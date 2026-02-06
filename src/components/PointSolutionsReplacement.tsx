@@ -108,19 +108,19 @@ const PointSolutionsReplacement: React.FC = () => {
           </div>
 
           {/* Logo Rows */}
-          <div className="grid grid-cols-1 md:grid-cols-5">
+          <div className="grid grid-cols-2 md:grid-cols-5">
              {columns.map((col, i) => (
-                <div key={i} className={`flex flex-col ${i < 4 ? 'md:border-r border-slate-100' : ''}`}>
+                <div key={i} className={`flex flex-col ${i < 4 ? 'md:border-r border-slate-100' : ''} ${i % 2 === 0 ? 'border-r border-slate-100 md:border-r' : ''}`}>
                    {/* Mobile Header */}
-                   <div className="md:hidden py-4 bg-slate-50 border-y border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400 mt-4 md:mt-0 first:mt-0">
+                   <div className="md:hidden py-3 bg-slate-50 border-y border-slate-100 text-[8px] font-black uppercase tracking-widest text-slate-400">
                       {col.title}
                    </div>
                    {col.logos.map((logo, j) => (
-                      <div key={j} className="h-32 flex items-center justify-center p-8 hover:bg-slate-50/30 transition-colors border-b border-slate-50 md:border-none last:border-none last:md:border-none md:odd:border-b md:border-slate-100/50 relative group">
+                      <div key={j} className="h-24 md:h-32 flex items-center justify-center p-4 md:p-8 hover:bg-slate-50/30 transition-colors border-b border-slate-50 md:border-none last:border-none last:md:border-none md:odd:border-b md:border-slate-100/50 relative group">
                          <img 
                            src={logo.url} 
                            alt={logo.name} 
-                           className="max-h-8 max-w-[140px] object-contain transition-all duration-300 transform group-hover:scale-110 drop-shadow-sm grayscale group-hover:grayscale-0 opacity-70 group-hover:opacity-100" 
+                           className="max-h-6 md:max-h-8 max-w-[100px] md:max-w-[140px] object-contain transition-all duration-300 transform group-hover:scale-110 drop-shadow-sm grayscale group-hover:grayscale-0 opacity-70 group-hover:opacity-100" 
                            onError={handleImageError}
                            loading="lazy"
                            crossOrigin="anonymous"

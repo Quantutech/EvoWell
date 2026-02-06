@@ -1,41 +1,52 @@
-# Implementation Plan - Navbar Background Fix
+# Implementation Plan - HomeView & Navbar Responsiveness Fixes
 
-The main navbar remains transparent or has visibility issues when scrolling. The goal is to ensure the navbar has a solid, legible background (with optional blur/glassmorphism) as soon as the user scrolls away from the top of the page.
+This plan addresses four specific responsiveness issues on the HomeView and Navbar.
 
 ## Root Cause Analysis
-1. **Scroll Detection Failure**: Global styles in `src/styles/design-system.css` set `html, body { height: 100%; }` and `body { overflow-y: auto; }`. This can cause `window.scrollY` to remain at 0 while the body element scrolls, preventing the navbar from ever entering its "scrolled" state.
-2. **Redundant Background Logic**: `Navbar.tsx` uses both Tailwind classes on the `nav` element and an absolute `div` for background, which is unnecessary and can lead to flickering or transparency issues.
-3. **Layout Jumps**: The conditional spacer `{scrolled && <div className="h-20"></div>}` causes the page content to jump by 20px when the scroll threshold is crossed, as the navbar is `fixed` and already out of the document flow.
-4. **Transparency at Top**: On some pages, the transparent background makes the dark text hard to read against certain hero content.
+1. **Counter Cards & Why Choose Cards**: Currently use `cols={4}` in the `Grid` component, which defaults to `grid-cols-4` on all screen sizes, causing overlapping on small screens.
+2. **Logo Section**: The `PointSolutionsReplacement` component uses `grid-cols-1` on mobile, leading to excessive vertical space usage.
+3. **Navbar Dropdowns**: The Navbar `z-index` might be lower than some scrolled page content or containers, or the dropdowns themselves are being clipped.
 
 ## Proposed Changes
 
-### `src/components/Navbar.tsx`
-- **Robust Scroll Detection**: Update `handleScroll` to check `document.documentElement.scrollTop` and `document.body.scrollTop` in addition to `window.scrollY`.
-- **Background Consolidation**: Use a single background strategy on the `nav` element using `backdrop-blur-md` and semi-transparent white (`bg-white/80` or `bg-white/90`) when scrolled.
-- **Remove Conditional Spacer**: Delete the `{scrolled && <div className="h-20"></div>}` spacer. Instead, rely on a constant top padding/margin in the layout or a fixed-height spacer.
-- **Glassmorphism**: Apply `backdrop-blur-xl` to the scrolled state for better readability over varied content.
-- **Smooth Transitions**: Ensure height and background transitions are synchronized.
+### `src/views/HomeView.tsx`
+- Update the counter cards `Grid` to `cols={2} md={4}`.
+- Update the "Why Choose" `Grid` to `cols={2} md={4}`.
+- Adjust font sizes for mobile where necessary.
 
-### `src/styles/design-system.css`
-- **Overflow Cleanup**: Review and potentially simplify the `html, body` overflow rules to ensure standard window scroll behavior if possible, or at least ensure consistency.
+### `src/components/AnimatedCounter.tsx`
+- Make the count font size responsive: `text-2xl md:text-4xl`.
+- Reduce padding on mobile: `p-6 md:p-10`.
+- Reduce label font size if needed.
+
+### `src/components/PointSolutionsReplacement.tsx`
+- Change the mobile grid from `grid-cols-1` to `grid-cols-2`.
+- Adjust the category headers to work with the 2-column layout (e.g., make them span 2 columns or integrate them differently).
+- Reduce logo padding on mobile to save space.
+
+### `src/components/Navbar.tsx`
+- Increase the `z-index` of the `nav` element to ensure it's above all page content.
+- Verify that the dropdown menus have appropriate `z-index` and aren't being hidden.
 
 ## Potential Side Effects
-- Layout shifts: The navbar height changes from `h-20` to `h-16` on scroll. I will ensure this transition is smooth and doesn't cause content to "jump".
-- Visibility on dark-themed pages: Need to ensure that pages with dark headers (like Provider Profile) still look good during the transition.
+- Layout shifts on mobile: Changing from 1 to 2 columns might affect the height of sections.
+- Alignment: Need to ensure 2nd column items align correctly.
 
 ## Implementation Steps
-1. **Analyze** all routes where `Navbar` is used to understand the various background contexts (light vs dark hero sections).
-2. **Modify `src/components/Navbar.tsx`**:
-    - Update the `nav` container to use a consistent background strategy.
-    - Add `backdrop-blur-md` to the scrolled state.
-    - Optimize the scroll threshold (currently 10px).
-3. **Verify** that the `isDarkMode` logic correctly toggles text colors based on both the route and the scroll state.
-4. **Test** on Home, Provider Profile, and Search views.
-5. **Run build/lint** to ensure no regressions.
+1. **Fix Counter Cards**:
+    - Modify `src/views/HomeView.tsx` to use responsive grid columns for counters.
+    - Modify `src/components/AnimatedCounter.tsx` for responsive sizing.
+2. **Fix "Why Choose" Cards**:
+    - Modify `src/views/HomeView.tsx` to use responsive grid columns for why choose section.
+3. **Fix Logo Section**:
+    - Modify `src/components/PointSolutionsReplacement.tsx` to use 2 columns on mobile.
+4. **Fix Navbar z-index**:
+    - Modify `src/components/Navbar.tsx` to increase `z-index`.
+5. **Verify**:
+    - Run `npm run build` to check for regressions.
 
 ## Success Criteria
-- Navbar is transparent at the very top (scrollY < 10 or similar) IF the page design calls for it.
-- Navbar becomes solid white (or blurred white) with a subtle shadow as soon as the user scrolls.
-- Text remains readable at all times.
-- No layout "jumps" or flickering during transition.
+- Counter cards show 2 per row on mobile, 4 on desktop, no overlapping.
+- "Why Choose" cards show 2 per row on mobile.
+- Logos show 2 per row on mobile.
+- Navbar dropdowns are visible and stay above all content when scrolling.

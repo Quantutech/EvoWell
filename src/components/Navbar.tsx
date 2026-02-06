@@ -58,17 +58,35 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
 
   // Scroll effect
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const handleScroll = (e?: any) => {
+      // Robust scroll detection for all browsers/configurations
+      const target = e?.target || document.documentElement;
+      const scrollTop = window.pageYOffset || 
+                        document.documentElement.scrollTop || 
+                        document.body.scrollTop || 
+                        (target === document ? 0 : target.scrollTop) ||
+                        window.scrollY ||
+                        0;
+      
       const isScrolled = scrollTop > 10;
       if (isScrolled !== scrolled) {
         setScrolled(isScrolled);
       }
     };
+    
+    // Listen on window and body to cover all scroll configurations
     window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    document.body.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    window.addEventListener('touchmove', handleScroll, { passive: true });
+    
     // Initial check
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll, { capture: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+      document.body.removeEventListener('scroll', handleScroll, { capture: true });
+      window.removeEventListener('touchmove', handleScroll);
+    };
   }, [scrolled]);
 
   // Handle Search Input Esc key
@@ -105,15 +123,6 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
     }, 200);
   };
 
-  /*
-   * ── Navigation structure ──────────────────────────────────────
-   * Ordered by user priority:
-   *   1. Find Care     — the #1 reason patients visit
-   *   2. Resources     — returning visitors, SEO content
-   *   3. About         — brand credibility
-   *   4. For Partners  — B2B (simple link)
-   *   5. For Providers — provider-side CTA
-   */
   const navItems: any[] = [
     {
       label: 'Find Care',
@@ -207,14 +216,12 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
     }
   };
 
-  // Helper styles based on mode
   const textColorClass = isDarkMode ? 'text-white/90 hover:text-white focus-visible:text-white' : 'text-slate-600 hover:text-slate-900 focus-visible:text-slate-900';
   const logoVariant = isDarkMode ? 'white' : 'color';
   const mobileToggleClass = isDarkMode ? 'text-white' : 'text-slate-800';
 
   return (
     <>
-      {/* Search Overlay */}
       {showSearch && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] animate-in fade-in duration-200">
           <div className="max-w-4xl mx-auto pt-32 px-6">
@@ -275,27 +282,21 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
 
       <nav 
         ref={navbarRef}
-        className={`fixed top-0 inset-x-0 z-[150] transition-all duration-300 ${
+        className={`fixed top-0 inset-x-0 z-[500] transition-all duration-300 ${
           scrolled 
-            ? 'bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm h-16' 
-            : 'bg-white/0 border-b border-transparent h-20'
+            ? 'bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-lg h-16' 
+            : 'bg-white border-b border-slate-100 md:bg-transparent md:border-transparent h-16 md:h-20'
         }`}
         aria-label="Main Navigation"
       >
-        {/* Gradient Line Top */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 via-blue-500 to-brand-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-
         <div className="max-w-[1440px] mx-auto px-6 h-full relative">
           <div className="relative flex justify-between items-center h-full">
-            
-            {/* Logo */}
             <div className="flex-shrink-0 z-20 flex items-center">
               <Link href="#/" className="flex items-center gap-2 group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 rounded-lg p-1">
                 <Logo variant={logoVariant} className={`transition-all duration-300 ${scrolled ? 'h-8' : 'h-9'}`} />
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               {navItems.map((item) => (
                 <div 
@@ -327,12 +328,10 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
                     </button>
                   )}
 
-                  {/* Dropdown Menu */}
                   {item.items && activeDropdown === item.id && (
                     <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-max animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="bg-white rounded-3xl shadow-2xl ring-1 ring-black/5 overflow-hidden p-2 min-w-[320px]">
                         <div className={`h-1.5 w-20 mx-auto rounded-full bg-gradient-to-r ${item.gradient} mb-2 opacity-50`}></div>
-                        
                         <div className="p-2 grid gap-1">
                           {item.items.map((sub: any) => (
                             <Link 
@@ -361,9 +360,7 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
               ))}
             </div>
 
-            {/* Right Actions */}
             <div className="hidden lg:flex items-center gap-3 z-20">
-              
               {isLoading ? (
                 <div className="flex items-center gap-3 animate-pulse">
                   <div className="w-20 h-9 bg-slate-200/50 rounded-lg"></div>
@@ -389,11 +386,7 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
                 <div className="relative group/user" onMouseEnter={() => handleMouseEnter('user')} onMouseLeave={handleMouseLeave}>
                   <button className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2">
                     <span className="text-xs font-bold text-slate-700 pl-2">{user.firstName}</span>
-                    <ProfileImage 
-                      src={provider?.imageUrl} 
-                      alt={`${user.firstName} ${user.lastName}`} 
-                      className="w-8 h-8 rounded-full"
-                    />
+                    <ProfileImage src={provider?.imageUrl} alt={`${user.firstName} ${user.lastName}`} className="w-8 h-8 rounded-full" />
                   </button>
 
                   {activeDropdown === 'user' && (
@@ -430,7 +423,6 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
               )}
             </div>
 
-            {/* Mobile Toggle */}
             <div className="lg:hidden flex items-center gap-4 z-20">
               <button 
                 onClick={() => setMobileMenuOpen(true)}
@@ -443,100 +435,113 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
           </div>
         </div>
 
-        {/* Mobile Menu Drawer */}
+        {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-[300]">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
-            <div className="absolute top-0 right-0 bottom-0 w-80 bg-white shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300">
-              <div className="flex justify-between items-center mb-8">
-                <Logo className="h-8" />
-                <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2" aria-label="Close mobile menu">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
+          <div className="lg:hidden fixed inset-0 z-[900]">
+            {/* Background overlay */}
+            <div 
+              className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            
+            {/* Menu panel */}
+            <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
+              <div className="h-full flex flex-col">
+                <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                  <Logo variant="color" className="h-8" />
+                  <button 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                    aria-label="Close mobile menu"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-              {/* Mobile: Quick-access links at top */}
-              <div className="flex gap-2 mb-6">
-                <Link
-                  href="#/directory"
-                  className="flex-1 py-3 text-center rounded-xl bg-brand-50 text-brand-700 text-sm font-bold border border-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Directory
-                </Link>
-                <Link
-                  href="#/search"
-                  className="flex-1 py-3 text-center rounded-xl bg-slate-50 text-slate-700 text-sm font-bold border border-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Search
-                </Link>
-              </div>
+                <div className="flex-1 p-6 overflow-y-auto">
+                  <div className="flex gap-2 mb-6">
+                    <Link
+                      href="#/directory"
+                      className="flex-1 py-3 text-center rounded-xl bg-brand-50 text-brand-700 text-sm font-bold border border-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Directory
+                    </Link>
+                    <Link
+                      href="#/search"
+                      className="flex-1 py-3 text-center rounded-xl bg-slate-50 text-slate-700 text-sm font-bold border border-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Search
+                    </Link>
+                  </div>
 
-              <div className="space-y-6">
-                {navItems.map((item) => (
-                  <div key={item.label}>
-                    {item.items ? (
-                      <div>
-                        <button 
-                          onClick={() => toggleMobileDropdown(item.id || item.label)}
-                          className="flex items-center justify-between w-full text-lg font-bold text-slate-900 mb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset rounded-lg p-1"
-                        >
-                          {item.label}
-                          <svg className={`w-5 h-5 transition-transform ${expandedMobileItem === (item.id || item.label) ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-                        {expandedMobileItem === (item.id || item.label) && (
-                          <div className="pl-4 space-y-3 border-l-2 border-slate-100 ml-1">
-                            {item.items.map((sub: any) => (
-                              <Link 
-                                key={sub.label} 
-                                href={sub.href} 
-                                className="flex items-center justify-between text-sm font-medium text-slate-600 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset rounded-lg px-2"
-                                onClick={() => setMobileMenuOpen(false)}
-                              >
-                                {sub.label}
-                                {sub.badge && <span className="text-[10px] font-bold bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded">{sub.badge}</span>}
-                              </Link>
-                            ))}
+                  <div className="space-y-6">
+                    {navItems.map((item) => (
+                      <div key={item.label}>
+                        {item.items ? (
+                          <div>
+                            <button 
+                              onClick={() => toggleMobileDropdown(item.id || item.label)}
+                              className="flex items-center justify-between w-full text-lg font-bold text-slate-900 mb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset rounded-lg p-1"
+                            >
+                              {item.label}
+                              <svg className={`w-5 h-5 transition-transform ${expandedMobileItem === (item.id || item.label) ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                            {expandedMobileItem === (item.id || item.label) && (
+                              <div className="pl-4 space-y-3 border-l-2 border-slate-100 ml-1">
+                                {item.items.map((sub: any) => (
+                                  <Link 
+                                    key={sub.label} 
+                                    href={sub.href} 
+                                    className="flex items-center justify-between text-sm font-medium text-slate-600 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset rounded-lg px-2"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                  >
+                                    {sub.label}
+                                    {sub.badge && <span className="text-[10px] font-bold bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded">{sub.badge}</span>}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          <Link 
+                            href={item.href!} 
+                            className="block text-lg font-bold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset rounded-lg p-1"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {item.label}
+                          </Link>
                         )}
                       </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-12 pt-8 border-t border-slate-100 space-y-4">
+                    {!user ? (
+                      <>
+                        <Link href="#/login" className="block w-full py-3 text-center rounded-xl bg-slate-100 font-bold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
+                        <Link href="#/login?join=true" className="block w-full py-3 text-center rounded-xl bg-slate-900 text-white font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2" onClick={() => setMobileMenuOpen(false)}>Provider Access</Link>
+                      </>
                     ) : (
-                      <Link 
-                        href={item.href!} 
-                        className="block text-lg font-bold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset rounded-lg p-1"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {item.label}
-                      </Link>
+                      <>
+                        <div className="flex items-center gap-3 mb-4">
+                          <ProfileImage src={provider?.imageUrl} alt={`${user.firstName} ${user.lastName}`} className="w-10 h-10 rounded-full" />
+                          <div>
+                            <p className="font-bold text-slate-900">{user.firstName}</p>
+                            <p className="text-xs text-slate-500">{user.email}</p>
+                          </div>
+                        </div>
+                        <Link href="#/dashboard" className="block w-full py-3 text-center rounded-xl bg-slate-100 font-bold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+                        <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full py-3 text-center rounded-xl border border-red-100 text-red-600 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">Sign Out</button>
+                      </>
                     )}
                   </div>
-                ))}
-              </div>
-
-              <div className="mt-12 pt-8 border-t border-slate-100 space-y-4">
-                {!user ? (
-                  <>
-                    <Link href="#/login" className="block w-full py-3 text-center rounded-xl bg-slate-100 font-bold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
-                    <Link href="#/login?join=true" className="block w-full py-3 text-center rounded-xl bg-slate-900 text-white font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2" onClick={() => setMobileMenuOpen(false)}>Provider Access</Link>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 mb-4">
-                      <ProfileImage 
-                        src={provider?.imageUrl} 
-                        alt={`${user.firstName} ${user.lastName}`} 
-                        className="w-10 h-10 rounded-full"
-                      />
-                      <div>
-                        <p className="font-bold text-slate-900">{user.firstName}</p>
-                        <p className="text-xs text-slate-500">{user.email}</p>
-                      </div>
-                    </div>
-                    <Link href="#/dashboard" className="block w-full py-3 text-center rounded-xl bg-slate-100 font-bold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
-                    <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full py-3 text-center rounded-xl border border-red-100 text-red-600 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">Sign Out</button>
-                  </>
-                )}
+                </div>
               </div>
             </div>
           </div>

@@ -42,11 +42,11 @@ const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ target, label, prefix
   }, [isVisible, target]);
 
   return (
-    <div ref={countRef} className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-xl text-center transform hover:-translate-y-1 transition-all duration-300 ${className}`}>
-      <p className="text-4xl font-black text-brand-500 mb-2">
+    <div ref={countRef} className={`bg-white p-6 md:p-10 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-xl text-center transform hover:-translate-y-1 transition-all duration-300 ${className}`}>
+      <p className="text-2xl md:text-4xl font-black text-brand-500 mb-2">
         {prefix}{count.toLocaleString()}{suffix}
       </p>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+      <p className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
     </div>
   );
 };

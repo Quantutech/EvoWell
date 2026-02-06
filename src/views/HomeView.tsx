@@ -356,7 +356,7 @@ const HomeView: React.FC<{ specialties: Specialty[] }> = ({ specialties }) => {
       {/* ── Stats ────────────────────────────────────────────────── */}
       <Section spacing="md" background="default">
         <Container>
-          <Grid cols={4} gap="lg" className="reveal">
+          <Grid cols={2} md={4} gap="lg" className="reveal">
               <AnimatedCounter target={50} label="Founding Providers" prefix="+" />
               <AnimatedCounter target={15} label="Specialties" prefix="+" />
               <AnimatedCounter target={100} label="Available Online" suffix="%" />
@@ -437,19 +437,19 @@ const HomeView: React.FC<{ specialties: Specialty[] }> = ({ specialties }) => {
           <div className="text-center mb-16 reveal">
              <Heading level={2}>Why Choose EvoWell?</Heading>
           </div>
-          <Grid cols={4} className="reveal">
+          <Grid cols={2} md={4} gap="md" className="reveal">
              {[
                { title: "Wellness Library", desc: "Digital downloads, media, and tools." },
                { title: "Direct Scheduling", desc: "Seamless booking with experts." },
                { title: "Private Messaging", desc: "Secure comms with professionals." },
                { title: "Open Access", desc: "No gatekeepers. Just care." },
              ].map((item, i) => (
-               <Card key={i} variant="muted" hoverable>
-                  <CardHeader>
-                     <Heading level={3} size="h4">{item.title}</Heading>
+               <Card key={i} variant="muted" hoverable className="p-4 md:p-6">
+                  <CardHeader className="p-0 mb-2">
+                     <Heading level={3} size="h4" className="text-sm md:text-lg">{item.title}</Heading>
                   </CardHeader>
-                  <CardBody>
-                     <Text variant="small">{item.desc}</Text>
+                  <CardBody className="p-0">
+                     <Text variant="small" className="text-[10px] md:text-sm">{item.desc}</Text>
                   </CardBody>
                </Card>
              ))}
