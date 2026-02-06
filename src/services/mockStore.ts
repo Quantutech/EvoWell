@@ -36,18 +36,26 @@ class MockStoreService {
       genders: stored.genders || ['Male', 'Female', 'Non-Binary', 'Prefer not to say']
     };
 
-    // Auto-generate client profiles if missing for seed/mock clients
-    if (store.clientProfiles.length === 0) {
-      const clients = store.users.filter(u => u.role === UserRole.CLIENT);
-      store.clientProfiles = clients.map(u => ({
+    // Load from seed data if persistence is empty
+    if (store.clientProfiles.length === 0 && initialData.clientProfiles) {
+      store.clientProfiles = [...initialData.clientProfiles];
+    }
+
+    // Auto-generate client profiles if still missing for remaining clients
+    const existingUserIds = new Set(store.clientProfiles.map(p => p.userId));
+    const remainingClients = store.users.filter(u => u.role === UserRole.CLIENT && !existingUserIds.has(u.id));
+    
+    if (remainingClients.length > 0) {
+      const generated: ClientProfile[] = remainingClients.map(u => ({
         id: `cp-${u.id}`,
         userId: u.id,
         intakeStatus: 'COMPLETED',
         documents: [],
         createdAt: u.createdAt,
         updatedAt: u.updatedAt,
-        preferences: { communication: 'email', language: 'English' }
+        preferences: { communication: 'email' as const, language: 'English' }
       }));
+      store.clientProfiles = [...store.clientProfiles, ...generated];
     }
 
     return store;

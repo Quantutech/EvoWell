@@ -4,6 +4,7 @@ import { Appointment, AvailabilitySlot, ProviderProfile, Availability } from '..
 import { api } from './api';
 import { startOfDay, endOfDay, addMinutes, isBefore, format, parseISO } from 'date-fns';
 import { formatInTimezone } from '../utils/timezone';
+import { SEED_DATA } from './seedData';
 
 class AppointmentService {
   
@@ -127,6 +128,40 @@ class AppointmentService {
 
     if (error) throw error;
     return apptId;
+  }
+
+  async updateMeetingLink(appointmentId: string, link: string): Promise<void> {
+    if (!isConfigured) {
+        const appt = SEED_DATA.appointments.find(a => a.id === appointmentId);
+        if (appt) {
+            appt.meetingLink = link;
+        }
+        return;
+    }
+    const { error } = await supabase
+      .from('appointments')
+      .update({ meeting_link: link })
+      .eq('id', appointmentId);
+    
+    if (error) throw error;
+  }
+
+  async updateStatus(appointmentId: string, status: string): Promise<void> {
+    if (!isConfigured) {
+        // Mock success
+        const appt = SEED_DATA.appointments.find(a => a.id === appointmentId);
+        if (appt) {
+            (appt as any).status = status;
+        }
+        return;
+    }
+
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status })
+      .eq('id', appointmentId);
+
+    if (error) throw error;
   }
 
   async cancelAppointment(appointmentId: string, reason: string): Promise<void> {

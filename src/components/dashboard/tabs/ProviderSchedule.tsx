@@ -1,23 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
-import ScheduleBuilder from '../../ScheduleBuilder';
 import AppointmentCard from '../../booking/AppointmentCard';
-import { Appointment, ProviderProfile, Availability, UserRole } from '../../../types';
+import { Appointment, UserRole } from '../../../types';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../App';
 
 interface ProviderScheduleProps {
-  apps?: Appointment[]; // Optional as we fetch internally now
-  availability: Availability;
-  onUpdateAvailability: (val: Availability) => void;
-  onSave: () => void;
+  apps?: Appointment[]; // Optional prop if passed from parent
+  onAppointmentClick?: (appt: Appointment) => void;
 }
 
-const ProviderSchedule: React.FC<ProviderScheduleProps> = ({ availability, onUpdateAvailability, onSave }) => {
+const ProviderSchedule: React.FC<ProviderScheduleProps> = ({ apps, onAppointmentClick }) => {
   const { user } = useAuth();
-  const [calendarSubTab, setCalendarSubTab] = useState<'appointments' | 'availability'>('appointments');
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [appointments, setAppointments] = useState<Appointment[]>(apps || []);
+  const [loading, setLoading] = useState(!apps);
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   const fetchAppointments = async () => {
     if (!user) return;
@@ -33,63 +29,58 @@ const ProviderSchedule: React.FC<ProviderScheduleProps> = ({ availability, onUpd
   };
 
   useEffect(() => {
-    fetchAppointments();
-  }, [user]);
+    if (!apps) {
+        fetchAppointments();
+    } else {
+        setAppointments(apps);
+        setLoading(false);
+    }
+  }, [user, apps]);
+
+  const filteredAppointments = appointments.filter(a => 
+    statusFilter === 'ALL' || a.status === statusFilter
+  );
 
   return (
     <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 min-h-[600px] flex flex-col animate-in fade-in slide-in-from-bottom-2">
-       <div className="flex justify-between items-center mb-8">
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <div>
-             <h2 className="text-xl font-black text-slate-900 mb-1">Clinical Calendar</h2>
+             <h2 className="text-xl font-black text-slate-900 mb-1">Clinical Schedule</h2>
              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
           </div>
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button 
-               onClick={() => setCalendarSubTab('appointments')}
-               className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${calendarSubTab === 'appointments' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400'}`}
-            >
-               Appointments
-            </button>
-            <button 
-               onClick={() => setCalendarSubTab('availability')}
-               className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${calendarSubTab === 'availability' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400'}`}
-            >
-               Availability
-            </button>
+          
+          <div className="flex gap-2 bg-slate-50 p-1 rounded-xl">
+             {['ALL', 'CONFIRMED', 'PENDING', 'COMPLETED', 'CANCELLED'].map(status => (
+                <button 
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === status ? 'bg-white shadow-sm text-brand-600' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                   {status}
+                </button>
+             ))}
           </div>
        </div>
 
-       {calendarSubTab === 'availability' ? (
-          <div className="max-w-3xl">
-             <p className="text-sm text-slate-500 mb-6">Manage your recurring weekly hours and time-off.</p>
-             <ScheduleBuilder 
-                value={availability}
-                onChange={(val) => {
-                   onUpdateAvailability(val);
-                   onSave();
-                }}
-             />
-          </div>
-       ) : (
-          <div className="space-y-4">
+       <div className="space-y-4">
              {loading ? (
                 <div className="text-center py-20 text-slate-400 animate-pulse font-bold uppercase tracking-widest text-xs">Loading Schedule...</div>
-             ) : appointments.length === 0 ? (
+             ) : filteredAppointments.length === 0 ? (
                 <div className="text-center py-20 bg-slate-50 rounded-[2rem] border border-slate-100 border-dashed">
-                   <p className="text-slate-400 font-bold">No upcoming appointments.</p>
+                   <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">No {statusFilter !== 'ALL' ? statusFilter.toLowerCase() : ''} appointments found.</p>
                 </div>
              ) : (
-                appointments.map(appt => (
+                filteredAppointments.map(appt => (
                    <AppointmentCard 
                       key={appt.id} 
                       appointment={appt} 
                       role={UserRole.PROVIDER}
                       onRefresh={fetchAppointments}
+                      onClick={onAppointmentClick}
                    />
                 ))
              )}
-          </div>
-       )}
+       </div>
     </div>
   );
 };

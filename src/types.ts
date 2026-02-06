@@ -262,12 +262,39 @@ export interface ProviderProfile {
   headline?: string;
 }
 
+export interface WellnessEntry {
+  id: string;
+  date: string;
+  mood: number; // 1-5
+  energy: number; // 1-5
+  sleepHours: number;
+  notes?: string;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  target: number;
+  current: number;
+  unit: string;
+  color: string;
+}
+
 export interface ClientProfile {
   id: string;
   userId: string;
   intakeStatus: 'PENDING' | 'COMPLETED';
   documents: { type: string; url: string; uploadedAt: string }[];
+  bio?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  pronouns?: string;
+  imageUrl?: string;
+  phoneNumber?: string;
+  address?: Address;
   emergencyContact?: { name: string; phone: string; relation: string };
+  wellnessLog?: WellnessEntry[];
+  habits?: Habit[];
   preferences?: {
     communication: 'email' | 'sms' | 'both';
     language: string;
@@ -310,6 +337,7 @@ export interface Appointment {
   dateTime: string;
   durationMinutes: number;
   status: AppointmentStatus;
+  type?: AppointmentType;
   providerTimezone?: string;
   clientTimezone?: string;
   servicePackageId?: string;

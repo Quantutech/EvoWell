@@ -25,10 +25,7 @@ const ProviderOnboardingView = lazy(() => import('./views/ProviderOnboardingView
 const AdminDashboard = lazy(() => import('./views/AdminDashboard'));
 import ClientLayout from './layouts/ClientLayout';
 import ProviderLayout from './layouts/ProviderLayout';
-import ClientHome from './views/client/ClientHome';
-import ClientSessions from './views/client/ClientSessions';
-import ClientSettings from './views/client/ClientSettings';
-import DocumentCenter from './views/client/DocumentCenter';
+import ClientDashboard from './views/ClientDashboard';
 import ClientSupportTab from './components/dashboard/tabs/client/ClientSupportTab';
 import RoleGuard from './components/RoleGuard';
 const LoginView = lazy(() => import('./views/LoginView'));
@@ -403,18 +400,10 @@ const AppInner: React.FC = () => {
                       path="/portal" 
                       element={
                         <RoleGuard allowedRole={UserRole.CLIENT} redirectPath="/console">
-                          <ClientLayout />
+                          <ClientDashboard />
                         </RoleGuard>
-                      }
-                    >
-                      <Route index element={<Navigate to="home" replace />} />
-                      <Route path="home" element={<ClientHome />} />
-                      <Route path="sessions" element={<ClientSessions />} />
-                      <Route path="documents" element={<DocumentCenter />} />
-                      <Route path="search" element={<Navigate to="/search" />} />
-                      <Route path="settings" element={<ClientSettings />} />
-                      <Route path="support" element={user ? <ClientSupportTab user={user} /> : <Navigate to="/login" />} />
-                    </Route>
+                      } 
+                    />
 
                     <Route 
                       path="/admin/*" 

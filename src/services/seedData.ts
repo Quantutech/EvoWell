@@ -5,7 +5,7 @@ import {
   InsuranceCompany, BlogCategory, JobPosting, 
   UserRole, SubscriptionTier, SubscriptionStatus, 
   ModerationStatus, AppointmentType, TicketStatus,
-  SessionFormat, AppointmentStatus // Added AppointmentStatus
+  SessionFormat, AppointmentStatus, WellnessEntry, Habit, ClientProfile
 } from '../types';
 
 // --- Constants for Relational Integrity ---
@@ -22,6 +22,40 @@ const CLIENT_ID_3 = 'u-client-003'; // Charlie
 const TEST_ADMIN_ID = 'test-admin';
 const TEST_PROV_ID = 'test-provider';
 const TEST_CLIENT_ID = 'test-client';
+
+const MOCK_WELLNESS_LOG: WellnessEntry[] = [
+  { id: 'w1', date: '2026-02-01', mood: 4, energy: 3, sleepHours: 7, notes: 'Felt a bit anxious in the morning.' },
+  { id: 'w2', date: '2026-02-02', mood: 5, energy: 4, sleepHours: 8, notes: 'Great sleep, productive day.' },
+  { id: 'w3', date: '2026-02-03', mood: 3, energy: 2, sleepHours: 6, notes: 'Stressful meeting today.' },
+  { id: 'w4', date: '2026-02-04', mood: 4, energy: 5, sleepHours: 7.5 },
+  { id: 'w5', date: '2026-02-05', mood: 5, energy: 4, sleepHours: 8 },
+  { id: 'w6', date: '2026-02-06', mood: 4, energy: 4, sleepHours: 7 },
+];
+
+const MOCK_HABITS: Habit[] = [
+  { id: 'h1', name: 'Water Intake', target: 8, current: 6, unit: 'glasses', color: '#3b82f6' },
+  { id: 'h2', name: 'Exercise', target: 30, current: 45, unit: 'mins', color: '#10b981' },
+  { id: 'h3', name: 'Meditation', target: 10, current: 5, unit: 'mins', color: '#8b5cf6' },
+  { id: 'h4', name: 'Reading', target: 20, current: 15, unit: 'pages', color: '#f59e0b' },
+];
+
+const clientProfiles: ClientProfile[] = [
+  {
+    id: `cp-${CLIENT_ID_1}`,
+    userId: CLIENT_ID_1,
+    intakeStatus: 'COMPLETED',
+    documents: [],
+    bio: 'Looking for holistic wellness strategies.',
+    dateOfBirth: '1992-05-15',
+    gender: 'Female',
+    pronouns: 'She/Her',
+    wellnessLog: MOCK_WELLNESS_LOG,
+    habits: MOCK_HABITS,
+    preferences: { communication: 'email', language: 'English' },
+    createdAt: '2023-06-01T12:00:00Z',
+    updatedAt: '2023-06-01T12:00:00Z'
+  }
+];
 
 const SPECIALTY_ANXIETY = 's-anxiety';
 const SPECIALTY_DEPRESSION = 's-depression';
@@ -674,8 +708,9 @@ const appointments: Appointment[] = [
     id: 'appt-1',
     providerId: `prov-${PROV_ID_1}`,
     clientId: CLIENT_ID_1,
-    dateTime: '2024-03-15T09:00:00', // Future
+    dateTime: '2026-03-15T09:00:00', 
     status: AppointmentStatus.CONFIRMED,
+    type: AppointmentType.VIDEO,
     paymentStatus: 'paid',
     durationMinutes: 60
   },
@@ -683,8 +718,9 @@ const appointments: Appointment[] = [
     id: 'appt-2',
     providerId: `prov-${PROV_ID_1}`,
     clientId: CLIENT_ID_1,
-    dateTime: '2024-03-01T09:00:00', // Past
+    dateTime: '2026-02-01T09:00:00', // Past
     status: AppointmentStatus.COMPLETED,
+    type: AppointmentType.IN_PERSON,
     paymentStatus: 'paid',
     durationMinutes: 60
   },
@@ -692,8 +728,9 @@ const appointments: Appointment[] = [
     id: 'appt-3',
     providerId: `prov-${PROV_ID_2}`,
     clientId: CLIENT_ID_2,
-    dateTime: '2024-03-20T14:00:00',
+    dateTime: '2026-03-20T14:00:00',
     status: AppointmentStatus.PENDING,
+    type: AppointmentType.VIDEO,
     paymentStatus: 'pending',
     durationMinutes: 60
   },
@@ -701,8 +738,9 @@ const appointments: Appointment[] = [
     id: 'appt-4',
     providerId: `prov-${PROV_ID_3}`,
     clientId: CLIENT_ID_3,
-    dateTime: '2024-03-18T10:00:00',
+    dateTime: '2026-03-18T10:00:00',
     status: AppointmentStatus.CONFIRMED,
+    type: AppointmentType.PHONE,
     paymentStatus: 'paid',
     durationMinutes: 45
   },
@@ -710,9 +748,69 @@ const appointments: Appointment[] = [
     id: 'appt-5',
     providerId: `prov-${PROV_ID_1}`,
     clientId: CLIENT_ID_2,
-    dateTime: '2024-02-28T15:00:00',
+    dateTime: '2026-02-02T15:00:00', // Past
     status: AppointmentStatus.CANCELLED,
+    type: AppointmentType.VIDEO,
     paymentStatus: 'exempted',
+    durationMinutes: 60
+  },
+  {
+    id: 'appt-new-pending',
+    providerId: `prov-${PROV_ID_1}`,
+    clientId: CLIENT_ID_3,
+    dateTime: '2026-04-01T10:00:00',
+    status: AppointmentStatus.PENDING,
+    type: AppointmentType.IN_PERSON,
+    paymentStatus: 'pending',
+    durationMinutes: 60
+  },
+  {
+    id: 'appt-alice-past-1',
+    providerId: `prov-${PROV_ID_1}`,
+    clientId: CLIENT_ID_1,
+    dateTime: '2026-01-15T14:00:00',
+    status: AppointmentStatus.COMPLETED,
+    type: AppointmentType.VIDEO,
+    paymentStatus: 'paid',
+    durationMinutes: 50
+  },
+  {
+    id: 'appt-alice-past-2',
+    providerId: `prov-${PROV_ID_2}`,
+    clientId: CLIENT_ID_1,
+    dateTime: '2026-01-20T10:00:00',
+    status: AppointmentStatus.COMPLETED,
+    type: AppointmentType.VIDEO,
+    paymentStatus: 'paid',
+    durationMinutes: 30
+  },
+  {
+    id: 'appt-alice-future-2',
+    providerId: `prov-${PROV_ID_1}`,
+    clientId: CLIENT_ID_1,
+    dateTime: '2026-03-25T11:00:00',
+    status: AppointmentStatus.CONFIRMED,
+    type: AppointmentType.VIDEO,
+    paymentStatus: 'paid',
+    durationMinutes: 50
+  },
+  // Ensure TEST_PROV_ID also has data for manual testing
+  {
+    id: 'appt-test-pending',
+    providerId: 'prov-test',
+    clientId: CLIENT_ID_1,
+    dateTime: '2026-04-02T14:00:00',
+    status: AppointmentStatus.PENDING,
+    paymentStatus: 'pending',
+    durationMinutes: 60
+  },
+  {
+    id: 'appt-test-confirmed',
+    providerId: 'prov-test',
+    clientId: CLIENT_ID_2,
+    dateTime: '2026-04-03T10:00:00',
+    status: AppointmentStatus.CONFIRMED,
+    paymentStatus: 'paid',
     durationMinutes: 60
   }
 ];
@@ -868,7 +966,7 @@ const jobs: JobPosting[] = [
     type: 'Full-time',
     postedAt: '1 week ago',
     description: 'Oversee our provider network and ensure clinical quality standards.',
-    responsibilities: ['Vet new providers', 'Manage support team', 'Ensure compliance'],
+    responsibilities: ['Vetting new providers', 'Manage support team', 'Ensure compliance'],
     requirements: ['Clinical background', 'Operations experience', 'Strong communication']
   },
   {
@@ -897,6 +995,7 @@ const blogCategories: BlogCategory[] = [
 export const SEED_DATA = {
   users,
   providers,
+  clientProfiles,
   specialties,
   insurance,
   blogs,

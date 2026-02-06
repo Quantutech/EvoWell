@@ -15,6 +15,9 @@ import ProviderArticles from '@/components/dashboard/tabs/ProviderArticles';
 import ProviderSupport from '@/components/dashboard/tabs/ProviderSupport';
 import ProviderPatients from '@/components/dashboard/tabs/ProviderPatients';
 import ProviderDocuments from '@/components/dashboard/tabs/ProviderDocuments';
+import ProviderAvailability from '@/components/dashboard/tabs/ProviderAvailability';
+import { ProviderSubscriptionTab } from '@/components/dashboard/tabs/ProviderSubscriptionTab';
+import { SubscriptionTier } from '@/types';
 
 const ProviderLayout: React.FC = () => {
   const { user, provider, login } = useAuth();
@@ -188,16 +191,22 @@ const ProviderLayout: React.FC = () => {
     >
       {activeTab === 'overview' && <ProviderOverview />}
       
-      {activeTab === 'schedule' && (
-        <ProviderSchedule 
-          apps={appointments} 
+      {activeTab === 'availability' && (
+        <ProviderAvailability 
           availability={editForm.availability} 
-          onUpdateAvailability={(val) => updateField('availability', val)}
+          onUpdateAvailability={(val: any) => updateField('availability', val)}
           onSave={handleSaveProfile}
         />
       )}
 
-      {activeTab === 'patients' && <ProviderPatients />}
+      {activeTab === 'patients' && (
+        <ProviderPatients 
+          appointments={appointments}
+          availability={editForm.availability}
+          onUpdateAvailability={(val: any) => updateField('availability', val)}
+          onSave={handleSaveProfile}
+        />
+      )}
       {activeTab === 'documents' && <ProviderDocuments />}
       
       {activeTab === 'financials' && (
@@ -233,6 +242,20 @@ const ProviderLayout: React.FC = () => {
       )}
       
       {activeTab === 'support' && <ProviderSupport user={user} />}
+
+      {activeTab === 'subscription' && (
+        <ProviderSubscriptionTab 
+            provider={provider} 
+            onUpgrade={async (tier: SubscriptionTier) => {
+                // Optimistic update for UI responsiveness
+                if (editForm) {
+                    setEditForm({ ...editForm, subscriptionTier: tier });
+                }
+                await api.updateProvider(provider.id, { subscriptionTier: tier });
+                await login(user.email);
+            }} 
+        />
+      )}
     </ProviderDashboardLayout>
   );
 };

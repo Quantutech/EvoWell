@@ -123,7 +123,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
            {/* Collapse Toggle Button (Bottom Position) */}
            <button 
              onClick={() => setIsCollapsed(!isCollapsed)}
-             className={`w-full flex ${isCollapsed ? 'justify-center' : 'justify-end'} mb-4 p-2 rounded-xl transition-colors ${role === 'client' ? 'hover:bg-slate-100 text-slate-400' : 'hover:bg-white/10 text-slate-500'}`}
+             className={`w-full flex ${isCollapsed ? 'justify-center' : 'justify-start'} mb-4 p-2 rounded-xl transition-colors ${role === 'client' ? 'hover:bg-slate-100 text-slate-400' : 'hover:bg-white/10 text-slate-500'}`}
              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
            >
              {isCollapsed ? (

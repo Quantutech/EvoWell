@@ -32,6 +32,40 @@ export interface IClientService {
   getUnreadCount(uid: string): Promise<number>;
 }
 
+// Helper to enrich appointments with client/provider data from seed
+function enrichAppointments(uid: string, role: UserRole): Appointment[] {
+  const appointments = SEED_DATA.appointments.filter((a) => {
+    if (role === UserRole.PROVIDER) {
+      const providerProfile = SEED_DATA.providers.find((p) => p.userId === uid);
+      return providerProfile && a.providerId === providerProfile.id;
+    }
+    return a.clientId === uid;
+  });
+
+  return appointments.map((appt) => {
+    const client = SEED_DATA.users.find((u) => u.id === appt.clientId);
+    const provider = SEED_DATA.providers.find((p) => p.id === appt.providerId);
+
+    return {
+      ...appt,
+      client: client
+        ? {
+            firstName: client.firstName,
+            lastName: client.lastName,
+            email: client.email,
+            imageUrl: '',
+          }
+        : undefined,
+      provider: provider
+        ? {
+            professionalTitle: provider.professionalTitle,
+            imageUrl: provider.imageUrl,
+          }
+        : undefined,
+    };
+  });
+}
+
 // Helper to format user
 function formatUser(row: any): User {
   return {
@@ -85,6 +119,12 @@ class MockClientService implements IClientService {
                   userId: userId,
                   intakeStatus: 'PENDING',
                   documents: [],
+                  bio: data.bio,
+                  dateOfBirth: data.dateOfBirth,
+                  gender: data.gender,
+                  pronouns: data.pronouns,
+                  phoneNumber: data.phoneNumber,
+                  address: data.address,
                   createdAt: new Date().toISOString(),
                   updatedAt: new Date().toISOString(),
                   preferences: { communication: 'email', language: 'English' }
@@ -93,7 +133,11 @@ class MockClientService implements IClientService {
               idx = mockStore.store.clientProfiles.length - 1;
           }
           
-          mockStore.store.clientProfiles[idx] = { ...mockStore.store.clientProfiles[idx], ...data };
+          mockStore.store.clientProfiles[idx] = { 
+            ...mockStore.store.clientProfiles[idx], 
+            ...data,
+            updatedAt: new Date().toISOString()
+          };
           mockStore.save();
           return mockStore.store.clientProfiles[idx];
       }, 'updateClientProfile');
@@ -122,7 +166,9 @@ class MockClientService implements IClientService {
 
   // Mocks
   async getAllAppointments(): Promise<Appointment[]> { return SEED_DATA.appointments; }
-  async getAppointmentsForUser(uid: string, role: UserRole): Promise<Appointment[]> { return SEED_DATA.appointments; }
+  async getAppointmentsForUser(uid: string, role: UserRole): Promise<Appointment[]> {
+      return enrichAppointments(uid, role);
+  }
   async bookAppointment(pid: string, cid: string, time: string): Promise<void> {}
   async getConversations(uid?: string): Promise<Conversation[]> { return []; }
   async getMessages(cid: string): Promise<Message[]> { return []; }
@@ -185,7 +231,9 @@ class SupabaseClientService implements IClientService {
 
   // Mocks/Placeholders for Supabase until implemented
   async getAllAppointments(): Promise<Appointment[]> { return SEED_DATA.appointments; }
-  async getAppointmentsForUser(uid: string, role: UserRole): Promise<Appointment[]> { return SEED_DATA.appointments; }
+  async getAppointmentsForUser(uid: string, role: UserRole): Promise<Appointment[]> {
+      return enrichAppointments(uid, role);
+  }
   async bookAppointment(pid: string, cid: string, time: string): Promise<void> {}
   async getConversations(uid?: string): Promise<Conversation[]> { return []; }
   async getMessages(cid: string): Promise<Message[]> { return []; }

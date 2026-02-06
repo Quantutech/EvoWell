@@ -7,11 +7,14 @@ import { useQuery } from '@tanstack/react-query';
 
 // Tabs
 import ProviderOverview from '@/components/dashboard/tabs/ProviderOverview';
+import ProviderPatients from '@/components/dashboard/tabs/ProviderPatients';
 import ProviderSchedule from '@/components/dashboard/tabs/ProviderSchedule';
 import ProviderFinancials from '@/components/dashboard/tabs/ProviderFinancials';
 import ProviderSettings from '@/components/dashboard/tabs/ProviderSettings';
 import ProviderArticles from '@/components/dashboard/tabs/ProviderArticles';
 import ProviderSupport from '@/components/dashboard/tabs/ProviderSupport';
+import { ProviderSubscriptionTab } from '@/components/dashboard/tabs/ProviderSubscriptionTab';
+import { SubscriptionTier } from '@/types';
 
 const ProviderDashboard: React.FC = () => {
   const { user, provider, login } = useAuth();
@@ -85,38 +88,38 @@ const ProviderDashboard: React.FC = () => {
   };
 
   const handleSaveProfile = async () => {
-  if (!editForm || !user) return;
-  setIsSaving(true);
-  setSaveMessage('');
-  try {
-    // Helper: Format legacy education string from structured history
-    if (editForm.educationHistory && editForm.educationHistory.length > 0) {
-      editForm.education = editForm.educationHistory.map(e => `${e.degree} from ${e.university}`).join(', ');
-    }
+    if (!editForm || !user) return;
+    setIsSaving(true);
+    setSaveMessage('');
+    try {
+      // Helper: Format legacy education string from structured history
+      if (editForm.educationHistory && editForm.educationHistory.length > 0) {
+        editForm.education = editForm.educationHistory.map(e => `${e.degree} from ${e.university}`).join(', ');
+      }
 
-    // Construct explicit payload including new Task 3 fields
-    const payload: Partial<ProviderProfile> = {
-      ...editForm, // Preserve all existing fields
-      firstName: editForm.firstName,       // ADD THIS
-      lastName: editForm.lastName,         // ADD THIS
-      phoneNumber: editForm.phoneNumber,
-      website: editForm.website,
-      pronouns: editForm.pronouns,
-      businessAddress: editForm.businessAddress,
-      mediaLinks: editForm.mediaLinks,
-      profileSlug: editForm.profileSlug,
-      isPublished: editForm.isPublished
-    };
-    await api.updateProvider(editForm.id, payload);
-    await login(user.email); // Refresh session data
-    setSaveMessage('Settings saved successfully!');
-    setTimeout(() => setSaveMessage(''), 3000);
-  } catch (err) {
-    alert("Update failed. Please check your inputs.");
-  } finally { 
-    setIsSaving(false); 
-  }
-};
+      // Construct explicit payload including new Task 3 fields
+      const payload: Partial<ProviderProfile> = {
+        ...editForm, // Preserve all existing fields
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        phoneNumber: editForm.phoneNumber,
+        website: editForm.website,
+        pronouns: editForm.pronouns,
+        businessAddress: editForm.businessAddress,
+        mediaLinks: editForm.mediaLinks,
+        profileSlug: editForm.profileSlug,
+        isPublished: editForm.isPublished
+      };
+      await api.updateProvider(editForm.id, payload);
+      await login(user.email); // Refresh session data
+      setSaveMessage('Settings saved successfully!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (err) {
+      alert("Update failed. Please check your inputs.");
+    } finally { 
+      setIsSaving(false); 
+    }
+  };
 
   const handleAiBio = async () => {
     if (!editForm) return;
@@ -139,6 +142,23 @@ const ProviderDashboard: React.FC = () => {
         updateField('imageUrl', reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUpgradePlan = async (tier: SubscriptionTier) => {
+    if (!editForm) return;
+    try {
+        // Optimistic update
+        updateField('subscriptionTier', tier);
+        
+        // Persist via API
+        await api.updateProvider(editForm.id, { subscriptionTier: tier });
+        await login(user!.email); // Refresh session
+        
+        alert(`Successfully switched plan. Your billing will be updated.`);
+    } catch (e) {
+        console.error(e);
+        alert("Failed to update plan.");
     }
   };
 
@@ -201,12 +221,29 @@ const ProviderDashboard: React.FC = () => {
     >
       {activeTab === 'overview' && <ProviderOverview />}
       
+      {activeTab === 'patients' && (
+        <ProviderPatients 
+          appointments={appointments}
+          availability={editForm.availability}
+          onUpdateAvailability={(val) => updateField('availability', val)}
+          onSave={handleSaveProfile}
+        />
+      )}
+
+      {activeTab === 'availability' && (
+        <ProviderAvailability 
+          availability={editForm.availability}
+          onUpdate={(val: any) => updateField('availability', val)}
+          onSave={handleSaveProfile}
+        />
+      )}
+
+      {activeTab === 'documents' && <ProviderDocuments />}
+
       {activeTab === 'schedule' && (
         <ProviderSchedule 
           apps={appointments} 
-          availability={editForm.availability} 
-          onUpdateAvailability={(val) => updateField('availability', val)}
-          onSave={handleSaveProfile}
+          onAppointmentClick={() => setActiveTab('patients')}
         />
       )}
       
@@ -243,6 +280,13 @@ const ProviderDashboard: React.FC = () => {
       )}
       
       {activeTab === 'support' && <ProviderSupport user={user} />}
+
+      {activeTab === 'subscription' && (
+        <ProviderSubscriptionTab 
+            provider={provider} 
+            onUpgrade={handleUpgradePlan} 
+        />
+      )}
     </ProviderDashboardLayout>
   );
 };
