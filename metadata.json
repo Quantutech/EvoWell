@@ -1,0 +1,8 @@
+{
+  "name": "EvoWell",
+  "description": "EvoWell is a professional, clinical-grade directory connecting patients with elite mental health specialists through a secure, balanced ecosystem. The next evolution in care.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

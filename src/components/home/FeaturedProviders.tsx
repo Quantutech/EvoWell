@@ -1,0 +1,95 @@
+
+import React, { useRef } from 'react';
+import { useNavigation } from '../../App';
+import { ProviderProfile } from '../../types';
+
+interface FeaturedProvider extends ProviderProfile {
+  firstName: string;
+  lastName: string;
+}
+
+const FeaturedProviders: React.FC<{ providers: FeaturedProvider[] }> = ({ providers }) => {
+  const { navigate } = useNavigation();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollContainer = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 360;
+      scrollRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <section className="py-24 mt-20 bg-[#F8FAFC] border-y border-slate-100 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-50/50 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+      
+      <div className="max-w-[1440px] mx-auto px-6 relative z-10">
+        <div className="max-w-7xl mx-auto mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
+          <div>
+            <p className="text-brand-500 text-xs font-bold uppercase tracking-widest mb-4">Our Network</p>
+            <h2 className="text-4xl font-black text-slate-900 mb-4">Real People. Real Support.</h2>
+            <p className="text-slate-500 font-medium text-lg max-w-xl">Meet our verified providers: Care from licensed therapists, coaches, and nutritionists dedicated to your growth.</p>
+          </div>
+          <div className="flex gap-4">
+            <button onClick={() => scrollContainer('left')} className="w-12 h-12 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-brand-500 hover:border-brand-500 hover:shadow-lg transition-all"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+            <button onClick={() => scrollContainer('right')} className="w-12 h-12 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-brand-500 hover:border-brand-500 hover:shadow-lg transition-all"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+          </div>
+        </div>
+
+        {providers.length === 0 ? (
+           <div className="py-20 text-center">
+              <div className="inline-block animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full mb-4"></div>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Discovering new wellness experts...</p>
+           </div>
+        ) : (
+        <div 
+          ref={scrollRef}
+          className="flex gap-8 overflow-x-auto pb-12 snap-x snap-mandatory no-scrollbar pl-6 lg:pl-[calc(50vw-42rem)]"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {providers.map((p) => (
+            <div 
+              key={p.id} 
+              onClick={() => navigate(`#/provider/${p.id}`)}
+              className="relative min-w-[320px] h-[450px] bg-white rounded-[2.5rem] overflow-hidden cursor-pointer snap-center group shadow-xl hover:shadow-2xl border border-slate-100 hover:border-brand-100 transition-all duration-500 hover:-translate-y-2"
+            >
+              <div className="absolute inset-0 h-[65%] overflow-hidden">
+                <img src={p.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`Dr. ${p.lastName}`} />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-90"></div>
+              </div>
+
+              <div className="absolute inset-x-0 bottom-0 h-[45%] bg-white p-8 flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-500 bg-brand-50 px-2 py-1 rounded-lg">{p.professionalTitle.split(' ')[0]}</p>
+                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-brand-500 group-hover:text-white transition-colors duration-300">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight mb-2">Dr. {p.firstName} {p.lastName}</h3>
+                  <p className="text-xs font-bold text-slate-400 line-clamp-2 leading-relaxed">"{p.tagline}"</p>
+                </div>
+                
+                <div className="pt-4 border-t border-slate-50 flex items-center gap-2 text-slate-500">
+                  <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">{p.address?.state || 'Nationwide'}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          <div className="relative min-w-[320px] h-[450px] bg-slate-900 rounded-[2.5rem] overflow-hidden cursor-pointer snap-center group shadow-xl flex flex-col items-center justify-center text-center p-8">
+            <div className="absolute inset-0 bg-brand-600/20 rounded-full blur-[100px] translate-y-1/2"></div>
+            <h3 className="text-3xl font-black text-white mb-6 relative z-10">Discover<br/>More Experts</h3>
+            <button onClick={() => navigate('#/search')} className="bg-white text-slate-900 px-8 py-3 rounded-xl font-bold text-sm shadow-xl hover:scale-105 transition-all relative z-10">
+              Browse Directory
+            </button>
+          </div>
+        </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+export default FeaturedProviders;

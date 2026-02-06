@@ -1,0 +1,29 @@
+# Senior Engineer Guardrails & Performance Rules
+
+## 1. Planning Phase (Mandatory)
+- BEFORE writing any code, you MUST perform a "System Impact Analysis."
+- Create or update a `IMPLEMENTATION_PLAN.md` file in the root.
+- The plan must list:
+  - Root cause of the bug.
+  - Files to be modified.
+  - Potential side effects on the 30k+ line architecture.
+- STOP and wait for my approval after the plan is created.
+
+## 2. Resource & Token Optimization
+- DO NOT read files blindly. Use `grep` or `list_files` to find specific keywords.
+- For files >500 lines, use the `search` tool to find specific functions instead of reading the entire file.
+- Avoid "Refactoring for the sake of refactoring." Only touch code directly related to the fix.
+
+## 3. Preservation & Branding
+- NEVER modify brand-related constants (Company names, Logos, UI Themes) unless explicitly asked.
+- DO NOT remove comments, JSDoc, or TODOs left by other developers.
+- Maintain the existing design patterns (e.g., if we use Functional Components, don't introduce Classes).
+
+## 4. Problem Solving Protocol
+- TRACE THE DATA: If a UI component is buggy, check the API layer and State Management first. Do not just patch the "symptom" in the UI.
+- TYPE SAFETY: Always maintain TypeScript integrity. Update interfaces/types project-wide if a data structure changes.
+- NO HALLUCINATIONS: If you cannot find where a variable is defined, ASK me instead of assuming it exists or creating a dummy value.
+
+## 5. Verification
+- After every fix, you must run the local build command (e.g., `npm run build` or `npm run lint`) to ensure no regressions.
+- If the fix involves a logic change, suggest a 5-line unit test to verify it.

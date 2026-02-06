@@ -1,0 +1,101 @@
+import { 
+  User, ProviderProfile, ClientProfile, Message, BlogPost, Testimonial, 
+  SupportTicket, Specialty, Appointment, SearchFilters, 
+  InsuranceCompany, BlogCategory, JobPosting, UserRole,
+  SubscriptionTier, SubscriptionStatus, ModerationStatus,
+  Availability, Conversation, AuditActionType, AuditResourceType
+} from '../types';
+import { aiService } from './ai';
+import { auditService } from './audit';
+import { authService } from './auth.service';
+import { providerService } from './provider.service';
+import { clientService } from './client.service';
+import { contentService } from './content.service';
+import { mockStore } from './mockStore';
+
+// Re-export services for direct usage
+export { authService, providerService, clientService, contentService, mockStore };
+
+class ApiService {
+  private audit = auditService;
+  public ai = aiService;
+
+  // Backward compatibility for _tempStore
+  get _tempStore() {
+    return mockStore.store;
+  }
+
+  // Auth Service Delegates
+  login(email: string, password?: string) { return authService.login(email, password); }
+  register(data: any) { return authService.register(data); }
+  logout() { return authService.logout(); }
+
+  // Provider Service Delegates
+  search(filters: SearchFilters) { return providerService.search(filters); }
+  getProviderById(id: string) { return providerService.getProviderById(id); }
+  getProviderByUserId(userId: string) { return providerService.getProviderByUserId(userId); }
+  updateProvider(id: string, data: Partial<ProviderProfile>) { return providerService.updateProvider(id, data); }
+  getAllProviders() { return providerService.getAllProviders(); }
+  getProviderBySlug(slug: string) { return providerService.getProviderBySlug(slug); }
+  fetchProviderBySlugOrId(slugOrId: string) { return providerService.fetchProviderBySlugOrId(slugOrId); }
+  moderateProvider(id: string, status: ModerationStatus) { return providerService.moderateProvider(id, status); }
+  updateProviderSlug(pid: string, first: string, last: string, spec?: string, city?: string) { return providerService.updateProviderSlug(pid, first, last, spec, city); }
+  getAllSpecialties() { return providerService.getAllSpecialties(); }
+  createSpecialty(name: string) { return providerService.createSpecialty(name); }
+  deleteSpecialty(id: string) { return providerService.deleteSpecialty(id); }
+  getAllInsurance() { return providerService.getAllInsurance(); }
+  createInsurance(name: string) { return providerService.createInsurance(name); }
+  deleteInsurance(id: string) { return providerService.deleteInsurance(id); }
+  getAllLanguages() { return providerService.getAllLanguages(); }
+  createLanguage(name: string) { return providerService.createLanguage(name); }
+  deleteLanguage(name: string) { return providerService.deleteLanguage(name); }
+  getAllGenders() { return providerService.getAllGenders(); }
+  createGender(name: string) { return providerService.createGender(name); }
+  deleteGender(name: string) { return providerService.deleteGender(name); }
+
+  // Client Service Delegates
+  getUserById(id: string) { return clientService.getUserById(id); }
+  updateUser(id: string, data: Partial<User>) { return clientService.updateUser(id, data); }
+  getClientProfile(userId: string) { return clientService.getClientProfile(userId); }
+  updateClientProfile(userId: string, data: Partial<ClientProfile>) { return clientService.updateClientProfile(userId, data); }
+  getAllClients() { return clientService.getAllClients(); }
+  getAllUsers() { return clientService.getAllUsers(); }
+  deleteUser(id: string) { return clientService.deleteUser(id); }
+  getAllAppointments() { return clientService.getAllAppointments(); }
+  getAppointmentsForUser(uid: string, role: UserRole) { return clientService.getAppointmentsForUser(uid, role); }
+  bookAppointment(pid: string, cid: string, time: string) { return clientService.bookAppointment(pid, cid, time); }
+  getConversations(uid?: string) { return clientService.getConversations(uid); }
+  getMessages(cid: string) { return clientService.getMessages(cid); }
+  sendMessage(params: any) { return clientService.sendMessage(params); }
+  getOrCreateConversation(u1: string, u2: string) { return clientService.getOrCreateConversation(u1, u2); }
+  markAsRead(cid: string, uid: string) { return clientService.markAsRead(cid, uid); }
+  deleteMessage(id: string) { return clientService.deleteMessage(id); }
+  deleteMessagesByRoom(cid: string) { return clientService.deleteMessagesByRoom(cid); }
+  getUnreadCount(uid: string) { return clientService.getUnreadCount(uid); }
+
+  // Content Service Delegates
+  getAllBlogs() { return contentService.getAllBlogs(); }
+  getBlogBySlug(slug: string) { return contentService.getBlogBySlug(slug); }
+  getBlogsByProvider(id: string) { return contentService.getBlogsByProvider(id); }
+  createBlog(data: any) { return contentService.createBlog(data); }
+  updateBlog(id: string, data: any) { return contentService.updateBlog(id, data); }
+  deleteBlog(id: string) { return contentService.deleteBlog(id); }
+  approveBlog(id: string) { return contentService.approveBlog(id); }
+  getAllBlogCategories() { return contentService.getAllBlogCategories(); }
+  createBlogCategory(name: string) { return contentService.createBlogCategory(name); }
+  deleteBlogCategory(id: string) { return contentService.deleteBlogCategory(id); }
+  getTestimonials(page?: string) { return contentService.getTestimonials(page); }
+  createTestimonial(data: any) { return contentService.createTestimonial(data); }
+  deleteTestimonial(id: string) { return contentService.deleteTestimonial(id); }
+  getAllJobs() { return contentService.getAllJobs(); }
+  getJobById(id: string) { return contentService.getJobById(id); }
+  applyToJob(id: string, data: any) { return contentService.applyToJob(id, data); }
+  createJob(job: Partial<JobPosting>) { return contentService.createJob(job); }
+  deleteJob(id: string) { return contentService.deleteJob(id); }
+  getTickets(userId?: string) { return contentService.getTickets(userId); }
+
+  // Misc
+  async seedDatabase() {}
+}
+
+export const api = new ApiService();

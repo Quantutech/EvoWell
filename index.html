@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;
+      script-src * 'unsafe-inline' 'unsafe-eval' data:;
+      connect-src * 'unsafe-inline';
+      img-src * data: blob: 'unsafe-inline';
+      frame-src *;
+      style-src * 'unsafe-inline';
+    ">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <title>EvoWell | The next evolution in care</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+              display: ['"Plus Jakarta Sans"', 'sans-serif'],
+            },
+            colors: {
+              primary: 'rgb(var(--primary) / <alpha-value>)',
+              secondary: 'rgb(var(--secondary) / <alpha-value>)',
+              brand: {
+                50: 'var(--brand-50)', 100: 'var(--brand-100)', 200: 'var(--brand-200)', 300: 'var(--brand-300)', 400: 'var(--brand-400)',
+                500: 'var(--brand-500)', 600: 'var(--brand-600)', 700: 'var(--brand-700)', 800: 'var(--brand-800)', 900: 'var(--brand-900)', 950: 'var(--brand-950)',
+              },
+              accent: {
+                50: 'var(--accent-50)', 100: 'var(--accent-100)', 200: 'var(--accent-200)', 300: 'var(--accent-300)', 400: 'var(--accent-400)',
+                500: 'var(--accent-500)', 600: 'var(--accent-600)', 700: 'var(--accent-700)', 800: 'var(--accent-800)', 900: 'var(--accent-900)', 950: 'var(--accent-950)',
+              }
+            },
+            borderRadius: { '2xl': '1rem', '3xl': '1.5rem', 'brand': '2.5rem' }
+          }
+        }
+      }
+    </script>
+    <style>
+      body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; color: #0f172a; -webkit-font-smoothing: antialiased; }
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+      .reveal { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+      .reveal.visible { opacity: 1; transform: translateY(0); }
+    </style>
+    <!-- Removed importmap since we're using npm packages -->
+    <!-- Removed /index.css link since it might not exist -->
+</head>
+  <body>
+    <div id="root"></div>
+    <!-- Only one script tag - your main entry point -->
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

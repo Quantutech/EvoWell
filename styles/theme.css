@@ -1,0 +1,44 @@
+
+:root {
+  /* Brand Palette - WCAG AA Accessible Update */
+  --brand-50: #f2fcf5;
+  --brand-100: #e1f7e7;
+  --brand-200: #c3ecd0;
+  --brand-300: #95dbad;
+  --brand-400: #5fc284;
+  --brand-500: #257a46; /* Accessible Primary Green */
+  --brand-600: #1e663a;
+  --brand-700: #18522e;
+  --brand-800: #144125;
+  --brand-900: #0f311c;
+  --brand-950: #081c10;
+
+  /* Accent Palette */
+  --accent-50: #f0f7ff;
+  --accent-100: #e0effe;
+  --accent-200: #badcff;
+  --accent-300: #7dbfff;
+  --accent-400: #399ef8;
+  --accent-500: #0e84ea; /* EvoWell Blue */
+  --accent-600: #0267c4;
+  --accent-700: #03529d;
+  --accent-800: #074683;
+  --accent-900: #0b3a6b;
+  --accent-950: #082545;
+
+  /* Layout */
+  --radius-sm: 1rem;
+  --radius-md: 1.5rem;
+  --radius-lg: 2.5rem;
+  
+  /* Transitions */
+  --transition-fast: 200ms ease;
+  --transition-medium: 300ms ease;
+  --transition-slow: 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Utility Classes for Asset Management */
+.logo-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
+}

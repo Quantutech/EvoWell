@@ -1,0 +1,190 @@
+
+import { Message, BlogPost, Testimonial } from '../types';
+import { SEED_DATA } from './seedData';
+
+/**
+ * @deprecated HYBRID LEGACY ADAPTER
+ * This service manages client-side mock data for entities not yet migrated to Supabase 
+ * (Blogs, Testimonials, Messages).
+ * 
+ * Users and Providers are now managed by Supabase/RLS. 
+ * Do NOT use this for Authentication or Profile data.
+ */
+class Database {
+  private KEYS = {
+    MESSAGES: 'evowell_messages',
+    BLOGS: 'evowell_blogs',
+    TESTIMONIALS: 'evowell_testimonials',
+    TICKETS: 'evowell_tickets',
+    JOBS: 'evowell_jobs',
+    INSURANCE: 'evowell_insurance',
+    CATEGORIES: 'evowell_blog_categories'
+  };
+
+  private memoryStore: Record<string, any> = {};
+  private useMemory = false;
+
+  constructor() {
+    this.init();
+  }
+
+  private init() {
+    // Initialize only non-sensitive, non-migrated content data
+    try {
+      if (!this.getItem(this.KEYS.INSURANCE)) this.setItem(this.KEYS.INSURANCE, JSON.stringify(SEED_DATA.insurance));
+      if (!this.getItem(this.KEYS.BLOGS)) this.setItem(this.KEYS.BLOGS, JSON.stringify(SEED_DATA.blogs));
+      if (!this.getItem(this.KEYS.TESTIMONIALS)) this.setItem(this.KEYS.TESTIMONIALS, JSON.stringify(SEED_DATA.testimonials));
+      if (!this.getItem(this.KEYS.TICKETS)) this.setItem(this.KEYS.TICKETS, JSON.stringify(SEED_DATA.tickets));
+      if (!this.getItem(this.KEYS.MESSAGES)) this.setItem(this.KEYS.MESSAGES, JSON.stringify(SEED_DATA.messages));
+      if (!this.getItem(this.KEYS.JOBS)) this.setItem(this.KEYS.JOBS, JSON.stringify(SEED_DATA.jobs));
+      if (!this.getItem(this.KEYS.CATEGORIES)) this.setItem(this.KEYS.CATEGORIES, JSON.stringify(SEED_DATA.categories));
+    } catch (e) {
+      console.warn("LocalStorage unavailable, falling back to memory store.");
+      this.useMemory = true;
+      // Re-seed memory store
+      this.memoryStore[this.KEYS.INSURANCE] = JSON.stringify(SEED_DATA.insurance);
+      this.memoryStore[this.KEYS.BLOGS] = JSON.stringify(SEED_DATA.blogs);
+      this.memoryStore[this.KEYS.TESTIMONIALS] = JSON.stringify(SEED_DATA.testimonials);
+      this.memoryStore[this.KEYS.TICKETS] = JSON.stringify(SEED_DATA.tickets);
+      this.memoryStore[this.KEYS.MESSAGES] = JSON.stringify(SEED_DATA.messages);
+      this.memoryStore[this.KEYS.JOBS] = JSON.stringify(SEED_DATA.jobs);
+      this.memoryStore[this.KEYS.CATEGORIES] = JSON.stringify(SEED_DATA.categories);
+    }
+  }
+
+  private getItem(key: string): string | null {
+    if (this.useMemory) return this.memoryStore[key] || null;
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      this.useMemory = true; // Switch to memory on first error
+      return null;
+    }
+  }
+
+  private setItem(key: string, value: string): void {
+    if (this.useMemory) {
+      this.memoryStore[key] = value;
+      return;
+    }
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      this.useMemory = true;
+      this.memoryStore[key] = value;
+    }
+  }
+
+  // Message Methods
+  getMessages(): Message[] { 
+    const raw = JSON.parse(this.getItem(this.KEYS.MESSAGES) || '[]');
+    return Array.isArray(raw) ? raw.filter((m: any) => m && m.id) : [];
+  }
+  
+  saveMessages(msgs: Message[]) { this.setItem(this.KEYS.MESSAGES, JSON.stringify(msgs)); }
+  
+  getMessagesByRoom(roomId: string): Message[] {
+    return this.getMessages().filter(m => m.conversation_id === roomId);
+  }
+
+  deleteMessage(id: string): void {
+    const msgs = this.getMessages();
+    const filtered = msgs.filter(m => m.id !== id);
+    this.saveMessages(filtered);
+  }
+
+  deleteMessagesByRoom(roomId: string): void {
+    const msgs = this.getMessages();
+    // Delete messages that are IN this room
+    const filtered = msgs.filter(m => m.conversation_id !== roomId);
+    this.saveMessages(filtered);
+  }
+
+  getUnreadMessageCount(userId: string): number {
+    const msgs = this.getMessages();
+    return msgs.filter(m => 
+      m.receiver_id === userId && 
+      !m.is_read
+    ).length;
+  }
+
+  markMessagesAsRead(roomId: string, userId: string): void {
+    const msgs = this.getMessages();
+    let hasUpdates = false;
+    
+    const updatedMsgs = msgs.map(m => {
+      if (m.conversation_id === roomId && m.receiver_id === userId && !m.is_read) {
+        hasUpdates = true;
+        return { ...m, is_read: true };
+      }
+      return m;
+    });
+
+    if (hasUpdates) {
+      this.saveMessages(updatedMsgs);
+    }
+  }
+
+  createMessage(data: Omit<Message, 'id' | 'created_at'>): Message {
+    const msgs = this.getMessages();
+    const newMessage: Message = {
+      ...data,
+      id: `msg-${Date.now()}`,
+      created_at: new Date().toISOString()
+    };
+    this.saveMessages([...msgs, newMessage]);
+    return newMessage;
+  }
+
+  // Blog Methods
+  getBlogs(): BlogPost[] {
+    const raw = JSON.parse(this.getItem(this.KEYS.BLOGS) || '[]');
+    return Array.isArray(raw) ? raw : [];
+  }
+
+  saveBlogs(blogs: BlogPost[]) {
+    this.setItem(this.KEYS.BLOGS, JSON.stringify(blogs));
+  }
+
+  createBlog(data: Partial<BlogPost>): void {
+    const blogs = this.getBlogs();
+    const newBlog = {
+        ...data,
+        id: data.id || `blog-${Date.now()}`,
+    } as BlogPost;
+    this.saveBlogs([...blogs, newBlog]);
+  }
+
+  updateBlog(id: string, data: Partial<BlogPost>): void {
+    const blogs = this.getBlogs();
+    const updated = blogs.map(b => b.id === id ? { ...b, ...data } : b);
+    this.saveBlogs(updated);
+  }
+
+  deleteBlog(id: string): void {
+    const blogs = this.getBlogs();
+    this.saveBlogs(blogs.filter(b => b.id !== id));
+  }
+
+  approveBlog(id: string): void {
+    this.updateBlog(id, { status: 'APPROVED' });
+  }
+
+  // Testimonial Methods
+  getTestimonials(page?: string): Testimonial[] {
+    const raw = JSON.parse(this.getItem(this.KEYS.TESTIMONIALS) || '[]');
+    const all = Array.isArray(raw) ? raw : [];
+    if (page && page !== 'all') {
+      return all.filter((t: Testimonial) => t.page === page);
+    }
+    return all;
+  }
+
+  deleteTestimonial(id: string): void {
+    const testimonials = this.getTestimonials();
+    const filtered = testimonials.filter(t => t.id !== id);
+    this.setItem(this.KEYS.TESTIMONIALS, JSON.stringify(filtered));
+  }
+}
+
+export const db = new Database();

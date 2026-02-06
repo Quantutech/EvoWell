@@ -1,0 +1,16 @@
+runtime: nodejs20
+
+handlers:
+- url: /(.*\..+)$
+  static_files: dist/\1
+  upload: dist/(.*\..+)$
+
+- url: /.*
+  static_files: dist/index.html
+  upload: dist/index.html
+
+env_variables:
+  NODE_ENV: "production"
+  VITE_SUPABASE_URL: "https://xxwmgtyrmysznsqezues.supabase.co"
+  VITE_SUPABASE_ANON_KEY: "sb_publishable_ExspuK1H366HvLXd9lNfHA_G2WvzYbE"
+

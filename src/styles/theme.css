@@ -1,0 +1,90 @@
+:root {
+  /* Default (Client/Wellness) - Emerald/Teal Base */
+  --primary: 37 122 70;      /* #257a46 */
+  --secondary: 14 132 234;   /* #0e84ea */
+  --background: 248 250 252; /* #f8fafc */
+  
+  /* Brand Palette - Legacy Support */
+  --brand-50: #f2fcf5;
+  --brand-100: #e1f7e7;
+  --brand-200: #c3ecd0;
+  --brand-300: #95dbad;
+  --brand-400: #5fc284;
+  --brand-500: #257a46;
+  --brand-600: #1e663a;
+  --brand-700: #18522e;
+  --brand-800: #144125;
+  --brand-900: #0f311c;
+  --brand-950: #081c10;
+
+  --accent-50: #f0f7ff;
+  --accent-100: #e0effe;
+  --accent-200: #badcff;
+  --accent-300: #7dbfff;
+  --accent-400: #399ef8;
+  --accent-500: #0e84ea;
+  --accent-600: #0267c4;
+  --accent-700: #03529d;
+  --accent-800: #074683;
+  --accent-900: #0b3a6b;
+  --accent-950: #082545;
+
+  /* Layout */
+  --radius-sm: 1rem;
+  --radius-md: 1.5rem;
+  --radius-lg: 2.5rem;
+  
+  /* Transitions */
+  --transition-fast: 200ms ease;
+  --transition-medium: 300ms ease;
+  --transition-slow: 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Client Theme (Explicit) */
+[data-theme="client"] {
+  --primary: 37 122 70;    /* Emerald */
+  --secondary: 14 132 234; /* Blue */
+}
+
+/* Provider Theme - Violet/Indigo */
+[data-theme="provider"] {
+  --primary: 99 102 241;   /* Indigo-500 #6366f1 */
+  --secondary: 139 92 246; /* Violet-500 #8b5cf6 */
+  
+  /* Override Brand Colors for Tailwind mapping */
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --brand-200: #c7d2fe;
+  --brand-300: #a5b4fc;
+  --brand-400: #818cf8;
+  --brand-500: #6366f1;
+  --brand-600: #4f46e5;
+  --brand-700: #4338ca;
+  --brand-800: #3730a3;
+  --brand-900: #312e81;
+  --brand-950: #1e1b4b;
+}
+
+/* Admin Theme - Slate/Gray */
+[data-theme="admin"] {
+  --primary: 71 85 105;    /* Slate-600 #475569 */
+  --secondary: 15 23 42;   /* Slate-900 #0f172a */
+  
+  /* Override Brand Colors */
+  --brand-50: #f8fafc;
+  --brand-100: #f1f5f9;
+  --brand-200: #e2e8f0;
+  --brand-300: #cbd5e1;
+  --brand-400: #94a3b8;
+  --brand-500: #64748b;
+  --brand-600: #475569;
+  --brand-700: #334155;
+  --brand-800: #1e293b;
+  --brand-900: #0f172a;
+  --brand-950: #020617;
+}
+
+.logo-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
+}

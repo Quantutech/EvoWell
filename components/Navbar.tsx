@@ -1,0 +1,482 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth, useNavigation } from '@/App';
+import Logo from '@/components/brand/Logo';
+import ThreeDIcon from '@/components/ui/ThreeDIcon';
+
+const Link: React.FC<{ href: string; className?: string; onClick?: () => void; children: React.ReactNode }> = ({ href, className, children, onClick }) => {
+  const { navigate } = useNavigation();
+  return (
+    <a 
+      href={href} 
+      className={className} 
+      onClick={(e) => {
+        e.preventDefault();
+        if (onClick) onClick();
+        navigate(href);
+      }}
+    >
+      {children}
+    </a>
+  );
+};
+
+const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
+  const { user, logout } = useAuth();
+  const { navigate } = useNavigation();
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedMobileItem, setExpandedMobileItem] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const navbarRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<any>(null);
+
+  // Determine if we are on a page with a dark header (Provider Profile)
+  const isDarkHeaderPage = currentPath.startsWith('#/provider/');
+  // Active Dark Mode is true only when on a dark page AND not scrolled (transparent background)
+  const isDarkMode = isDarkHeaderPage && !scrolled;
+
+  // Close mobile menu when path changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setActiveDropdown(null);
+  }, [currentPath]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
+  // Scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled]);
+
+  // Handle Search Input Esc key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowSearch(false);
+        setActiveDropdown(null);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (navbarRef.current && !navbarRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleMouseEnter = (id: string) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setActiveDropdown(id);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 200); // 200ms delay to prevent flickering
+  };
+
+  // Nav Configuration with Updated Branding
+  const navItems = [
+    { 
+      label: 'About', 
+      id: 'about',
+      gradient: 'from-slate-700 to-slate-900',
+      items: [
+        { label: 'Our Story', href: '#/about', icon: 'info', desc: 'Mission & Vision' },
+        { label: 'Careers', href: '#/careers', icon: 'star', desc: 'Join the team' }
+      ]
+    },
+    { 
+      label: 'Find Care', 
+      id: 'care',
+      gradient: 'from-brand-500 to-brand-600', // Primary Green
+      items: [
+        { label: 'Search Providers', href: '#/search', icon: 'search', desc: 'Browse the full directory', badge: 'Popular' },
+        { label: 'Telehealth', href: '#/search?format=REMOTE', icon: 'video', desc: 'Video & remote sessions' },
+        { label: 'In-Person Care', href: '#/search?format=IN_PERSON', icon: 'clinic', desc: 'Visit local offices' },
+        { label: 'Urgent Care', href: '#/search?query=urgent', icon: 'clinic', desc: 'Immediate availability' }
+      ] 
+    },
+    { 
+      label: 'Resources', 
+      id: 'resources',
+      gradient: 'from-blue-500 to-blue-600', // Accent Blue
+      items: [
+        { label: 'Wellness Blog', href: '#/blog', icon: 'blog', desc: 'Articles & guides' },
+        { label: 'Podcasts', href: '#/podcasts', icon: 'podcast', desc: 'Listen to experts' },
+        { label: 'Docs & Tools', href: '#/docs', icon: 'folder', desc: 'Clinical resources' }
+      ] 
+    },
+    { 
+      label: 'For Partners', 
+      href: '#/partners',
+      icon: 'partners',
+      gradient: 'from-indigo-500 to-violet-600'
+    },
+    { 
+      label: 'For Providers', 
+      id: 'providers',
+      gradient: 'from-slate-800 to-black', // Dark/Premium
+      items: [
+        { label: 'Join Network', href: '#/login?join=true', icon: 'userPlus', desc: 'Create provider profile' },
+        { label: 'Provider Benefits', href: '#/benefits', icon: 'star', desc: 'Why join us' },
+        { label: 'ROI Calculator', href: '#/calculator', icon: 'dollar', desc: 'Calculate potential growth' },
+        { label: 'Provider Login', href: '#/login', icon: 'lock', desc: 'Access portal' }
+      ] 
+    }
+  ];
+
+  const userQuickActions = [
+    { label: 'Dashboard', href: '#/dashboard', icon: 'settings' },
+    { label: 'Appointments', href: '#/dashboard', icon: 'calendar', badge: '2' },
+  ];
+
+  const toggleMobileDropdown = (id: string) => {
+    setExpandedMobileItem(expandedMobileItem === id ? null : id);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`#/search?query=${encodeURIComponent(searchQuery)}`);
+      setShowSearch(false);
+      setSearchQuery('');
+    }
+  };
+
+  // Helper styles based on mode
+  const textColorClass = isDarkMode ? 'text-white/90 hover:text-white' : 'text-slate-600 hover:text-slate-900';
+  const logoVariant = isDarkMode ? 'white' : 'color';
+  const mobileToggleClass = isDarkMode ? 'text-white' : 'text-slate-800';
+
+  return (
+    <>
+      {/* Search Overlay */}
+      {showSearch && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] animate-in fade-in duration-200">
+          <div className="max-w-4xl mx-auto pt-32 px-6">
+            <div className="relative">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-white text-2xl font-bold tracking-tight">Search EvoWell</h3>
+                <button 
+                  onClick={() => setShowSearch(false)}
+                  className="text-white/50 hover:text-white p-2 transition-colors rounded-full hover:bg-white/10"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <form onSubmit={handleSearch} className="relative group">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Providers, specialties, or topics..."
+                  className="w-full bg-white text-slate-900 rounded-2xl py-6 px-8 text-xl placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-500/50 shadow-2xl font-bold"
+                  autoFocus
+                />
+                <button 
+                  type="submit"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-brand-500 text-white rounded-xl flex items-center justify-center hover:bg-brand-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </form>
+              
+              <div className="mt-8">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Popular Tags</p>
+                <div className="flex flex-wrap gap-3">
+                  {['Anxiety', 'Depression', 'Therapy', 'Sleep', 'Nutrition', 'Coaching'].map((topic) => (
+                    <button
+                      key={topic}
+                      onClick={() => {
+                        setSearchQuery(topic);
+                      }}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-2 px-4 text-white text-sm font-medium transition-colors"
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav 
+        ref={navbarRef}
+        className={`fixed top-0 inset-x-0 z-[150] transition-all duration-300 ${
+          scrolled 
+            ? 'bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-sm h-16' 
+            : 'bg-white/0 border-b border-transparent h-20'
+        }`}
+      >
+        <div className={`absolute inset-0 bg-white/95 backdrop-blur-xl border-b border-slate-100 transition-opacity duration-300 ${scrolled ? 'opacity-100' : 'opacity-0'}`}></div>
+        
+        {/* Gradient Line Top */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 via-blue-500 to-brand-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+
+        <div className="max-w-[1440px] mx-auto px-6 h-full relative">
+          <div className="relative flex justify-between items-center h-full">
+            
+            {/* Logo */}
+            <div className="flex-shrink-0 z-20 flex items-center">
+              <Link href="#/" className="flex items-center gap-2 group relative">
+                <Logo variant={logoVariant} className={`transition-all duration-300 ${scrolled ? 'h-8' : 'h-9'}`} />
+              </Link>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              {navItems.map((item) => (
+                <div 
+                  key={item.label} 
+                  className="relative"
+                  onMouseEnter={() => handleMouseEnter(item.id || item.label)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  {item.href ? (
+                    <Link 
+                      href={item.href} 
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold ${textColorClass} ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <button 
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold ${
+                        activeDropdown === item.id 
+                          ? 'bg-slate-100 text-slate-900' // Dropdown active always light background
+                          : `${textColorClass} ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`
+                      }`}
+                    >
+                      {item.label}
+                      <svg className={`w-3 h-3 transition-transform duration-200 ${activeDropdown === item.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Dropdown Menu */}
+                  {item.items && activeDropdown === item.id && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-max animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="bg-white rounded-3xl shadow-2xl ring-1 ring-black/5 overflow-hidden p-2 min-w-[320px]">
+                        <div className={`h-1.5 w-20 mx-auto rounded-full bg-gradient-to-r ${item.gradient} mb-2 opacity-50`}></div>
+                        
+                        <div className="p-2 grid gap-1">
+                          {item.items.map((sub: any) => (
+                            <Link 
+                              key={sub.label} 
+                              href={sub.href} 
+                              className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group/item"
+                              onClick={() => setActiveDropdown(null)}
+                            >
+                              <ThreeDIcon icon={sub.icon} size="sm" variant="minimal" />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-bold text-slate-900">{sub.label}</p>
+                                  {sub.badge && <span className="text-[9px] font-black bg-slate-900 text-white px-1.5 py-0.5 rounded-md">{sub.badge}</span>}
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium mt-0.5">{sub.desc}</p>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Right Actions */}
+            <div className="hidden lg:flex items-center gap-3 z-20">
+              
+              {!user ? (
+                <div className="flex items-center gap-3">
+                  <Link href="#/login" className={`text-sm font-bold px-4 py-2 transition-colors ${textColorClass}`}>
+                    Log In
+                  </Link>
+                  <Link 
+                    href="#/login?join=true" 
+                    className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 ${
+                      isDarkMode 
+                        ? 'bg-white text-slate-900 hover:bg-slate-100' // Inverse for dark mode
+                        : 'bg-slate-900 text-white hover:bg-slate-800' // Standard
+                    }`}
+                  >
+                    For Providers
+                  </Link>
+                </div>
+              ) : (
+                <div className="relative group/user" onMouseEnter={() => handleMouseEnter('user')} onMouseLeave={handleMouseLeave}>
+                  <button className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200">
+                    <span className="text-xs font-bold text-slate-700 pl-2">{user.firstName}</span>
+                    <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-black">
+                      {user.firstName.charAt(0)}
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'user' && (
+                    <div className="absolute right-0 top-full pt-2 w-56 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 overflow-hidden">
+                        <div className="px-4 py-3 border-b border-slate-50 mb-1">
+                          <p className="text-xs font-bold text-slate-900">{user.email}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{user.role}</p>
+                        </div>
+                        {userQuickActions.map(action => (
+                          <Link 
+                            key={action.label} 
+                            href={action.href}
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors"
+                            onClick={() => setActiveDropdown(null)}
+                          >
+                            <ThreeDIcon icon={action.icon as any} size="sm" variant="minimal" />
+                            {action.label}
+                          </Link>
+                        ))}
+                        <div className="border-t border-slate-50 mt-1 pt-1">
+                          <button 
+                            onClick={logout}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-red-50 text-sm font-bold text-red-600 transition-colors text-left"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                            Sign Out
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Toggle */}
+            <div className="lg:hidden flex items-center gap-4 z-20">
+              <button 
+                onClick={() => setMobileMenuOpen(true)}
+                className={`p-2 transition-colors ${mobileToggleClass}`}
+              >
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu Drawer */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-[300]">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+            <div className="absolute top-0 right-0 bottom-0 w-80 bg-white shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300">
+              <div className="flex justify-between items-center mb-8">
+                <Logo className="h-8" />
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-500">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {navItems.map((item) => (
+                  <div key={item.label}>
+                    {item.items ? (
+                      <div>
+                        <button 
+                          onClick={() => toggleMobileDropdown(item.id || item.label)}
+                          className="flex items-center justify-between w-full text-lg font-bold text-slate-900 mb-2"
+                        >
+                          {item.label}
+                          <svg className={`w-5 h-5 transition-transform ${expandedMobileItem === (item.id || item.label) ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        {expandedMobileItem === (item.id || item.label) && (
+                          <div className="pl-4 space-y-3 border-l-2 border-slate-100 ml-1">
+                            {item.items.map((sub: any) => (
+                              <Link 
+                                key={sub.label} 
+                                href={sub.href} 
+                                className="block text-sm font-medium text-slate-600 py-1"
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                {sub.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Link 
+                        href={item.href!} 
+                        className="block text-lg font-bold text-slate-900"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-12 pt-8 border-t border-slate-100 space-y-4">
+                {!user ? (
+                  <>
+                    <Link href="#/login" className="block w-full py-3 text-center rounded-xl bg-slate-100 font-bold text-slate-700" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
+                    <Link href="#/login?join=true" className="block w-full py-3 text-center rounded-xl bg-slate-900 text-white font-bold" onClick={() => setMobileMenuOpen(false)}>Provider Access</Link>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold">
+                        {user.firstName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">{user.firstName}</p>
+                        <p className="text-xs text-slate-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <Link href="#/dashboard" className="block w-full py-3 text-center rounded-xl bg-slate-100 font-bold text-slate-700" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+                    <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full py-3 text-center rounded-xl border border-red-100 text-red-600 font-bold">Sign Out</button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+      
+      {/* Spacer to prevent layout jump on scroll */}
+      {scrolled && <div className="h-20"></div>}
+    </>
+  );
+};
+
+export default Navbar;
