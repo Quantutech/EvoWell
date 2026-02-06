@@ -46,6 +46,7 @@ const LegalView = lazy(() => import('./views/LegalView'));
 const CareersView = lazy(() => import('./views/CareersView'));
 const JobDetailView = lazy(() => import('./views/JobDetailView'));
 const PricingCalculatorView = lazy(() => import('./views/PricingCalculatorView'));
+const InvestorsView = lazy(() => import('./views/InvestorsView'));
 const NotificationsView = lazy(() => import('./views/NotificationsView'));
 const SecuritySettingsView = lazy(() => import('./views/SecuritySettingsView'));
 
@@ -377,6 +378,7 @@ const AppInner: React.FC = () => {
                       <Route path="/contact" element={<SupportView type="contact" />} />
                       <Route path="/faq" element={<SupportView type="faq" />} />
                       <Route path="/help" element={<SupportView type="help" />} />
+                      <Route path="/investors" element={<InvestorsView />} />
                       <Route path="/terms" element={<LegalView type="terms" />} />
                       <Route path="/privacy" element={<LegalView type="privacy" />} />
                       

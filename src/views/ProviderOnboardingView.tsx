@@ -6,6 +6,7 @@ import { ProviderProfile, AppointmentType, Specialty, ModerationStatus } from '@
 import { storageService } from '@/services/storageService';
 import ScheduleBuilder from '@/components/ScheduleBuilder';
 import { Select } from '@/components/ui';
+import { US_STATES, AGE_GROUPS } from '@/data/constants';
 
 // --- Shared Constants ---
 const LANGUAGES_LIST = [
@@ -246,6 +247,27 @@ const ProviderOnboardingView: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                 <p className="text-slate-500 font-medium">Define your professional standing on the TeleWellness Hub.</p>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">First Name</label>
+                    <input
+                      value={formData.firstName || ''}
+                      onChange={e => updateField('firstName', e.target.value)}
+                      placeholder="Jane"
+                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Name</label>
+                    <input
+                      value={formData.lastName || ''}
+                      onChange={e => updateField('lastName', e.target.value)}
+                      placeholder="Doe"
+                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-6 mb-8">
                   <div className="relative w-24 h-24 rounded-full bg-slate-100 overflow-hidden border-4 border-white shadow-lg shrink-0 group">
                     {formData.imageUrl && !formData.imageUrl.includes('pravatar') ? (
@@ -304,34 +326,61 @@ const ProviderOnboardingView: React.FC = () => {
             {step === 2 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                 <p className="text-slate-500 font-medium">Where is your practice physically based?</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinical Phone</label>
-                    <input
-                      value={formData.phone || ''}
-                      onChange={e => updateField('phone', e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">State of Licensure</label>
-                    <input
-                      value={formData.address?.state || ''}
-                      onChange={e => updateField('address.state', e.target.value)}
-                      placeholder="e.g., New York"
-                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
-                    />
-                  </div>
-                </div>
+                
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Office Address (Publicly Visible)</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinical Phone</label>
                   <input
-                    value={formData.address?.street || ''}
-                    onChange={e => updateField('address.street', e.target.value)}
-                    placeholder="123 Wellness Ave, Suite 400"
+                    value={formData.phone || ''}
+                    onChange={e => updateField('phone', e.target.value)}
+                    placeholder="+1 (555) 000-0000"
                     className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
                   />
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Office Address</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Street Address</label>
+                      <input
+                        value={formData.address?.street || ''}
+                        onChange={e => updateField('address.street', e.target.value)}
+                        placeholder="123 Wellness Ave, Suite 400"
+                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
+                        <input
+                          value={formData.address?.city || ''}
+                          onChange={e => updateField('address.city', e.target.value)}
+                          placeholder="City"
+                          className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Select 
+                          label="State"
+                          options={US_STATES}
+                          value={formData.address?.state || ''}
+                          onChange={val => updateField('address.state', val)}
+                          placeholder="Select State"
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Zip Code</label>
+                        <input
+                          value={formData.address?.zip || ''}
+                          onChange={e => updateField('address.zip', e.target.value)}
+                          placeholder="12345"
+                          className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -349,6 +398,14 @@ const ProviderOnboardingView: React.FC = () => {
                     const ids = names.map(n => specialtiesList.find(s => s.name === n)?.id || n);
                     updateField('specialties', ids);
                   }}
+                />
+
+                <MultiSelect
+                  label="Ages Served"
+                  placeholder="Select age groups..."
+                  options={AGE_GROUPS}
+                  selected={formData.agesServed || []}
+                  onChange={(val) => updateField('agesServed', val)}
                 />
 
                 <div>

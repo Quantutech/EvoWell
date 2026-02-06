@@ -172,6 +172,7 @@ const Footer: React.FC = () => {
                   <p>© 2026 EvoWell Inc.</p>
                   <Link href="#/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
                   <Link href="#/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+                  <Link href="#/investors" className="hover:text-white transition-colors">Investors</Link>
                   <Link href="#/careers" className="hover:text-white transition-colors">Careers</Link>
               </div>
 

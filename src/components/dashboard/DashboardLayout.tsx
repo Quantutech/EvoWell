@@ -8,6 +8,7 @@ interface NavItem {
   id: string;
   label: string;
   icon: string;
+  category?: string;
 }
 
 interface DashboardLayoutProps {
@@ -27,6 +28,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const { logout } = useAuth();
   const { navigate } = useNavigation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Poll for unread messages
   useEffect(() => {
@@ -44,70 +46,120 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     return () => clearInterval(intervalId);
   }, [user]);
 
-  const sidebarColor = role === 'admin' ? 'bg-[#1e293b]' : 'bg-white';
-  const sidebarTextColor = role === 'admin' ? 'text-slate-400' : 'text-slate-500';
-  const sidebarActiveText = role === 'admin' ? 'text-white' : 'text-white';
+  const sidebarColor = role === 'admin' ? 'bg-[#0f311c]' : role === 'provider' ? 'bg-[#0f172a]' : 'bg-white';
+  const sidebarTextColor = role === 'client' ? 'text-slate-500' : 'text-slate-400';
+  const sidebarActiveText = 'text-white';
   const activeBg = themeColor; 
+  const sidebarWidth = isCollapsed ? 'w-20' : 'w-72';
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
       {/* Sidebar */}
-      <aside className={`w-72 fixed top-0 bottom-0 z-30 flex flex-col justify-between hidden lg:flex shadow-2xl transition-colors ${sidebarColor} ${role !== 'admin' ? 'border-r border-slate-200' : ''}`}>
-        <div className="p-8">
-          <div className="flex items-center gap-3 mb-12" onClick={() => navigate('#/')} style={{cursor: 'pointer'}}>
-             {role === 'admin' ? (
-                <div className="flex items-center gap-3 text-white">
-                   <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center font-black">E</div>
-                   <span className="font-bold text-lg tracking-tight">Admin OS</span>
-                </div>
-             ) : (
-                <Logo className="h-8" />
+      <aside className={`${sidebarWidth} fixed top-0 bottom-0 z-30 flex flex-col justify-between hidden lg:flex shadow-2xl transition-all duration-300 ${sidebarColor} ${role === 'client' ? 'border-r border-slate-200' : ''}`}>
+        <div className="p-4 md:p-6">
+          <div className="flex items-center justify-between mb-8">
+             {!isCollapsed && (
+               <div className="flex items-center gap-3" onClick={() => navigate('#/')} style={{cursor: 'pointer'}}>
+                 {role === 'admin' ? (
+                    <div className="flex items-center gap-3 text-white">
+                       <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center font-black">E</div>
+                       <span className="font-bold text-lg tracking-tight">Admin OS</span>
+                    </div>
+                 ) : (
+                    <Logo className="h-8" variant={role === 'provider' ? 'white' : 'color'} />
+                 )}
+               </div>
              )}
+             {isCollapsed && (
+                <div className="mx-auto cursor-pointer" onClick={() => navigate('#/')}>
+                   {role === 'admin' ? (
+                      <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center font-black text-white">E</div>
+                   ) : (
+                      <Logo className="h-8 w-8" showText={false} variant={role === 'provider' ? 'white' : 'color'} />
+                   )}
+                </div>
+             )}
+             
+             {/* Collapse Toggle Removed from Top */}
           </div>
           
-          <nav className="space-y-2">
-            {navItems.map(link => (
-              <button 
-                key={link.id}
-                onClick={() => onTabChange(link.id)}
-                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all ${
-                  activeTab === link.id 
-                    ? `${activeBg} ${sidebarActiveText} shadow-lg` 
-                    : `${sidebarTextColor} hover:bg-slate-100/10 hover:text-slate-900`
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} /></svg>
-                {link.label}
-              </button>
+          <nav className="space-y-6">
+            {Object.entries(navItems.reduce((acc, item) => {
+                const cat = item.category || 'General';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(item);
+                return acc;
+            }, {} as Record<string, NavItem[]>)).map(([category, items], idx, arr) => (
+                <div key={category} className="space-y-2">
+                    {category !== 'General' && !isCollapsed && (
+                        <h4 className={`px-4 text-[10px] font-black uppercase tracking-widest ${role === 'client' ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {category}
+                        </h4>
+                    )}
+                    {category !== 'General' && isCollapsed && idx > 0 && (
+                        <div className={`mx-3 h-px ${role === 'client' ? 'bg-slate-100' : 'bg-white/5'} my-2`}></div>
+                    )}
+                    {items.map(link => (
+                      <button 
+                        key={link.id}
+                        onClick={() => onTabChange(link.id)}
+                        title={isCollapsed ? link.label : ''}
+                        className={`w-full flex items-center gap-4 px-3 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all ${
+                          activeTab === link.id 
+                            ? `${activeBg} ${sidebarActiveText} shadow-lg` 
+                            : `${sidebarTextColor} ${role === 'client' ? 'hover:bg-slate-100/50 hover:text-slate-900' : 'hover:bg-white/10 hover:text-white'}`
+                        } ${isCollapsed ? 'justify-center' : ''}`}
+                      >
+                        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} /></svg>
+                        {!isCollapsed && <span>{link.label}</span>}
+                      </button>
+                    ))}
+                </div>
             ))}
           </nav>
         </div>
 
-        <div className="px-8 pb-4 mt-auto">
+        <div className="px-4 md:px-6 pb-4 mt-auto">
+           {/* Collapse Toggle Button (Bottom Position) */}
+           <button 
+             onClick={() => setIsCollapsed(!isCollapsed)}
+             className={`w-full flex ${isCollapsed ? 'justify-center' : 'justify-end'} mb-4 p-2 rounded-xl transition-colors ${role === 'client' ? 'hover:bg-slate-100 text-slate-400' : 'hover:bg-white/10 text-slate-500'}`}
+             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+           >
+             {isCollapsed ? (
+               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+             ) : (
+               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+             )}
+           </button>
+
           <button 
             onClick={() => navigate('#/')}
-            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all ${sidebarTextColor} hover:bg-slate-100/10 hover:text-slate-900`}
+            title={isCollapsed ? "Back to Home" : ""}
+            className={`w-full flex items-center gap-4 px-3 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all ${sidebarTextColor} ${role === 'client' ? 'hover:bg-slate-100/50 hover:text-slate-900' : 'hover:bg-white/10 hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`}
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            Back to Home
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            {!isCollapsed && "Back to Home"}
           </button>
         </div>
 
-        <div className={`p-8 border-t ${role === 'admin' ? 'border-slate-700' : 'border-slate-100'}`}>
-           <div className={`flex items-center gap-3 ${role === 'admin' ? 'text-white' : 'text-slate-900'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${role === 'admin' ? 'bg-slate-700' : 'bg-brand-50 text-brand-600'}`}>
+        <div className={`p-4 md:p-6 border-t ${role === 'client' ? 'border-slate-100' : 'border-slate-700/50'}`}>
+           <div className={`flex items-center gap-3 ${role === 'client' ? 'text-slate-900' : 'text-white'} ${isCollapsed ? 'justify-center' : ''}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${role === 'client' ? 'bg-brand-50 text-brand-600' : 'bg-slate-700'}`}>
                  {user.firstName.charAt(0)}
               </div>
-              <div className="overflow-hidden">
-                 <p className="text-xs font-bold truncate">{user.firstName} {user.lastName}</p>
-                 <button onClick={logout} className={`text-[10px] uppercase font-bold hover:underline ${role === 'admin' ? 'text-slate-400' : 'text-slate-500'}`}>Sign Out</button>
-              </div>
+              {!isCollapsed && (
+                <div className="overflow-hidden">
+                   <p className="text-xs font-bold truncate">{user.firstName} {user.lastName}</p>
+                   <button onClick={logout} className={`text-[10px] uppercase font-bold hover:underline ${role === 'client' ? 'text-slate-500' : 'text-slate-400'}`}>Sign Out</button>
+                </div>
+              )}
            </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-grow lg:ml-72 min-h-screen flex flex-col">
+      <main className={`flex-grow ${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} transition-all duration-300 min-h-screen flex flex-col`}>
         {/* Header */}
         <header className="h-20 px-8 flex items-center justify-between sticky top-0 z-20 bg-[#f8fafc]/95 backdrop-blur-sm border-b border-slate-200/50">
            <div className="flex items-center gap-4">

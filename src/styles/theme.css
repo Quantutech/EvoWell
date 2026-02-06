@@ -65,23 +65,23 @@
   --brand-950: #1e1b4b;
 }
 
-/* Admin Theme - Slate/Gray */
+/* Admin Theme - Green (Brand) */
 [data-theme="admin"] {
-  --primary: 71 85 105;    /* Slate-600 #475569 */
-  --secondary: 15 23 42;   /* Slate-900 #0f172a */
+  --primary: 37 122 70;      /* #257a46 */
+  --secondary: 14 132 234;   /* #0e84ea */
   
-  /* Override Brand Colors */
-  --brand-50: #f8fafc;
-  --brand-100: #f1f5f9;
-  --brand-200: #e2e8f0;
-  --brand-300: #cbd5e1;
-  --brand-400: #94a3b8;
-  --brand-500: #64748b;
-  --brand-600: #475569;
-  --brand-700: #334155;
-  --brand-800: #1e293b;
-  --brand-900: #0f172a;
-  --brand-950: #020617;
+  /* Brand Palette - Same as Root/Client */
+  --brand-50: #f2fcf5;
+  --brand-100: #e1f7e7;
+  --brand-200: #c3ecd0;
+  --brand-300: #95dbad;
+  --brand-400: #5fc284;
+  --brand-500: #257a46;
+  --brand-600: #1e663a;
+  --brand-700: #18522e;
+  --brand-800: #144125;
+  --brand-900: #0f311c;
+  --brand-950: #081c10;
 }
 
 .logo-text {

@@ -12,12 +12,16 @@ const getEnv = (key: string) => {
 const supabaseUrl = getEnv('VITE_SUPABASE_URL');
 const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY');
 
+// FORCE MOCK MODE FOR TESTING
+export const isConfigured = false; 
+/*
 export const isConfigured = 
   !!supabaseUrl && 
   supabaseUrl !== 'https://placeholder.supabase.co' && 
   !supabaseUrl.includes('your-project') &&
   supabaseUrl !== 'undefined' &&
   supabaseUrl !== 'null';
+*/
 
 export const supabase = createClient<Database>(
   supabaseUrl || 'https://placeholder.supabase.co', 

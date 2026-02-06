@@ -378,6 +378,8 @@ export interface BlogPost {
   status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
   isFeatured?: boolean;
   providerId?: string;
+  isAiGenerated?: boolean;
+  moderationFlags?: string[];
 }
 
 export interface InsuranceCompany {

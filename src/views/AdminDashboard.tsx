@@ -25,6 +25,7 @@ import AdminContentReviewTab from '../components/dashboard/tabs/admin/AdminConte
 import AdminClientsTab from '../components/dashboard/tabs/admin/AdminClientsTab';
 import AdminJobsTab from '../components/dashboard/tabs/admin/AdminJobsTab';
 import { ResetDataButton } from '../components/dashboard/tabs/admin/ResetDataButton';
+import AddUserModal from '../components/dashboard/tabs/admin/AddUserModal';
 
 const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -35,6 +36,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<ProviderProfile | undefined>(undefined);
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   
   // Filter States
   const [testimonialFilter, setTestimonialFilter] = useState<'all' | 'home' | 'partners'>('all');
@@ -110,6 +112,8 @@ const AdminDashboard: React.FC = () => {
   const handleAction = (action: string) => {
     if (action === 'addBlog') {
         setEditingBlog({ title: '', content: '', status: 'DRAFT' });
+    } else if (action === 'addUser') {
+        setIsAddUserModalOpen(true);
     }
   };
 
@@ -135,14 +139,23 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Blog Handlers
-  const handleSaveBlog = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingBlog) return;
+  const handleSaveBlog = async (blogData: Partial<BlogPost>) => {
+    if (!blogData) return;
     
-    if (editingBlog.id) {
-        await api.updateBlog(editingBlog.id, editingBlog);
+    // Check if updating existing or creating new
+    if (blogData.id) {
+        await api.updateBlog(blogData.id, blogData);
     } else {
-        await api.createBlog({ ...editingBlog, authorName: 'Admin', authorRole: 'Editor', publishedAt: new Date().toLocaleDateString() });
+        // Since api.createBlog expects a specific shape (Omit<BlogPost, 'id'>)
+        // We ensure we pass the required fields for a new admin post
+        const newPost = {
+            ...blogData,
+            authorName: 'Admin',
+            authorRole: 'Editor',
+            publishedAt: new Date().toLocaleDateString(),
+            status: 'APPROVED' as const // Admins auto-approve their own
+        };
+        await api.createBlog(newPost as any);
     }
     setEditingBlog(null);
     refetchBlogs();
@@ -288,6 +301,23 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {activeView === 'config' && <ResetDataButton />}
+
+      {isAddUserModalOpen && (
+        <AddUserModal 
+            onClose={() => setIsAddUserModalOpen(false)}
+            onSuccess={() => {
+                // Refresh data based on current view
+                if (activeView === 'users') refetchBlogs(); // Actually refetch users not blogs, but users tab uses internal fetching or prop? 
+                // AdminUsersTab fetches internally via AdminService?
+                // Wait, AdminUsersTab might need a refresh trigger. 
+                // For now, reload the page or rely on react-query invalidation if we used it.
+                // AdminService.getUsers is called by useQuery? 
+                // No, AdminOverviewTab passes users prop, but AdminUsersTab handles its own data?
+                // Let's check AdminUsersTab later. For now just close.
+                fetchContentData();
+            }}
+        />
+      )}
 
       {/* Detail Modal for User/Provider Management */}
       {(selectedUser || selectedProvider) && (

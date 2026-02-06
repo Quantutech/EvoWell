@@ -99,7 +99,7 @@ const FeaturedProvidersGrid: React.FC<{ providers: FeaturedProvider[]; navigate:
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 reveal">
           {providers.slice(0, 10).map((p) => {
-            const slug = p.slug || p.id;
+            const slug = p.profileSlug || p.id;
             return (
               <div
                 key={p.id}
@@ -115,12 +115,12 @@ const FeaturedProvidersGrid: React.FC<{ providers: FeaturedProvider[]; navigate:
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  {/* Rating badge */}
-                  {p.rating && (
+                  {/* Rating badge (Disabled - Missing Property) */}
+                  {/* {p.rating && (
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-black text-slate-800 shadow-sm">
                       ★ {typeof p.rating === 'number' ? p.rating.toFixed(1) : p.rating}
                     </div>
-                  )}
+                  )} */}
 
                   {/* Hover overlay info */}
                   <div className="absolute bottom-0 left-0 w-full p-4 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
@@ -135,7 +135,7 @@ const FeaturedProvidersGrid: React.FC<{ providers: FeaturedProvider[]; navigate:
                     {p.firstName} {p.lastName}
                   </p>
                   <p className="text-xs text-slate-500 truncate">
-                    {p.title || p.credentials || 'Licensed Provider'}
+                    {p.professionalTitle || 'Licensed Provider'}
                   </p>
                 </div>
               </div>
@@ -203,7 +203,7 @@ const HomeView: React.FC<{ specialties: Specialty[] }> = ({ specialties }) => {
     { name: 'Parenting', img: 'https://images.unsplash.com/photo-1536640712-4d4c36ff0e4e?auto=format&fit=crop&q=80&w=600', id: 's5' },
     { name: 'Nutrition', img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=600', id: 's7' },
     { name: 'Relational', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=600', id: 's6' },
-    { name: 'Trauma & PTSD', img: 'https://images.unsplash.com/photo-1620065406085-7d8d21b5f7e6?auto=format&fit=crop&q=80&w=600', id: 's4' },
+    { name: 'Trauma & PTSD', img: 'https://images.unsplash.com/photo-1474418397713-7ede21d49118?auto=format&fit=crop&q=80&w=600', id: 's4' },
     { name: 'ADHD', img: 'https://images.unsplash.com/photo-1517021897933-0e0319cfbc28?auto=format&fit=crop&q=80&w=600', id: 's8' },
   ];
 

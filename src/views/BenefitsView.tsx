@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigation } from '../App';
 import Breadcrumb from '../components/Breadcrumb';
-import ThreeDIcon from '../components/ui/ThreeDIcon';
+import Icon from '../components/ui/Icon';
+import { iconPaths } from '../components/ui/iconPaths';
 import PointSolutionsReplacement from '../components/PointSolutionsReplacement';
 import { PageHero, Section, Container, Grid } from '../components/layout';
 import { Heading, Text, Label } from '../components/typography';
-import { Button, Card, CardHeader, CardBody, Badge } from '../components/ui';
+import { Button, Card, CardHeader, CardBody } from '../components/ui';
 
 /* ─── Shared pricing data (single source of truth) ───────────────────── */
 export const PRICING_TIERS = [
@@ -136,7 +137,9 @@ const BenefitsView: React.FC = () => {
                      className={`w-full text-left p-8 rounded-[2rem] transition-all duration-300 flex items-center gap-6 group ${activeFeature === idx ? 'bg-slate-50 shadow-inner' : 'hover:bg-white hover:shadow-lg border border-transparent hover:border-slate-100'}`}
                    >
                       <div className={`transition-all duration-300 ${activeFeature === idx ? 'scale-110' : 'grayscale group-hover:grayscale-0'}`}>
-                         <ThreeDIcon icon={feature.icon as any} size="lg" />
+                         <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-brand-600">
+                           <Icon path={iconPaths[feature.icon as keyof typeof iconPaths]} size={24} />
+                         </div>
                       </div>
                       <div>
                          <Heading level={4} className={`mb-1 transition-colors ${activeFeature === idx ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-800'}`}>{feature.title}</Heading>
@@ -152,7 +155,11 @@ const BenefitsView: React.FC = () => {
                          <img src={feature.img} className="w-full h-full object-cover opacity-60 rounded-[2.5rem]" alt={feature.title} />
                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
                          <div className="absolute bottom-0 left-0 w-full p-12">
-                            <div className="mb-6"><ThreeDIcon icon={feature.icon as any} size="xl" className="shadow-2xl" /></div>
+                            <div className="mb-6">
+                              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl">
+                                <Icon path={iconPaths[feature.icon as keyof typeof iconPaths]} size={32} />
+                              </div>
+                            </div>
                             <Heading level={3} size="h2" color="white" className="mb-4">{feature.subtitle}</Heading>
                             <Text color="white" className="opacity-80 max-w-md">{feature.desc}</Text>
                          </div>

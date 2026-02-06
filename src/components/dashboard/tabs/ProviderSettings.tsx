@@ -3,6 +3,8 @@ import { SettingInput, MultiSelect } from '@/components/dashboard/DashboardCompo
 import { ProviderProfile, Specialty, User } from '@/types';
 import { LANGUAGES_LIST } from '@/components/dashboard/constants';
 import { getCommonTimezones, getUserTimezone } from '@/utils/timezone';
+import { Select } from '@/components/ui';
+import { US_STATES, AGE_GROUPS } from '@/data/constants';
 
 interface ProviderSettingsProps {
   editForm: ProviderProfile;
@@ -172,6 +174,7 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
 
                    <MultiSelect label="Languages Spoken" placeholder="Select languages..." options={LANGUAGES_LIST} selected={editForm.languages} onChange={(val) => updateField('languages', val)} />
                    <MultiSelect label="Clinical Specialties" placeholder="Select specialties..." options={specialtiesList.map(s => s.name)} selected={editForm.specialties.map(id => specialtiesList.find(s => s.id === id)?.name || id)} onChange={(names) => { const ids = names.map(n => specialtiesList.find(s => s.name === n)?.id || n); updateField('specialties', ids); }} />
+                   <MultiSelect label="Ages Served" placeholder="Select age groups..." options={AGE_GROUPS} selected={editForm.agesServed || []} onChange={(val) => updateField('agesServed', val)} />
 
                    <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -194,15 +197,13 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                    {/* Timezone Selector */}
                    <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Practice Timezone</label>
-                      <select 
+                      <Select 
+                        options={availableTimezones}
                         value={editForm.timezone || getUserTimezone()} 
-                        onChange={(e) => updateField('timezone', e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-medium text-slate-900 outline-none focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all cursor-pointer"
-                      >
-                        {availableTimezones.map(tz => (
-                          <option key={tz} value={tz}>{tz}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => updateField('timezone', val)}
+                        className="w-full"
+                        placeholder="Select Timezone"
+                      />
                       <p className="text-[9px] text-slate-400 ml-1">Your availability will be based on this timezone.</p>
                    </div>
 
@@ -212,7 +213,16 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                    <SettingInput label="Street Address" value={editForm.address?.street} onChange={(v: string) => updateField('address.street', v)} />
                    <div className="grid grid-cols-2 gap-4">
                       <SettingInput label="City" value={editForm.address?.city} onChange={(v: string) => updateField('address.city', v)} />
-                      <SettingInput label="State" value={editForm.address?.state} onChange={(v: string) => updateField('address.state', v)} />
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
+                        <Select 
+                          options={US_STATES} 
+                          value={editForm.address?.state || ''} 
+                          onChange={val => updateField('address.state', val)} 
+                          placeholder="Select State"
+                          className="w-full"
+                        />
+                      </div>
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                       <SettingInput label="Zip Code" value={editForm.address?.zip} onChange={(v: string) => updateField('address.zip', v)} />
@@ -292,12 +302,15 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                             placeholder="City" 
                             className="bg-white rounded-lg px-3 py-2 text-xs font-bold outline-none"
                          />
-                         <input 
-                            value={editForm.businessAddress?.state || ''} 
-                            onChange={e => updateField('businessAddress', { ...editForm.businessAddress, state: e.target.value })} 
-                            placeholder="State" 
-                            className="bg-white rounded-lg px-3 py-2 text-xs font-bold outline-none"
-                         />
+                         <div className="min-w-0">
+                           <Select 
+                              options={US_STATES} 
+                              value={editForm.businessAddress?.state || ''} 
+                              onChange={val => updateField('businessAddress', { ...editForm.businessAddress, state: val })} 
+                              placeholder="State"
+                              className="w-full h-full text-xs"
+                           />
+                         </div>
                          <input 
                             value={editForm.businessAddress?.zip || ''} 
                             onChange={e => updateField('businessAddress', { ...editForm.businessAddress, zip: e.target.value })} 

@@ -13,7 +13,7 @@ import { SEED_DATA } from './seedData';
 class Database {
   private KEYS = {
     MESSAGES: 'evowell_messages',
-    BLOGS: 'evowell_blogs',
+    BLOGS: 'evowell_blogs_v2', // Updated to force re-seed with new images
     TESTIMONIALS: 'evowell_testimonials',
     TICKETS: 'evowell_tickets',
     JOBS: 'evowell_jobs',

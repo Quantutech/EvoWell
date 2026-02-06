@@ -314,7 +314,7 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
       ]} />
 
       {/* ── Search header ────────────────────────────────────── */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-40">
+      <div className="bg-white border-b border-slate-100 sticky top-16 z-40 shadow-sm">
         <Container>
           <div className="flex items-center gap-3 py-4">
             {/* Search input */}
@@ -429,9 +429,9 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
         <div className="flex flex-col lg:flex-row gap-8 items-start relative min-h-[500px]">
           
           {/* Desktop filter sidebar */}
-          <aside className="hidden lg:block w-72 shrink-0 relative">
-            <div ref={sidebarRef} className="pb-10 transition-transform duration-75 ease-linear will-change-transform">
-              <Card className="p-6 !overflow-visible">
+          <aside className="hidden lg:block w-72 shrink-0">
+            <div className="sticky top-[136px] pb-10">
+              <Card className="p-6 !overflow-visible max-h-[calc(100vh-160px)] overflow-y-auto no-scrollbar">
                 <div className="flex items-center justify-between mb-6">
                   <Heading level={4} className="text-sm">Filters</Heading>
                   {hasActiveFilters && (

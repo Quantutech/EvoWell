@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth, useNavigation } from '@/App';
 import Logo from '@/components/brand/Logo';
-import ThreeDIcon from '@/components/ui/ThreeDIcon';
+import Icon from '@/components/ui/Icon';
+import { iconPaths } from '@/components/ui/iconPaths';
 import ProfileImage from '@/components/ui/ProfileImage';
 
 const Link: React.FC<{ href: string; className?: string; onClick?: () => void; children: React.ReactNode }> = ({ href, className, children, onClick }) => {
@@ -110,7 +111,7 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
    *   4. For Partners  — B2B (simple link)
    *   5. For Providers — provider-side CTA
    */
-  const navItems = [
+  const navItems: any[] = [
     {
       label: 'Find Care',
       id: 'care',
@@ -129,7 +130,7 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
       items: [
         { label: 'Wellness Blog', href: '#/blog', icon: 'blog', desc: 'Articles & clinical guides' },
         { label: 'Podcasts', href: '#/podcasts', icon: 'podcast', desc: 'Listen to expert conversations' },
-        { label: 'Tools & Downloads', href: '#/docs', icon: 'folder', desc: 'Worksheets & assessments' },
+        { label: 'Branding & Guidelines', href: '#/docs', icon: 'folder', desc: 'Design system & assets' },
       ],
     },
     {
@@ -139,14 +140,17 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
       items: [
         { label: 'Our Story', href: '#/about', icon: 'info', desc: 'Mission, values & team' },
         { label: 'Careers', href: '#/careers', icon: 'star', desc: 'Open positions' },
-        { label: 'Contact', href: '#/contact', icon: 'email', desc: 'Get in touch' },
+        { label: 'Contact', href: '#/contact', icon: 'chat', desc: 'Get in touch' },
       ],
     },
     {
-      label: 'For Partners',
-      href: '#/partners',
-      icon: 'partners',
+      label: 'Ecosystem',
+      id: 'ecosystem',
       gradient: 'from-indigo-500 to-violet-600',
+      items: [
+        { label: 'For Partners', href: '#/partners', icon: 'partners', desc: 'B2B & strategic alliances' },
+        { label: 'For Investors', href: '#/investors', icon: 'star', desc: 'Investment thesis & strategy' },
+      ],
     },
     {
       label: 'For Providers',
@@ -336,7 +340,9 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
                               className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors group/item focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset"
                               onClick={() => setActiveDropdown(null)}
                             >
-                              <ThreeDIcon icon={sub.icon} size="sm" variant="minimal" />
+                              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 shrink-0">
+                                <Icon path={iconPaths[sub.icon as keyof typeof iconPaths]} size={20} />
+                              </div>
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm font-bold text-slate-900">{sub.label}</p>
@@ -369,13 +375,13 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
                   </Link>
                   <Link 
                     href="#/login?join=true" 
-                    className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
+                    className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
                       isDarkMode 
-                        ? 'bg-white text-slate-900 hover:bg-slate-100'
-                        : 'bg-slate-900 text-white hover:bg-slate-800'
+                        ? 'bg-white text-brand-600 hover:bg-brand-50'
+                        : 'bg-brand-500 text-white hover:bg-brand-600 shadow-brand-500/20'
                     }`}
                   >
-                    For Providers
+                    Join as Provider
                   </Link>
                 </div>
               ) : (
@@ -403,7 +409,7 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
                             className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset"
                             onClick={() => setActiveDropdown(null)}
                           >
-                            <ThreeDIcon icon={action.icon as any} size="sm" variant="minimal" />
+                            <Icon path={iconPaths[action.icon as keyof typeof iconPaths]} size={18} className="text-slate-400" />
                             {action.label}
                           </Link>
                         ))}

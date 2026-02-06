@@ -1,6 +1,8 @@
 import { supabase, isConfigured } from './supabase';
 import { User, ProviderProfile, UserRole, ModerationStatus, SubscriptionTier, SubscriptionStatus } from '../types';
 import { api } from './api';
+import { authService } from './auth.service';
+import { providerService } from './provider.service';
 import { Database } from '../types/supabase'; // Import generated types
 
 type UserRow = Database['public']['Tables']['users']['Row'];
@@ -393,6 +395,53 @@ class AdminService {
 
   async rejectProvider(providerId: string): Promise<void> {
     await api.moderateProvider(providerId, ModerationStatus.REJECTED);
+  }
+
+  async createUser(data: { 
+    firstName: string; 
+    lastName: string; 
+    email: string; 
+    role: UserRole; 
+    subscriptionTier?: SubscriptionTier; 
+  }): Promise<void> {
+    if (!isConfigured || !supabase) {
+      // Mock Mode
+      const user = await authService.register({
+        email: data.email,
+        password: 'password', // Default password for admin-created users
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role
+      });
+
+      if (data.role === UserRole.PROVIDER && data.subscriptionTier) {
+        const provider = await providerService.getProviderByUserId(user.id);
+        if (provider) {
+          await providerService.updateProvider(provider.id, { 
+            subscriptionTier: data.subscriptionTier,
+            subscriptionStatus: SubscriptionStatus.ACTIVE,
+            onboardingComplete: true // Auto-complete for admin created? Maybe.
+          });
+        }
+      }
+      return;
+    }
+
+    // Supabase Mode (Real)
+    // Admin creation usually requires service_role key to bypass email verification or different endpoint
+    // For now, we use the same flow but might fail if email confirm enabled.
+    // Assuming this is for internal tool where we might have appropriate setup.
+    // Or we just use signUp and let them verify.
+    // But we need to set the role/tier immediately.
+    
+    // NOTE: This implementation is limited by client-side admin capabilities in Supabase.
+    // In a real app, this should call an Edge Function.
+    console.warn("Creating user via client-side admin is limited. Using basic registration.");
+    
+    // We can't easily register another user while logged in as admin without logging out.
+    // So we likely need an RPC or Function. 
+    // Falling back to just logging the attempt for now if not mock.
+    throw new Error("User creation in Supabase mode requires backend function.");
   }
 
   async approveApplication(applicationId: string): Promise<void> {

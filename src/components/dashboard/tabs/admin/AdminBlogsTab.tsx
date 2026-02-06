@@ -1,11 +1,12 @@
 import React from 'react';
 import { BlogPost, User } from '@/types';
+import { BlogEditor } from '../../shared/BlogEditor';
 
 interface AdminBlogsTabProps {
   blogs: BlogPost[];
   editingBlog: Partial<BlogPost> | null;
   setEditingBlog: (blog: Partial<BlogPost> | null) => void;
-  onSave: (e: React.FormEvent) => void;
+  onSave: (blog: Partial<BlogPost>) => Promise<void>;
   onApprove: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -17,31 +18,12 @@ const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({
   if (editingBlog) {
     return (
       <div className="bg-white rounded-[3rem] p-12 shadow-sm border border-slate-100 animate-in fade-in zoom-in-95">
-        <h2 className="text-2xl font-black mb-10">Resource Editor</h2>
-        <form onSubmit={onSave} className="space-y-6">
-          <div className="space-y-2">
-             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Title</label>
-             <input value={editingBlog.title || ''} onChange={e => setEditingBlog({...editingBlog, title: e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl text-lg font-bold outline-none" placeholder="Article Title" />
-          </div>
-          <div className="space-y-2">
-             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content (HTML Supported)</label>
-             <textarea value={editingBlog.content || ''} onChange={e => setEditingBlog({...editingBlog, content: e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl h-96 font-medium outline-none" placeholder="<p>Write your content here...</p>" />
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-             <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category</label>
-                <input value={editingBlog.category || ''} onChange={e => setEditingBlog({...editingBlog, category: e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold outline-none" placeholder="Wellness, Nutrition..." />
-             </div>
-             <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Image URL</label>
-                <input value={editingBlog.imageUrl || ''} onChange={e => setEditingBlog({...editingBlog, imageUrl: e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold outline-none" placeholder="https://..." />
-             </div>
-          </div>
-          <div className="flex justify-end gap-4 pt-6">
-             <button type="button" onClick={() => setEditingBlog(null)} className="px-6 py-3 font-bold text-slate-500 hover:bg-slate-50 rounded-xl">Cancel</button>
-             <button type="submit" className="bg-brand-500 text-white px-10 py-3 rounded-2xl font-black shadow-xl hover:bg-brand-600 transition-all">Save Post</button>
-          </div>
-        </form>
+        <BlogEditor 
+          initialBlog={editingBlog}
+          onSubmit={onSave}
+          onCancel={() => setEditingBlog(null)}
+          isAiEnabled={true} 
+        />
       </div>
     );
   }

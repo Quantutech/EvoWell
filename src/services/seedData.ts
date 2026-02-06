@@ -529,7 +529,7 @@ const blogs: BlogPost[] = [
     authorRole: 'Clinical Psychologist',
     authorImage: providers[1].imageUrl, // Adjusted index
     readTime: '6 min read',
-    imageUrl: 'https://images.unsplash.com/photo-1541781777621-af13b7a5a503?auto=format&fit=crop&q=80&w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?auto=format&fit=crop&q=80&w=800',
     publishedAt: 'Oct 12, 2023',
     status: 'APPROVED',
     isFeatured: true,
