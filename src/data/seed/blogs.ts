@@ -16,7 +16,44 @@ export const blogs: BlogPost[] = [
     slug: 'science-of-sleep',
     title: 'The Science of Sleep: Why It Matters for Mental Health',
     summary: 'Understanding the bidirectional relationship between sleep quality and emotional regulation. Practical tips for better rest.',
-    content: '<p>Sleep is not just a passive state of rest; it is an active period of neurological repair...</p><h3>The REM Cycle</h3><p>During REM sleep, our brains process emotional memories...</p>',
+    content: `
+      <p>Sleep is not just a passive state of rest; it is an active period of neurological repair and cognitive consolidation. When we drift into slumber, our bodies initiate a series of complex physiological processes that are fundamental to our mental well-being and emotional regulation. In this comprehensive exploration, we will delve into the science of sleep and its profound impact on mental health.</p>
+
+      <h2 id="the-biological-clock">The Biological Clock: Circadian Rhythms</h2>
+      <p>Every human body operates on an internal biological clock known as the circadian rhythm. This 24-hour cycle regulates everything from body temperature to hormone release. The master clock, located in the suprachiasmatic nucleus of the brain, is highly sensitive to light cues. This is why exposure to morning sunlight is crucial for setting your internal pace, while evening exposure to blue light can severely disrupt your sleep onset.</p>
+      <p>When our circadian rhythms are misaligned—whether through shift work, jet lag, or poor sleep hygiene—our mental health suffers. Disrupted rhythms are linked to increased rates of bipolar disorder flare-ups, seasonal affective disorder, and generalized anxiety.</p>
+
+      <h2 id="the-architecture-of-sleep">The Architecture of Sleep: Beyond REM</h2>
+      <p>Sleep is divided into two main types: Non-Rapid Eye Movement (NREM) and Rapid Eye Movement (REM) sleep. NREM sleep is further categorized into three stages, with Stage 3 being the deepest and most restorative phase, often called "slow-wave sleep."</p>
+      <h3>NREM Stage 3: Physical Restoration</h3>
+      <p>During deep NREM sleep, the body focuses on physical repair. Growth hormone is released, and the immune system strengthens its defenses. For the brain, this is also the period when the glymphatic system—the brain's waste clearance mechanism—becomes most active, literally "washing away" metabolic waste products that accumulate during waking hours.</p>
+      <h3>REM Sleep: The Emotional Workshop</h3>
+      <p>REM sleep is where the magic of emotional regulation happens. It is the only time our brain is completely devoid of the anxiety-triggering molecule noradrenaline. This allows us to process difficult, even traumatic, memories in a safe, neurochemically calm environment. Individuals who are deprived of REM sleep are significantly more likely to misinterpret neutral facial expressions as hostile and are less capable of social empathy.</p>
+
+      <h2 id="the-bidirectional-link">The Bidirectional Link</h2>
+      <p>The relationship between sleep and mental health is bidirectional: poor sleep can contribute to the development of mental health issues, and mental health issues can, in turn, make it harder to sleep. Chronic insomnia, for instance, is a known risk factor for developing depression and anxiety disorders.</p>
+      <blockquote>
+        "Sleep is the single most effective thing we can do to reset our brain and body health each day — our mother nature's best effort yet at contra-death." 
+        <br/>— Dr. Matthew Walker, Why We Sleep
+      </blockquote>
+
+      <h2 id="sleep-and-modern-stress">Sleep in the Age of Modern Stress</h2>
+      <p>In our hyper-connected world, the boundary between "on" and "off" has blurred. The "always-on" culture is a direct assault on our sleep health. Cortisol, the primary stress hormone, is the natural antagonist of melatonin. When we are stressed late into the evening, our cortisol levels remain elevated, preventing the natural rise of melatonin required for sleep.</p>
+      <p>This creates a vicious cycle: stress prevents sleep, and lack of sleep reduces our ability to handle stress, leading to further sleep disruption. Breaking this cycle requires intentional, consistent sleep hygiene practices that treat rest as a non-negotiable pillar of productivity.</p>
+
+      <h2 id="practical-strategies">Practical Strategies for Deep Restoration</h2>
+      <p>Improving sleep quality doesn't always require medical intervention. Often, small environmental and behavioral shifts can yield massive dividends for your mental clarity and emotional stability.</p>
+      <ul>
+        <li><strong>Temperature Control:</strong> Your body needs to drop its core temperature by about 2-3 degrees Fahrenheit to initiate sleep. Aim for a bedroom temperature around 65°F (18°C).</li>
+        <li><strong>Darkness is Key:</strong> Invest in blackout curtains and avoid all screens at least 90 minutes before bed. If you must use a device, enable red-light filters.</li>
+        <li><strong>The 3-2-1 Rule:</strong> No food 3 hours before bed, no work 2 hours before bed, and no screens 1 hour before bed.</li>
+        <li><strong>Consistency:</strong> The brain thrives on predictability. Going to bed and waking up at the same time every day stabilizes your circadian rhythm.</li>
+      </ul>
+
+      <h2 id="the-future-of-sleep">The Future of Sleep Science</h2>
+      <p>We are just beginning to understand the long-term implications of sleep deprivation on neurodegenerative diseases like Alzheimer's. Research suggests that chronic lack of deep NREM sleep may prevent the clearance of beta-amyloid plaques, a hallmark of the disease. Therefore, sleep is not just about feeling good tomorrow; it is about protecting your cognitive legacy for decades to come.</p>
+      <p>In conclusion, prioritizing sleep is perhaps the most courageous act of self-care available to us. It requires setting boundaries with our work, our technology, and our own racing thoughts. But the reward—a resilient brain and a balanced heart—is worth every effort.</p>
+    `,
     category: 'Wellness',
     authorName: 'Dr. Sarah Chen',
     authorRole: 'Clinical Psychologist',
@@ -33,7 +70,19 @@ export const blogs: BlogPost[] = [
     slug: 'nutrition-and-mood',
     title: 'Gut-Brain Axis: How Food Affects Your Mood',
     summary: 'Exploring the connection between the microbiome and neurotransmitter production. What to eat for better mental clarity.',
-    content: '<p>95% of your serotonin is produced in your gastrointestinal tract...</p>',
+    content: `
+      <p>It’s often said that the gut is the "second brain." This isn't just a metaphor; the enteric nervous system contains more neurons than the spinal cord. Perhaps more surprisingly, about 95% of your body's serotonin—the neurotransmitter responsible for mood regulation—is produced in your gastrointestinal tract.</p>
+      <h2>The Vagus Nerve Connection</h2>
+      <p>The gut and the brain communicate constantly via the vagus nerve. This bidirectional highway means that the state of your microbiome can directly influence your stress levels, clarity of thought, and overall emotional state.</p>
+      <h2>Top Foods for Mental Clarity</h2>
+      <ol>
+        <li><strong>Leafy Greens:</strong> Packed with folate, which helps produce dopamine.</li>
+        <li><strong>Fatty Fish:</strong> Rich in Omega-3s, essential for brain cell structure.</li>
+        <li><strong>Fermented Foods:</strong> Yogurt, kimchi, and kefir provide beneficial probiotics.</li>
+        <li><strong>Berries:</strong> High in antioxidants that protect brain cells from oxidative stress.</li>
+      </ol>
+      <p>When we choose whole, nutrient-dense foods, we are providing the raw materials our brain needs to function at its peak. Mental health starts on your plate.</p>
+    `,
     category: 'Nutrition',
     authorName: 'James Wilson',
     authorRole: 'Clinical Nutritionist',

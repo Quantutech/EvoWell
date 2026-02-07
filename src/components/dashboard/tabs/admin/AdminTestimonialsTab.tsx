@@ -7,7 +7,6 @@ interface AdminTestimonialsTabProps {
   setFilter: (f: 'all' | 'home' | 'partners') => void;
   onDelete: (id: string) => void;
 }
-
 const AdminTestimonialsTab: React.FC<AdminTestimonialsTabProps> = ({ testimonials, filter, setFilter, onDelete }) => {
   return (
      <div className="space-y-8 relative z-0 animate-in fade-in slide-in-from-bottom-2">

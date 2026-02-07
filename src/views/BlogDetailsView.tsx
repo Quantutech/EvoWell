@@ -4,9 +4,9 @@ import { useNavigation } from '../App';
 import { BlogPost } from '../types';
 import Breadcrumb from '../components/Breadcrumb';
 import { sanitizeHTML } from '../utils/content-sanitizer';
-import { Section, Container } from '../components/layout';
-import { Heading, Text, Label } from '../components/typography';
-import { Button, Card, Badge, Tag } from '../components/ui';
+import { Container } from '../components/layout';
+import { Heading, Text } from '../components/typography';
+import { Button, Badge } from '../components/ui';
 import SEO from '../components/SEO';
 
 /* ─── Reading progress bar ───────────────────────────────────────────── */
@@ -25,9 +25,9 @@ const ReadingProgressBar: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 w-full h-1 z-50 bg-transparent pointer-events-none">
+    <div className="fixed top-0 left-0 w-full h-1.5 z-[100] bg-transparent pointer-events-none">
       <div
-        className="h-full bg-brand-500 transition-[width] duration-100 ease-out"
+        className="h-full bg-brand-500 transition-[width] duration-150 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -37,55 +37,18 @@ const ReadingProgressBar: React.FC = () => {
 /* ─── Loading skeleton ───────────────────────────────────────────────── */
 
 const ArticleSkeleton: React.FC = () => (
-  <div className="bg-white min-h-screen animate-pulse">
-    <div className="pt-32 pb-12">
-      <div className="max-w-3xl mx-auto px-6 text-center space-y-4">
-        <div className="flex justify-center gap-3"><div className="h-6 w-20 bg-slate-100 rounded-full" /><div className="h-6 w-28 bg-slate-50 rounded-full" /></div>
-        <div className="h-10 w-3/4 mx-auto bg-slate-100 rounded-xl" />
-        <div className="h-10 w-1/2 mx-auto bg-slate-100 rounded-xl" />
-        <div className="h-5 w-2/3 mx-auto bg-slate-50 rounded-lg" />
-        <div className="flex justify-center items-center gap-3 pt-4"><div className="w-11 h-11 bg-slate-100 rounded-full" /><div className="h-4 w-24 bg-slate-50 rounded-lg" /></div>
+  <div className="bg-white min-h-screen animate-pulse pt-20">
+    <div className="max-w-7xl mx-auto px-6 grid grid-cols-12 gap-12">
+      <div className="col-span-3 space-y-4 pt-10">
+        {[...Array(5)].map((_, i) => <div key={i} className="h-3 bg-slate-50 rounded w-3/4" />)}
       </div>
-    </div>
-    <div className="max-w-5xl mx-auto px-6"><div className="aspect-[21/9] bg-slate-100 rounded-[3rem]" /></div>
-    <div className="max-w-3xl mx-auto px-6 pt-16 space-y-4">
-      {[...Array(8)].map((_, i) => <div key={i} className={`h-4 bg-slate-50 rounded-lg ${i % 3 === 0 ? 'w-full' : i % 3 === 1 ? 'w-5/6' : 'w-4/5'}`} />)}
+      <div className="col-span-9 space-y-8">
+        <div className="h-12 w-3/4 bg-slate-100 rounded-xl" />
+        <div className="h-[400px] bg-slate-50 rounded-3xl" />
+      </div>
     </div>
   </div>
 );
-
-/* ─── Share helpers ───────────────────────────────────────────────────── */
-
-const shareActions = [
-  {
-    label: 'Copy link',
-    icon: '🔗',
-    action: () => {
-      navigator.clipboard?.writeText(window.location.href);
-    },
-  },
-  {
-    label: 'Twitter',
-    icon: '𝕏',
-    action: (title: string) => {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
-    },
-  },
-  {
-    label: 'LinkedIn',
-    icon: 'in',
-    action: () => {
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, '_blank');
-    },
-  },
-  {
-    label: 'Email',
-    icon: '✉',
-    action: (title: string) => {
-      window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(window.location.href)}`, '_self');
-    },
-  },
-];
 
 /* ─── Main view ──────────────────────────────────────────────────────── */
 
@@ -98,6 +61,7 @@ const BlogDetailsView: React.FC<{ slug: string }> = ({ slug }) => {
   const [subscribed, setSubscribed] = useState(false);
   const [sanitizedContent, setSanitizedContent] = useState('');
   const [copied, setCopied] = useState(false);
+  const [toc, setToc] = useState<{ id: string; text: string; level: number }[]>([]);
   const articleRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -112,8 +76,16 @@ const BlogDetailsView: React.FC<{ slug: string }> = ({ slug }) => {
       setBlog(b || null);
       if (b && b.content) {
         setSanitizedContent(sanitizeHTML(b.content));
+        
+        // Simple TOC extraction
+        const doc = new DOMParser().parseFromString(b.content, 'text/html');
+        const headings = Array.from(doc.querySelectorAll('h2, h3')).map(h => ({
+          id: h.getAttribute('id') || h.textContent?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '',
+          text: h.textContent || '',
+          level: parseInt(h.tagName[1])
+        }));
+        setToc(headings);
       }
-      // Related: same category first, then others, exclude current
       const others = all.filter(x => x.slug !== slug && x.status === 'APPROVED');
       const sameCategory = others.filter(x => x.category === b?.category);
       const different = others.filter(x => x.category !== b?.category);
@@ -137,30 +109,32 @@ const BlogDetailsView: React.FC<{ slug: string }> = ({ slug }) => {
     setTimeout(() => setCopied(false), 2000);
   }, []);
 
-  const handleSubscribe = useCallback(() => {
-    if (!email) return;
-    setSubscribed(true);
-    setEmail('');
-    setTimeout(() => setSubscribed(false), 4000);
-  }, [email]);
+  const shareActions = [
+    { label: 'LinkedIn', icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+    ), action: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, '_blank') },
+    { label: 'X', icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    ), action: () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(blog?.title || '')}&url=${encodeURIComponent(window.location.href)}`, '_blank') },
+    { label: 'Facebook', icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+    ), action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank') }
+  ];
 
   if (loading) return <ArticleSkeleton />;
 
   if (!blog) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
-        <span className="text-5xl">📄</span>
-        <Heading level={2}>Article not found</Heading>
-        <Text color="muted" className="text-center max-w-md">
-          This article may have been removed or the link might be incorrect.
-        </Text>
-        <Button variant="secondary" onClick={() => navigate('#/blog')}>Back to Blog</Button>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 bg-[#fbfcff]">
+        <div className="text-6xl">📄</div>
+        <Heading level={2} className="text-slate-900">Article not found</Heading>
+        <Button variant="secondary" onClick={() => navigate('#/blog')} className="rounded-xl px-8">Back to Writing</Button>
       </div>
     );
   }
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-[#fbfcff] min-h-screen font-sans selection:bg-brand-100 selection:text-brand-900">
       <SEO 
         title={blog.title}
         description={blog.summary}
@@ -169,211 +143,207 @@ const BlogDetailsView: React.FC<{ slug: string }> = ({ slug }) => {
         url={`/blog/${blog.slug}`}
       />
       <ReadingProgressBar />
-      <Breadcrumb items={[{ label: 'Blog', href: '#/blog' }, { label: blog.category || 'Article' }]} />
-
-      <Section spacing="sm">
-        <Container size="content">
-          {/* ── Article header ────────────────────────────────── */}
-          <header className="max-w-3xl mx-auto text-center mb-12 pt-4">
-            <div className="flex items-center gap-3 mb-6 justify-center flex-wrap">
-              <Badge variant="brand">{blog.category}</Badge>
-              {blog.readTime && <Label variant="badge" color="muted">{blog.readTime}</Label>}
-              <Label variant="badge" color="muted">{formatDate(blog.publishedAt)}</Label>
-            </div>
-
-            <Heading level={1} size="display" className="mb-8 leading-[1.15]">{blog.title}</Heading>
-
-            {blog.summary && (
-              <Text variant="lead" color="secondary" className="mb-10 max-w-2xl mx-auto">{blog.summary}</Text>
-            )}
-
-            {/* Author */}
-            <div className="flex items-center justify-center gap-4">
-               {blog.authorImage && (
-                 <img src={blog.authorImage} className="w-12 h-12 rounded-full border-2 border-slate-50 shadow-sm object-cover" alt={blog.authorName || ''} />
-               )}
-               <div className="text-left">
-                  <Text variant="small" weight="bold">{blog.authorName}</Text>
-                  {blog.authorRole && <Text variant="caption" color="muted">{blog.authorRole}</Text>}
-               </div>
-            </div>
-          </header>
-
-          {/* ── Hero image ────────────────────────────────────── */}
-          {blog.imageUrl && (
-            <div className="aspect-[21/9] rounded-[2.5rem] overflow-hidden mb-20 shadow-xl border border-slate-100 max-w-5xl mx-auto">
-               <img src={blog.imageUrl} className="w-full h-full object-cover" alt={blog.title} />
-            </div>
-          )}
-
-          {/* ── Body ──────────────────────────────────────────── */}
-          <div className="flex flex-col lg:flex-row gap-16 items-start max-w-5xl mx-auto">
-
-            {/* Share sidebar */}
-            <aside className="hidden lg:block w-14 shrink-0 sticky top-28">
-              <div className="flex flex-col items-center gap-3">
-                <Label variant="overline" color="muted" className="mb-1 text-[9px] text-center">Share</Label>
-                {shareActions.map((action, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (action.label === 'Copy link') {
-                        handleCopyLink();
-                      } else {
-                        action.action(blog.title);
-                      }
-                    }}
-                    title={action.label}
-                    className={`w-10 h-10 rounded-xl border flex items-center justify-center text-sm transition-all ${
-                      action.label === 'Copy link' && copied
-                        ? 'bg-brand-50 border-brand-200 text-brand-600'
-                        : 'border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-700'
-                    }`}
-                  >
-                    {action.label === 'Copy link' && copied ? '✓' : action.icon}
-                  </button>
-                ))}
+      
+      {/* ── Lean Light Hero Section ────────────────── */}
+      <section className="bg-gradient-to-br from-slate-50 via-white to-blue-50/20 pt-20 pb-12 px-6 relative overflow-hidden border-b border-slate-100">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left: Content */}
+            <div className="lg:col-span-7 space-y-5">
+              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-brand-600">
+                <span className="bg-brand-50 px-2 py-0.5 rounded">{blog.category}</span>
               </div>
-            </aside>
+              
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                {blog.title}
+              </h1>
 
-            {/* Article content */}
-            <article ref={articleRef} className="flex-grow max-w-3xl min-w-0">
+              <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-xl">
+                {blog.summary}
+              </p>
+
+              {/* Author & Publication Box */}
+              <div className="inline-flex items-center gap-4 bg-white/80 backdrop-blur-xl p-3 rounded-2xl border border-slate-100 shadow-sm">
+                {blog.authorImage ? (
+                  <img 
+                    src={blog.authorImage} 
+                    className={`w-10 h-10 rounded-xl object-cover ${blog.providerId ? 'cursor-pointer hover:ring-2 hover:ring-brand-500 transition-all' : ''}`} 
+                    alt="" 
+                    onClick={() => blog.providerId && navigate(`#/provider/${blog.providerId}`)}
+                  />
+                ) : (
+                  <div 
+                    className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 font-bold text-xs border border-slate-100 ${blog.providerId ? 'cursor-pointer hover:bg-slate-100 transition-all' : ''}`}
+                    onClick={() => blog.providerId && navigate(`#/provider/${blog.providerId}`)}
+                  >
+                    {blog.authorName?.charAt(0)}
+                  </div>
+                )}
+                <div className="flex flex-col pr-2">
+                  {blog.providerId ? (
+                    <button 
+                      onClick={() => navigate(`#/provider/${blog.providerId}`)}
+                      className="text-xs font-black text-slate-900 hover:text-brand-600 transition-colors text-left"
+                    >
+                      {blog.authorName}
+                    </button>
+                  ) : (
+                    <span className="text-xs font-black text-slate-900">{blog.authorName}</span>
+                  )}
+                  <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span>{formatDate(blog.publishedAt)}</span>
+                    <span className="text-slate-200">•</span>
+                    <span>{blog.readTime || '5 min read'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Image */}
+            {blog.imageUrl && (
+              <div className="lg:col-span-5 relative">
+                <div className="relative aspect-[16/10] rounded-[2rem] overflow-hidden border-[4px] border-white shadow-xl">
+                  <img src={blog.imageUrl} className="w-full h-full object-cover" alt="" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Main content grid with TOC ────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          
+          {/* LEFT: Table of Contents */}
+          <aside className="hidden lg:block lg:col-span-3 sticky top-28">
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">On this page</h4>
+                <nav className="space-y-3">
+                  {toc.length > 0 ? toc.map((item, i) => (
+                    <a 
+                      key={i} 
+                      href={`#${item.id}`}
+                      className={`block text-xs font-bold transition-all hover:text-brand-600 ${item.level === 3 ? 'pl-4 text-slate-400' : 'text-slate-500'}`}
+                    >
+                      {item.text}
+                    </a>
+                  )) : (
+                    <span className="text-xs text-slate-400 italic">Reading mode active</span>
+                  )}
+                </nav>
+              </div>
+              
+              <div className="pt-8 border-t border-slate-50">
+                 <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">Share</h4>
+                 <div className="flex gap-2">
+                    {shareActions.map(s => (
+                      <button 
+                        key={s.label} 
+                        onClick={s.action}
+                        className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-brand-500 hover:border-brand-200 transition-all shadow-sm"
+                      >
+                        {s.icon}
+                      </button>
+                    ))}
+                 </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* MIDDLE: Article Body */}
+          <main className="lg:col-span-9 max-w-3xl">
+            <article ref={articleRef} className="bg-white p-8 md:p-12 lg:p-16 rounded-[2.5rem] border border-slate-50 shadow-sm shadow-slate-100">
               <div
-                className="prose prose-slate prose-lg max-w-none
-                  prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight
-                  prose-h2:text-2xl prose-h2:mt-14 prose-h2:mb-6
-                  prose-h3:text-xl prose-h3:mt-10 prose-h3:mb-4
-                  prose-p:text-slate-600 prose-p:font-medium prose-p:leading-relaxed
-                  prose-a:text-brand-600 hover:prose-a:text-brand-700 prose-a:font-semibold prose-a:no-underline hover:prose-a:underline
-                  prose-blockquote:border-brand-300 prose-blockquote:bg-brand-50/30 prose-blockquote:rounded-r-2xl prose-blockquote:py-1 prose-blockquote:px-6 prose-blockquote:not-italic
-                  prose-img:rounded-2xl prose-img:shadow-md
-                  prose-li:marker:text-brand-400
-                  prose-strong:text-slate-800
-                  prose-code:text-brand-600 prose-code:bg-brand-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-semibold prose-code:before:content-none prose-code:after:content-none"
+                className="prose prose-slate prose-lg max-w-none 
+                  prose-headings:text-slate-900 prose-headings:font-black prose-headings:tracking-tight
+                  prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:scroll-mt-32
+                  prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:scroll-mt-32
+                  prose-p:text-slate-600 prose-p:leading-[1.8] prose-p:mb-6 prose-p:text-[1.05rem]
+                  prose-a:text-brand-600 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
+                  prose-blockquote:border-l-4 prose-blockquote:border-brand-500 prose-blockquote:bg-brand-50/20 prose-blockquote:rounded-r-2xl prose-blockquote:py-2 prose-blockquote:px-8 prose-blockquote:not-italic prose-blockquote:font-medium
+                  prose-img:rounded-[1.5rem] prose-img:shadow-lg prose-img:my-10
+                  prose-li:text-slate-600 prose-strong:text-slate-900 prose-hr:my-12"
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
 
-              {/* ── Mobile share row ─────────────────────────── */}
-              <div className="flex items-center gap-3 mt-12 pt-8 border-t border-slate-100 lg:hidden">
-                <Label variant="overline" color="muted" className="mr-2">Share</Label>
-                {shareActions.map((action, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (action.label === 'Copy link') handleCopyLink();
-                      else action.action(blog.title);
-                    }}
-                    className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-all"
-                  >
-                    {action.icon}
-                  </button>
-                ))}
-              </div>
-
-              {/* ── Tags ─────────────────────────────────────── */}
-              {(blog as any).tags && (blog as any).tags.length > 0 ? (
-                <div className="flex flex-wrap gap-2 pt-8 mt-10 border-t border-slate-100">
-                  {(blog as any).tags.map((tag: string) => (
-                    <Tag key={tag} onSelect={() => navigate(`#/blog?category=${encodeURIComponent(tag)}`)}>{tag}</Tag>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2 pt-8 mt-10 border-t border-slate-100">
-                  {[blog.category, 'Wellness', 'Mental Health'].filter(Boolean).map((tag, i) => (
-                    <Tag key={i}>{tag}</Tag>
-                  ))}
-                </div>
-              )}
-
-              {/* ── Newsletter CTA ───────────────────────────── */}
-              <div className="mt-16 relative rounded-[2rem] overflow-hidden border border-slate-200 bg-white">
-                {/* Accent strip */}
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-400 via-emerald-400 to-brand-500" />
-                <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
-                <div className="relative z-10 p-8 lg:p-10">
-                  <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
-                    {/* Icon + text */}
-                    <div className="flex gap-4 items-start flex-1">
-                      <div className="hidden sm:flex w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 items-center justify-center shrink-0">
-                        <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                        </svg>
+              {/* ── Newsletter Dispatch ───────────────────── */}
+              <div className="mt-16 bg-brand-50/30 border border-brand-100/50 rounded-[2rem] p-8">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-black text-slate-900 mb-1">The Dispatch</h3>
+                    <p className="text-slate-500 text-xs leading-relaxed max-w-xs">
+                      Join 5,000+ professionals getting weekly wellness strategies.
+                    </p>
+                  </div>
+                  <div className="w-full md:w-auto md:min-w-[300px]">
+                    {subscribed ? (
+                      <div className="bg-white border border-brand-200 rounded-xl p-3 text-center animate-in zoom-in-95">
+                        <p className="text-brand-600 font-bold text-xs">✓ You're in!</p>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-black text-slate-900 mb-1">Enjoyed this article?</h3>
-                        <p className="text-slate-500 text-sm leading-relaxed">Get evidence-based wellness strategies delivered weekly.</p>
+                    ) : (
+                      <div className="flex bg-white p-1 rounded-xl border border-slate-200 focus-within:border-brand-400 transition-all shadow-sm">
+                         <input
+                            type="email"
+                            placeholder="Email address"
+                            className="flex-grow bg-transparent border-none text-slate-800 px-4 py-2 placeholder:text-slate-400 focus:ring-0 outline-none text-sm font-medium min-w-0"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                         />
+                         <button
+                           onClick={() => { if(email) setSubscribed(true); }}
+                           className="bg-slate-900 text-white px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
+                         >
+                           Join
+                         </button>
                       </div>
-                    </div>
-
-                    {/* Input */}
-                    <div className="w-full sm:w-auto sm:min-w-[320px]">
-                      {subscribed ? (
-                        <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-center">
-                          <p className="text-brand-800 font-bold text-sm">✓ You're on the list!</p>
-                        </div>
-                      ) : (
-                        <div className="flex bg-slate-50 p-1.5 rounded-xl border border-slate-200 focus-within:border-brand-300 focus-within:ring-4 focus-within:ring-brand-500/10 transition-all">
-                           <input
-                              type="email"
-                              placeholder="you@email.com"
-                              className="flex-grow bg-transparent border-none text-slate-800 px-4 py-2.5 placeholder:text-slate-400 focus:ring-0 outline-none text-sm font-medium min-w-0"
-                              value={email}
-                              onChange={e => setEmail(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleSubscribe()}
-                           />
-                           <button
-                             onClick={handleSubscribe}
-                             className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-95 shadow-sm whitespace-nowrap"
-                           >
-                             Subscribe
-                           </button>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
             </article>
-          </div>
+          </main>
+        </div>
+      </div>
 
-          {/* ── Related articles ──────────────────────────────── */}
-          {latest.length > 0 && (
-            <div className="mt-28 pt-16 border-t border-slate-100 max-w-5xl mx-auto">
-              <div className="flex justify-between items-center mb-10">
-                <Heading level={2}>More to read</Heading>
-                <Button variant="ghost" onClick={() => navigate('#/blog')}>View All →</Button>
-              </div>
-              <div className="grid md:grid-cols-3 gap-6">
-                {latest.map(post => (
-                  <div
-                    key={post.id}
-                    onClick={() => navigate(`#/blog/${post.slug}`)}
-                    className="group cursor-pointer"
-                  >
-                    <div className="aspect-[16/10] rounded-[1.75rem] overflow-hidden mb-5 shadow-sm border border-slate-100 bg-slate-50 relative">
-                       <img
-                         src={post.imageUrl}
-                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                         alt={post.title}
-                         loading="lazy"
-                       />
-                       <div className="absolute top-3 left-3">
-                          <Badge variant="neutral" className="bg-white/90 backdrop-blur-md shadow-sm text-[10px]">{post.category}</Badge>
-                       </div>
-                    </div>
-                    <Label variant="badge" color="muted" className="mb-2">{formatDate(post.publishedAt)}</Label>
-                    <Heading level={4} className="mb-2 group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
-                      {post.title}
-                    </Heading>
-                    <Text variant="small" color="muted" className="line-clamp-2">{post.summary}</Text>
-                  </div>
-                ))}
-              </div>
+      {/* ── Related articles ──────────────────────────────── */}
+      {latest.length > 0 && (
+        <div className="bg-white border-t border-slate-100 py-16">
+          <Container>
+            <div className="flex items-end justify-between mb-10">
+              <Heading level={2} className="text-2xl font-black">Related Reading</Heading>
+              <button onClick={() => navigate('#/blog')} className="text-xs font-bold text-brand-600 hover:text-brand-800">
+                View all →
+              </button>
             </div>
-          )}
-        </Container>
-      </Section>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {latest.map(post => (
+                <div
+                  key={post.id}
+                  onClick={() => navigate(`#/blog/${post.slug}`)}
+                  className="group cursor-pointer"
+                >
+                  <div className="aspect-[16/10] rounded-2xl overflow-hidden mb-4 bg-slate-100 border border-slate-50 group-hover:shadow-lg transition-all duration-300">
+                     <img
+                       src={post.imageUrl}
+                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                       alt=""
+                     />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">{post.category}</span>
+                    <h4 className="text-sm font-bold text-slate-900 leading-snug group-hover:text-brand-600 transition-colors line-clamp-2">
+                      {post.title}
+                    </h4>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </div>
+      )}
     </div>
   );
 };

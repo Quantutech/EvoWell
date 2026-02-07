@@ -66,7 +66,9 @@ class MockContentService implements IContentService {
   async deleteBlogCategory(id: string): Promise<void> {}
   
   async getTestimonials(page?: string): Promise<Testimonial[]> { return db.getTestimonials(page); }
-  async createTestimonial(data: any): Promise<void> {}
+  async createTestimonial(data: any): Promise<void> {
+    db.createTestimonial(data);
+  }
   async deleteTestimonial(id: string): Promise<void> { db.deleteTestimonial(id); }
   
   async getAllJobs(): Promise<JobPosting[]> { 

@@ -68,6 +68,10 @@ class Database {
     try {
       localStorage.setItem(key, value);
     } catch (e) {
+      console.error("LocalStorage save failed, falling back to memory store", e);
+      if (e instanceof Error && e.name === 'QuotaExceededError') {
+        alert("Warning: The content is too large to save permanently in this browser. Some formatting or large images might be lost on reload.");
+      }
       this.useMemory = true;
       this.memoryStore[key] = value;
     }
@@ -138,6 +142,15 @@ class Database {
     const testimonials = this.getTestimonials();
     const filtered = testimonials.filter(t => t.id !== id);
     this.setItem(this.KEYS.TESTIMONIALS, JSON.stringify(filtered));
+  }
+
+  createTestimonial(data: Partial<Testimonial>): void {
+    const testimonials = this.getTestimonials();
+    const newTestimonial = {
+      ...data,
+      id: data.id || `testimonial-${Date.now()}`,
+    } as Testimonial;
+    this.setItem(this.KEYS.TESTIMONIALS, JSON.stringify([...testimonials, newTestimonial]));
   }
 }
 

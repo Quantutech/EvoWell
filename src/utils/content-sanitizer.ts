@@ -21,13 +21,14 @@ const SANITIZER_CONFIG = {
   ALLOWED_ATTR: [
     'href', 'target', 'rel', // Links
     'src', 'alt', 'title', 'width', 'height', // Images
-    'class', 'id', // Styling hooks (safe classes only expected)
+    'class', 'id', // Styling hooks
+    'style', // Allow inline styles for rich formatting (Word/GDoc paste support)
     'align', 'valign' // Legacy formatting support
   ],
   ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data):)/i, // No javascript: allowed
   ADD_ATTR: ['target', 'rel'], // Force these attributes on specific tags
   FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'object', 'embed', 'link', 'meta', 'base'],
-  FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur'],
 };
 
 // Hook to enforce security on links

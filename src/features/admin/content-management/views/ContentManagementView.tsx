@@ -69,7 +69,7 @@ export const ContentManagementView: React.FC = () => {
     scheduledFor: null,
     imageUrl: '',
     status: 'DRAFT',
-    authorName: user?.name || '',
+    authorName: user ? `${user.firstName} ${user.lastName}` : '',
     authorRole: user?.role || 'ADMIN',
   });
 
@@ -88,13 +88,27 @@ export const ContentManagementView: React.FC = () => {
   // Initialize form when editing
   useEffect(() => {
     if (selectedBlog) {
+      // Format date for datetime-local input (YYYY-MM-DDThh:mm)
+      let scheduledFor = '';
+      if (selectedBlog.publishedAt) {
+        try {
+          const date = new Date(selectedBlog.publishedAt);
+          // Adjust for timezone offset to show local time correct in input
+          const offset = date.getTimezoneOffset() * 60000;
+          const localISOTime = (new Date(date.getTime() - offset)).toISOString().slice(0, 16);
+          scheduledFor = localISOTime;
+        } catch (e) {
+          console.error('Invalid date', e);
+        }
+      }
+
       setFormData({
         title: selectedBlog.title,
         content: selectedBlog.content,
         summary: selectedBlog.summary || '',
         slug: selectedBlog.slug,
         tags: (selectedBlog as any).tags || [],
-        scheduledFor: selectedBlog.publishedAt || null,
+        scheduledFor: scheduledFor || null,
         status: selectedBlog.status,
         category: selectedBlog.category,
         imageUrl: selectedBlog.imageUrl || '',
@@ -113,7 +127,7 @@ export const ContentManagementView: React.FC = () => {
         scheduledFor: null,
         imageUrl: '',
         status: 'DRAFT',
-        authorName: user?.name || '',
+        authorName: user ? `${user.firstName} ${user.lastName}` : '',
         authorRole: user?.role || 'ADMIN',
       });
     }
@@ -131,7 +145,7 @@ export const ContentManagementView: React.FC = () => {
         ...formData,
         slug: formData.slug || generateSlug(formData.title),
         status: currentState.status as any,
-        authorName: formData.authorName || user?.name || 'Admin',
+        authorName: formData.authorName || (user ? `${user.firstName} ${user.lastName}` : 'Admin'),
         authorRole: formData.authorRole || user?.role || 'ADMIN',
       };
 
@@ -520,6 +534,7 @@ export const ContentManagementView: React.FC = () => {
                 <RichTextEditor
                   content={formData.content}
                   onChange={(content) => setFormData({ ...formData, content })}
+                  onImageAction={() => setShowMediaModal(true)}
                   placeholder="Start writing your story..."
                 />
               </div>
@@ -597,56 +612,14 @@ export const ContentManagementView: React.FC = () => {
                 <option value="">Select category</option>
                 <option value="Mental Health">Mental Health</option>
                 <option value="Wellness">Wellness</option>
+                <option value="Nutrition">Nutrition</option>
+                <option value="Lifestyle">Lifestyle</option>
+                <option value="Design">Design</option>
+                <option value="Product">Product</option>
                 <option value="Therapy">Therapy</option>
                 <option value="Self-Care">Self-Care</option>
                 <option value="Mindfulness">Mindfulness</option>
               </select>
-            </div>
-
-            {/* Tags */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-                Tags
-              </h3>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {formData.tags?.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => {
-                        const newTags = formData.tags?.filter((_, i) => i !== index);
-                        setFormData({ ...formData, tags: newTags });
-                      }}
-                      className="text-blue-400 hover:text-blue-600 transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <input
-                type="text"
-                placeholder="Add tag (press Enter)"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                    e.preventDefault();
-                    setFormData({
-                      ...formData,
-                      tags: [...(formData.tags || []), e.currentTarget.value.trim()]
-                    });
-                    e.currentTarget.value = '';
-                  }
-                }}
-              />
             </div>
 
             {/* Featured Image */}
@@ -697,6 +670,13 @@ export const ContentManagementView: React.FC = () => {
         isOpen={showMediaModal}
         onClose={() => setShowMediaModal(false)}
         onSelect={(image) => {
+          // If in editor view, we might want to insert into editor or set featured image
+          // For now, if we came from the editor's image button, we should probably have a way to know.
+          // But looking at the UI, there's also a "Featured Image" section in the sidebar.
+          // Let's make it smart: if the editor is active, we can't easily insert into tiptap from here 
+          // without a ref, but we can at least update the featured image if that was the intent.
+          // However, the RichTextEditor now calls onImageAction.
+          
           setFormData({ ...formData, imageUrl: image.url });
           setShowMediaModal(false);
         }}

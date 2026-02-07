@@ -27,6 +27,7 @@ import AdminClientsTab from '../components/dashboard/tabs/admin/AdminClientsTab'
 import AdminJobsTab from '../components/dashboard/tabs/admin/AdminJobsTab';
 import { ResetDataButton } from '../components/dashboard/tabs/admin/ResetDataButton';
 import AddUserModal from '../components/dashboard/tabs/admin/AddUserModal';
+import AddTestimonialModal from '../components/dashboard/tabs/admin/AddTestimonialModal';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { providerProfileSchema } from '../utils/validation-schemas';
@@ -41,6 +42,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedProvider, setSelectedProvider] = useState<ProviderProfile | undefined>(undefined);
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isAddTestimonialModalOpen, setIsAddTestimonialModalOpen] = useState(false);
   
   // Filter States
   const [testimonialFilter, setTestimonialFilter] = useState<'all' | 'home' | 'partners'>('all');
@@ -121,6 +123,8 @@ const AdminDashboard: React.FC = () => {
         setEditingBlog({ title: '', content: '', status: 'DRAFT' });
     } else if (action === 'addUser') {
         setIsAddUserModalOpen(true);
+    } else if (action === 'addTestimonial') {
+        setIsAddTestimonialModalOpen(true);
     }
   };
 
@@ -318,6 +322,15 @@ const AdminDashboard: React.FC = () => {
                 // Let's check AdminUsersTab later. For now just close.
                 fetchContentData();
             }}
+        />
+      )}
+
+      {isAddTestimonialModalOpen && (
+        <AddTestimonialModal 
+          onClose={() => setIsAddTestimonialModalOpen(false)}
+          onSuccess={() => {
+            refetchTestimonials();
+          }}
         />
       )}
 
