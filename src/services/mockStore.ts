@@ -10,6 +10,11 @@ import {
   Conversation,
   Message,
   Notification,
+  UserRoleAssignment,
+  PermissionOverride,
+  ProviderEntitlementOverride,
+  ConfigCatalog,
+  ConfigEntry,
 } from '../types';
 import { persistence } from './persistence';
 import { loadInitialData } from '../data/utils/loader';
@@ -48,6 +53,11 @@ interface MockStoreData {
   notifications: Notification[];
   clientJournalEntries: ClientJournalEntry[];
   providerClientNotes: ProviderClientNote[];
+  userRoleAssignments: UserRoleAssignment[];
+  userPermissionOverrides: PermissionOverride[];
+  providerEntitlementOverrides: ProviderEntitlementOverride[];
+  configCatalogs: ConfigCatalog[];
+  configEntries: ConfigEntry[];
   lastUpdated?: number;
   isDemoMode?: boolean;
 }
@@ -82,6 +92,14 @@ class MockStoreService {
         (stored as any).clientJournalEntries || initialData.clientJournalEntries || [],
       providerClientNotes:
         (stored as any).providerClientNotes || initialData.providerClientNotes || [],
+      userRoleAssignments:
+        (stored as any).userRoleAssignments || initialData.userRoleAssignments || [],
+      userPermissionOverrides:
+        (stored as any).userPermissionOverrides || initialData.userPermissionOverrides || [],
+      providerEntitlementOverrides:
+        (stored as any).providerEntitlementOverrides || initialData.providerEntitlementOverrides || [],
+      configCatalogs: (stored as any).configCatalogs || initialData.configCatalogs || [],
+      configEntries: (stored as any).configEntries || initialData.configEntries || [],
     };
 
     // Load from seed data if persistence is empty

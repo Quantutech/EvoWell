@@ -1,5 +1,6 @@
 import { UserRole } from '../../data/types/enums';
 import { z } from 'zod';
+import { StaffAccessProfile } from './access';
 
 export const UserSchema = z.object({
   id: z.string(),
@@ -23,6 +24,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
+  staffAccess?: StaffAccessProfile;
 }
 
 export interface ClientProfile {

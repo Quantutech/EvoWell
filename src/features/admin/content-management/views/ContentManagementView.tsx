@@ -6,7 +6,7 @@ import { useBlogPosts } from '@/hooks/queries';
 import { useCreateBlog, useUpdateBlog, useDeleteBlog } from '@/hooks/mutations';
 import { BlogPost } from '@/types/domain/blog';
 import { useAuth } from '@/App';
-import { debounce } from 'lodash';
+import { Select } from '@/components/ui';
 
 interface BlogPostForm {
   id?: string;
@@ -291,18 +291,20 @@ export const ContentManagementView: React.FC = () => {
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <select
+            <Select
+              ariaLabel="Filter CMS posts by status"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
-              <option value="all">All Status</option>
-              <option value="DRAFT">Draft</option>
-              <option value="PENDING">Pending</option>
-              <option value="APPROVED">Approved</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
+              onChange={(value) => setStatusFilter(value)}
+              className="sm:w-[220px]"
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'DRAFT', label: 'Draft' },
+                { value: 'PENDING', label: 'Pending' },
+                { value: 'APPROVED', label: 'Approved' },
+                { value: 'PUBLISHED', label: 'Published' },
+                { value: 'REJECTED', label: 'Rejected' },
+              ]}
+            />
           </div>
         </div>
 
@@ -604,22 +606,23 @@ export const ContentManagementView: React.FC = () => {
                 </svg>
                 Category
               </h3>
-              <select
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              <Select
+                ariaLabel="Select CMS post category"
                 value={formData.category || ''}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              >
-                <option value="">Select category</option>
-                <option value="Mental Health">Mental Health</option>
-                <option value="Wellness">Wellness</option>
-                <option value="Nutrition">Nutrition</option>
-                <option value="Lifestyle">Lifestyle</option>
-                <option value="Design">Design</option>
-                <option value="Product">Product</option>
-                <option value="Therapy">Therapy</option>
-                <option value="Self-Care">Self-Care</option>
-                <option value="Mindfulness">Mindfulness</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, category: value })}
+                options={[
+                  { value: '', label: 'Select category' },
+                  { value: 'Mental Health', label: 'Mental Health' },
+                  { value: 'Wellness', label: 'Wellness' },
+                  { value: 'Nutrition', label: 'Nutrition' },
+                  { value: 'Lifestyle', label: 'Lifestyle' },
+                  { value: 'Design', label: 'Design' },
+                  { value: 'Product', label: 'Product' },
+                  { value: 'Therapy', label: 'Therapy' },
+                  { value: 'Self-Care', label: 'Self-Care' },
+                  { value: 'Mindfulness', label: 'Mindfulness' },
+                ]}
+              />
             </div>
 
             {/* Featured Image */}

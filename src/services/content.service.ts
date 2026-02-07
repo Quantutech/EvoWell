@@ -1,8 +1,10 @@
-import { BlogPost, Testimonial, JobPosting, SupportTicket, BlogCategory } from '../types';
+import { BlogPost, PermissionCode, Testimonial, JobPosting, SupportTicket, BlogCategory } from '../types';
 import { db } from './db';
 import { SEED_DATA } from '../data/seed';
 import { isConfigured } from './supabase';
-import { handleRequest } from './serviceUtils';
+import { entitlementService } from './entitlements';
+import { accessService } from './access.service';
+import { persistence } from './persistence';
 
 export interface IContentService {
   getAllBlogs(params?: { page?: number, limit?: number }): Promise<{ data: BlogPost[], total: number }>;
@@ -35,6 +37,25 @@ export interface IContentService {
 // =========================================================
 
 class MockContentService implements IContentService {
+  private async assertPermission(permission: PermissionCode): Promise<void> {
+    const actorId = persistence.getSession().userId;
+    if (!actorId) return;
+
+    const allowed = await accessService.hasPermission(permission, actorId);
+    if (!allowed) {
+      throw new Error(`Permission denied: ${permission}`);
+    }
+  }
+
+  private async assertProviderBlogAccess(providerId?: string): Promise<void> {
+    if (!providerId) return;
+
+    const canAuthor = await entitlementService.canUseFeature(providerId, 'feature.blog.author');
+    if (!canAuthor) {
+      throw new Error('Your current subscription tier does not include blog authoring.');
+    }
+  }
+
   async getAllBlogs(params?: { page?: number, limit?: number }): Promise<{ data: BlogPost[], total: number }> { 
     const all = await db.getBlogs(); 
     const page = params?.page || 1;
@@ -56,10 +77,43 @@ class MockContentService implements IContentService {
     return all.filter(b => b.providerId === id); 
   }
   
-  async createBlog(data: any): Promise<void> { db.createBlog(data); }
-  async updateBlog(id: string, data: any): Promise<void> { db.updateBlog(id, data); }
-  async deleteBlog(id: string): Promise<void> { db.deleteBlog(id); }
-  async approveBlog(id: string): Promise<void> { db.approveBlog(id); }
+  async createBlog(data: any): Promise<void> {
+    await this.assertProviderBlogAccess(data?.providerId);
+
+    if (!data?.providerId) {
+      await this.assertPermission('cms.posts.write');
+    }
+
+    db.createBlog(data);
+  }
+
+  async updateBlog(id: string, data: any): Promise<void> {
+    const existing = db.getBlogs().find((blog) => blog.id === id);
+    const providerId = data?.providerId || existing?.providerId;
+    await this.assertProviderBlogAccess(providerId);
+
+    const nextStatus = data?.status as string | undefined;
+    if (providerId && (nextStatus === 'APPROVED' || nextStatus === 'PUBLISHED')) {
+      await this.assertPermission('cms.posts.approve');
+    }
+
+    db.updateBlog(id, data);
+  }
+
+  async deleteBlog(id: string): Promise<void> {
+    const existing = db.getBlogs().find((blog) => blog.id === id);
+    if (existing?.providerId) {
+      await this.assertProviderBlogAccess(existing.providerId);
+    } else {
+      await this.assertPermission('cms.posts.write');
+    }
+    db.deleteBlog(id);
+  }
+
+  async approveBlog(id: string): Promise<void> {
+    await this.assertPermission('cms.posts.approve');
+    db.approveBlog(id);
+  }
   
   async getAllBlogCategories(): Promise<BlogCategory[]> { return [{id:'1', name:'General'}]; }
   async createBlogCategory(name: string): Promise<void> {}

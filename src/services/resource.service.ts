@@ -1,9 +1,10 @@
-import { Resource, SearchFilters, ResourceModerationStatus, ModerationStatus } from '../types';
+import { Resource, ResourceModerationStatus } from '../types';
 import { SEED_DATA } from '../data/seed';
 import { mockStore } from './mockStore';
 import { handleRequest } from './serviceUtils';
 import { supabase, isConfigured } from './supabase';
 import { providerService } from './provider.service';
+import { entitlementService } from './entitlements';
 
 export interface IResourceService {
   getAllResources(): Promise<Resource[]>;
@@ -16,6 +17,30 @@ export interface IResourceService {
   deleteResource(id: string): Promise<void>;
   searchResources(filters: any): Promise<Resource[]>;
   moderateResource(id: string, status: ResourceModerationStatus): Promise<void>;
+}
+
+async function assertProviderCanAuthorExchange(providerId?: string): Promise<void> {
+  if (!providerId) return;
+
+  const canAuthor = await entitlementService.canUseFeature(providerId, 'feature.exchange.author');
+  if (!canAuthor) {
+    throw new Error('Your subscription does not include Provider Exchange publishing.');
+  }
+}
+
+async function assertProviderCanPublishPaid(
+  providerId?: string,
+  accessType?: Resource['accessType'],
+): Promise<void> {
+  if (!providerId || accessType !== 'paid') return;
+
+  const canPublishPaid = await entitlementService.canUseFeature(
+    providerId,
+    'feature.exchange.publish_paid',
+  );
+  if (!canPublishPaid) {
+    throw new Error('Paid Exchange listings require a Professional or Premium package.');
+  }
 }
 
 class MockResourceService implements IResourceService {
@@ -82,6 +107,9 @@ class MockResourceService implements IResourceService {
 
   async createResource(resource: Resource): Promise<void> {
     return handleRequest(async () => {
+      await assertProviderCanAuthorExchange(resource.providerId);
+      await assertProviderCanPublishPaid(resource.providerId, resource.accessType);
+
       const current = (mockStore.store as any).resources || [];
       (mockStore.store as any).resources = [...current, resource];
       mockStore.save();
@@ -90,6 +118,13 @@ class MockResourceService implements IResourceService {
 
   async updateResource(id: string, updates: Partial<Resource>): Promise<void> {
     return handleRequest(async () => {
+      const existing = this.resources.find((resource) => resource.id === id);
+      const providerId = updates.providerId || existing?.providerId;
+      const nextAccessType = updates.accessType || existing?.accessType;
+
+      await assertProviderCanAuthorExchange(providerId);
+      await assertProviderCanPublishPaid(providerId, nextAccessType);
+
       const storeResources = (mockStore.store as any).resources || [];
       const mockIndex = storeResources.findIndex((r: Resource) => r.id === id);
       
@@ -108,6 +143,9 @@ class MockResourceService implements IResourceService {
 
   async deleteResource(id: string): Promise<void> {
     return handleRequest(async () => {
+        const existing = this.resources.find((resource) => resource.id === id);
+        await assertProviderCanAuthorExchange(existing?.providerId);
+
         const storeResources = (mockStore.store as any).resources || [];
         (mockStore.store as any).resources = storeResources.filter((r: Resource) => r.id !== id);
         
@@ -182,16 +220,29 @@ class SupabaseResourceService implements IResourceService {
   }
 
   async createResource(resource: Resource): Promise<void> {
+    await assertProviderCanAuthorExchange(resource.providerId);
+    await assertProviderCanPublishPaid(resource.providerId, resource.accessType);
+
     const { error } = await (supabase.from('resources') as any).insert(resource as any);
     if (error) throw error;
   }
 
   async updateResource(id: string, updates: Partial<Resource>): Promise<void> {
+    const existing = await this.getResourceById(id);
+    const providerId = updates.providerId || existing?.providerId;
+    const nextAccessType = updates.accessType || existing?.accessType;
+
+    await assertProviderCanAuthorExchange(providerId);
+    await assertProviderCanPublishPaid(providerId, nextAccessType);
+
     const { error } = await (supabase.from('resources') as any).update(updates as any).eq('id', id);
     if (error) throw error;
   }
 
   async deleteResource(id: string): Promise<void> {
+    const existing = await this.getResourceById(id);
+    await assertProviderCanAuthorExchange(existing?.providerId);
+
     const { error } = await (supabase.from('resources') as any).delete().eq('id', id);
     if (error) throw error;
   }

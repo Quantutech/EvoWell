@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
-import { ModerationStatus, ProviderProfile, UserRole } from '../types';
+import { ModerationStatus, PermissionCode, ProviderProfile, UserRole } from '../types';
 import AdminDashboardLayout from '../components/dashboard/AdminDashboardLayout';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
+import { useAccess } from '@/features/access';
 
 // Tabs
 import AdminOverviewTab from '../components/dashboard/tabs/admin/AdminOverviewTab';
@@ -23,6 +24,22 @@ import { ResetDataButton } from '../components/dashboard/tabs/admin/ResetDataBut
 import AddUserModal from '../components/dashboard/tabs/admin/AddUserModal';
 import AddTestimonialModal from '../components/dashboard/tabs/admin/AddTestimonialModal';
 import DetailModal from '../components/dashboard/tabs/admin/DetailModal';
+
+const VIEW_PERMISSIONS: Partial<Record<string, PermissionCode>> = {
+  overview: 'dashboard.overview.read',
+  users: 'people.users.read',
+  providers: 'people.providers.read',
+  clients: 'people.clients.read',
+  review: 'cms.posts.read',
+  blogs: 'cms.posts.read',
+  testimonials: 'cms.posts.write',
+  endorsements: 'exchange.resources.read',
+  jobs: 'exchange.resources.read',
+  messages: 'support.messages.read',
+  tickets: 'support.tickets.read',
+  audit: 'compliance.audit.read',
+  config: 'platform.config.read',
+};
 
 const AdminDashboard: React.FC = () => {
   const {
@@ -48,15 +65,50 @@ const AdminDashboard: React.FC = () => {
     handleDeleteUser,
     refetchTestimonials,
   } = useAdminDashboard();
+  const { can } = useAccess();
   const queryClient = useQueryClient();
   const normalizedView = activeView === 'applications' ? 'providers' : activeView;
   const defaultProviderStatus =
     activeView === 'applications' ? ModerationStatus.PENDING : 'ALL';
 
+  const canAccessView = useMemo(
+    () => (view: string) => {
+      const required = VIEW_PERMISSIONS[view];
+      return !required || can(required);
+    },
+    [can],
+  );
+
+  const firstAllowedView = useMemo(() => {
+    const priority = [
+      'overview',
+      'users',
+      'providers',
+      'clients',
+      'review',
+      'blogs',
+      'messages',
+      'tickets',
+      'audit',
+      'config',
+    ];
+    return priority.find((view) => canAccessView(view)) || null;
+  }, [canAccessView]);
+
+  useEffect(() => {
+    if (!canAccessView(normalizedView) && firstAllowedView) {
+      setActiveView(firstAllowedView as any);
+    }
+  }, [canAccessView, firstAllowedView, normalizedView, setActiveView]);
+
   const { data: messageUsers = [] } = useQuery({
     queryKey: ['adminMessagesUsers'],
     queryFn: () => api.getAllUsers(),
-    enabled: normalizedView === 'messages' && !!user && user.role === UserRole.ADMIN,
+    enabled:
+      normalizedView === 'messages' &&
+      !!user &&
+      user.role === UserRole.ADMIN &&
+      canAccessView('messages'),
   });
 
   const refreshAdminData = () => {
@@ -88,11 +140,22 @@ const AdminDashboard: React.FC = () => {
       onLogout={logout}
       onAction={handleAction}
     >
-      {normalizedView === 'overview' && <AdminOverviewTab />}
+      {!canAccessView(normalizedView) && (
+        <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-10 text-center">
+          <h2 className="text-xl font-black text-slate-900 mb-2">Access Restricted</h2>
+          <p className="text-sm text-slate-500">
+            Your staff role does not include permission for this workspace.
+          </p>
+        </div>
+      )}
 
-      {normalizedView === 'messages' && <AdminMessagesTab users={messageUsers} />}
+      {normalizedView === 'overview' && canAccessView('overview') && <AdminOverviewTab />}
 
-      {normalizedView === 'users' && (
+      {normalizedView === 'messages' && canAccessView('messages') && (
+        <AdminMessagesTab users={messageUsers} />
+      )}
+
+      {normalizedView === 'users' && canAccessView('users') && (
         <UsersPeopleTab
           onAddUser={() => setIsAddUserModalOpen(true)}
           onSelectUser={(selected) => {
@@ -102,20 +165,20 @@ const AdminDashboard: React.FC = () => {
         />
       )}
 
-      {normalizedView === 'clients' && <ClientsPeopleTab />}
+      {normalizedView === 'clients' && canAccessView('clients') && <ClientsPeopleTab />}
 
-      {normalizedView === 'providers' && (
+      {normalizedView === 'providers' && canAccessView('providers') && (
         <ProvidersPeopleTab
           defaultStatus={defaultProviderStatus}
           onSelectProvider={handleSelectProvider}
         />
       )}
 
-      {normalizedView === 'review' && <AdminContentReviewTab />}
+      {normalizedView === 'review' && canAccessView('review') && <AdminContentReviewTab />}
 
-      {normalizedView === 'endorsements' && <AdminEndorsementsTab />}
+      {normalizedView === 'endorsements' && canAccessView('endorsements') && <AdminEndorsementsTab />}
 
-      {normalizedView === 'testimonials' && (
+      {normalizedView === 'testimonials' && canAccessView('testimonials') && (
         <AdminTestimonialsTab
           testimonials={testimonials}
           filter={testimonialFilter}
@@ -124,17 +187,17 @@ const AdminDashboard: React.FC = () => {
         />
       )}
 
-      {normalizedView === 'blogs' && <ContentManagementView />}
+      {normalizedView === 'blogs' && canAccessView('blogs') && <ContentManagementView />}
 
-      {normalizedView === 'jobs' && <AdminJobsTab />}
+      {normalizedView === 'jobs' && canAccessView('jobs') && <AdminJobsTab />}
 
-      {normalizedView === 'tickets' && <AdminTicketsTab tickets={tickets} />}
+      {normalizedView === 'tickets' && canAccessView('tickets') && <AdminTicketsTab tickets={tickets} />}
 
-      {normalizedView === 'audit' && <AdminAuditTab />}
+      {normalizedView === 'audit' && canAccessView('audit') && <AdminAuditTab />}
 
-      {normalizedView === 'config' && <AdminConfigTab />}
+      {normalizedView === 'config' && canAccessView('config') && <AdminConfigTab />}
 
-      {normalizedView === 'config' && <ResetDataButton />}
+      {normalizedView === 'config' && canAccessView('config') && <ResetDataButton />}
 
       {isAddUserModalOpen && (
         <AddUserModal

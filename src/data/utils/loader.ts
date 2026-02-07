@@ -1,6 +1,18 @@
 import { seedUsers, seedProviders, seedBlogs, seedSpecialties, seedTestimonials } from '../seed/core';
 import { generateMockData } from '../mock/factories';
-import { Conversation, Endorsement, Message, UserRole } from '../../types';
+import {
+  Conversation,
+  Endorsement,
+  Message,
+  UserRole,
+  ConfigCatalog,
+  ConfigEntry,
+  ConfigCatalogKey,
+  UserRoleAssignment,
+  PermissionOverride,
+  ProviderEntitlementOverride,
+  AppointmentType,
+} from '../../types';
 import { SEED_DATA } from '../seed';
 
 function toConversations(messages: Message[]): Conversation[] {
@@ -67,6 +79,136 @@ function migrateLegacyMessages(): Message[] {
     console.error('Failed to migrate legacy messages', error);
     return [];
   }
+}
+
+function defaultCatalogs(): ConfigCatalog[] {
+  return [
+    { key: 'specialties', label: 'Specialties', description: 'Clinical specialty taxonomy.' },
+    { key: 'insurance', label: 'Insurance', description: 'Insurance providers accepted by clinicians.' },
+    { key: 'languages', label: 'Languages', description: 'Supported language list for users/providers.' },
+    { key: 'genders', label: 'Genders', description: 'User profile gender options.' },
+    { key: 'blog_categories', label: 'Blog Categories', description: 'Content categories for editorial workflows.' },
+    { key: 'exchange_categories', label: 'Exchange Categories', description: 'Provider exchange marketplace categories.' },
+    { key: 'exchange_tags', label: 'Exchange Tags', description: 'Search tags for provider exchange resources.' },
+    { key: 'appointment_types', label: 'Appointment Types', description: 'Session type options.' },
+    { key: 'intake_statuses', label: 'Intake Statuses', description: 'Client intake status labels.' },
+    { key: 'moderation_reasons', label: 'Moderation Reasons', description: 'Reusable moderation reason dictionary.' },
+    { key: 'notification_templates', label: 'Notification Templates', description: 'System notification templates.' },
+  ];
+}
+
+function toConfigEntries(
+  catalogKey: ConfigCatalogKey,
+  rows: Array<{ code: string; label: string }>,
+): ConfigEntry[] {
+  const now = new Date().toISOString();
+  return rows.map((row, index) => ({
+    id: `${catalogKey}-${row.code}`.toLowerCase(),
+    catalogKey,
+    code: row.code,
+    label: row.label,
+    status: 'ACTIVE',
+    sortOrder: index + 1,
+    usageCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
+
+function defaultConfigEntries(): ConfigEntry[] {
+  const specialtyEntries = toConfigEntries(
+    'specialties',
+    SEED_DATA.specialties.map((item) => ({ code: item.slug || item.id, label: item.name })),
+  );
+
+  const insuranceEntries = toConfigEntries(
+    'insurance',
+    SEED_DATA.insurance.map((item) => ({ code: item.id, label: item.name })),
+  );
+
+  const languageEntries = toConfigEntries(
+    'languages',
+    ['English', 'Spanish', 'Mandarin', 'French', 'German'].map((label) => ({
+      code: label.toUpperCase().replace(/\s+/g, '_'),
+      label,
+    })),
+  );
+
+  const genderEntries = toConfigEntries(
+    'genders',
+    ['Male', 'Female', 'Non-Binary', 'Prefer not to say'].map((label) => ({
+      code: label.toUpperCase().replace(/[\s-]+/g, '_'),
+      label,
+    })),
+  );
+
+  const blogCategoryEntries = toConfigEntries(
+    'blog_categories',
+    SEED_DATA.categories.map((item) => ({ code: item.slug || item.id, label: item.name })),
+  );
+
+  const exchangeCategoryEntries = toConfigEntries(
+    'exchange_categories',
+    [
+      { code: 'MENTAL_HEALTH', label: 'Mental Health' },
+      { code: 'WELLNESS', label: 'Wellness' },
+      { code: 'NUTRITION', label: 'Nutrition' },
+      { code: 'LIFESTYLE', label: 'Lifestyle' },
+      { code: 'PRACTICE_OPS', label: 'Practice Operations' },
+    ],
+  );
+
+  const exchangeTagEntries = toConfigEntries(
+    'exchange_tags',
+    [
+      { code: 'CBT', label: 'CBT' },
+      { code: 'TRAUMA', label: 'Trauma' },
+      { code: 'WORKSHEET', label: 'Worksheet' },
+      { code: 'GUIDE', label: 'Guide' },
+      { code: 'CLINICAL', label: 'Clinical' },
+    ],
+  );
+
+  const appointmentTypeEntries = toConfigEntries(
+    'appointment_types',
+    Object.values(AppointmentType).map((label) => ({
+      code: label.toUpperCase().replace(/\s+/g, '_'),
+      label,
+    })),
+  );
+
+  const intakeStatusEntries = toConfigEntries('intake_statuses', [
+    { code: 'PENDING', label: 'Pending' },
+    { code: 'COMPLETED', label: 'Completed' },
+  ]);
+
+  const moderationReasonEntries = toConfigEntries('moderation_reasons', [
+    { code: 'MISSING_CREDENTIALS', label: 'Missing credentials' },
+    { code: 'CONTENT_QUALITY', label: 'Content quality issue' },
+    { code: 'COMPLIANCE', label: 'Compliance concern' },
+    { code: 'DUPLICATE_SUBMISSION', label: 'Duplicate submission' },
+  ]);
+
+  const notificationTemplateEntries = toConfigEntries('notification_templates', [
+    { code: 'APPOINTMENT_CONFIRMED', label: 'Appointment confirmed' },
+    { code: 'APPOINTMENT_CANCELLED', label: 'Appointment cancelled' },
+    { code: 'MESSAGE_RECEIVED', label: 'Message received' },
+    { code: 'BLOG_REVIEW_DECISION', label: 'Blog review decision' },
+  ]);
+
+  return [
+    ...specialtyEntries,
+    ...insuranceEntries,
+    ...languageEntries,
+    ...genderEntries,
+    ...blogCategoryEntries,
+    ...exchangeCategoryEntries,
+    ...exchangeTagEntries,
+    ...appointmentTypeEntries,
+    ...intakeStatusEntries,
+    ...moderationReasonEntries,
+    ...notificationTemplateEntries,
+  ];
 }
 
 const isProd = (import.meta as any).env?.PROD;
@@ -185,6 +327,11 @@ export const loadInitialData = () => {
     notifications: [],
     clientJournalEntries: [],
     providerClientNotes: [],
+    userRoleAssignments: [] as UserRoleAssignment[],
+    userPermissionOverrides: [] as PermissionOverride[],
+    providerEntitlementOverrides: [] as ProviderEntitlementOverride[],
+    configCatalogs: defaultCatalogs(),
+    configEntries: defaultConfigEntries(),
     endorsements,
     lastUpdated: Date.now(),
     isDemoMode: true

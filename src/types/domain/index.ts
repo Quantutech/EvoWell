@@ -13,4 +13,7 @@ export * from './auth';
 export * from './wishlist';
 export * from './common';
 export * from './support';
+export * from './access';
+export * from './entitlement';
+export * from './config-catalog';
 export * from '../../data/types/enums';

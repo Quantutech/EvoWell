@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth, useNavigation } from '@/App';
 import { api } from '@/services/api';
 import { Resource } from '@/types';
 import ResourceEditor from '../shared/ResourceEditor';
+import { Select } from '@/components/ui';
+import { useProviderEntitlements } from '@/features/access';
+import { useToast } from '@/contexts/ToastContext';
 
 // Icons
 const Plus = ({ className }: { className?: string }) => (
@@ -10,9 +13,6 @@ const Plus = ({ className }: { className?: string }) => (
 );
 const Search = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-);
-const Filter = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
 );
 const Edit2 = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -27,11 +27,18 @@ const Eye = ({ className }: { className?: string }) => (
 const ProviderResourcesTab: React.FC = () => {
   const { provider } = useAuth();
   const { navigate } = useNavigation();
+  const { addToast } = useToast();
+  const entitlements = useProviderEntitlements(provider?.id);
   const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [view, setView] = useState<'list' | 'editor'>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingResource, setEditingResource] = useState<Resource | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [accessFilter, setAccessFilter] = useState<'ALL' | 'free' | 'paid'>('ALL');
+
+  const canAuthorExchange = entitlements.isLoading || entitlements.canUseFeature('feature.exchange.author');
+  const canPublishPaid = entitlements.isLoading || entitlements.canUseFeature('feature.exchange.publish_paid');
 
   useEffect(() => {
     if (provider) {
@@ -81,12 +88,27 @@ const ProviderResourcesTab: React.FC = () => {
   };
 
   const handleCreate = () => {
+    if (!canAuthorExchange) {
+      addToast('info', 'Upgrade your plan to publish in Provider Exchange.');
+      navigate('/console/subscription');
+      return;
+    }
     setEditingId(null);
     setEditingResource(undefined);
     setView('editor');
   };
 
   const handleSave = async (data: Partial<Resource>) => {
+      if (!canAuthorExchange) {
+          addToast('error', 'Your package does not include Provider Exchange publishing.');
+          return;
+      }
+
+      if ((data.accessType || editingResource?.accessType) === 'paid' && !canPublishPaid) {
+          addToast('error', 'Paid listings require a Professional or Premium package.');
+          return;
+      }
+
       try {
           if (editingId) {
               await api.updateResource(editingId, data);
@@ -109,6 +131,22 @@ const ProviderResourcesTab: React.FC = () => {
           alert("Failed to save resource.");
       }
   };
+
+  const filteredResources = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    return resources.filter((resource) => {
+      const matchesSearch =
+        q.length === 0 ||
+        resource.title.toLowerCase().includes(q) ||
+        resource.shortDescription.toLowerCase().includes(q);
+
+      const matchesAccess =
+        accessFilter === 'ALL' || resource.accessType === accessFilter;
+
+      return matchesSearch && matchesAccess;
+    });
+  }, [resources, searchQuery, accessFilter]);
 
   if (view === 'editor') {
     if (editingId && !editingResource) {
@@ -143,13 +181,23 @@ const ProviderResourcesTab: React.FC = () => {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Provider Exchange</h1>
           <p className="text-slate-500 mt-2">Manage your shared clinical tools and digital resources.</p>
         </div>
-        <button 
-          onClick={handleCreate}
-          className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create Resource
-        </button>
+        <div className="flex items-center gap-3">
+          {!canPublishPaid && (
+            <button
+              onClick={() => navigate('/console/subscription')}
+              className="px-4 py-2 rounded-xl bg-brand-50 text-brand-700 border border-brand-100 text-[10px] font-black uppercase tracking-widest hover:bg-brand-100 transition-all"
+            >
+              Unlock Paid Listings
+            </button>
+          )}
+          <button 
+            onClick={handleCreate}
+            className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Create Resource
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
@@ -159,13 +207,23 @@ const ProviderResourcesTab: React.FC = () => {
                 <input 
                     type="text" 
                     placeholder="Search resources..." 
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
                     className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500/10"
                 />
             </div>
-            <button className="px-4 py-3 bg-slate-50 text-slate-600 rounded-xl border border-slate-100 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filter
-            </button>
+            <div className="w-[220px]">
+              <Select
+                ariaLabel="Filter resources by access type"
+                value={accessFilter}
+                onChange={(value) => setAccessFilter(value as 'ALL' | 'free' | 'paid')}
+                options={[
+                  { value: 'ALL', label: 'All Access Types' },
+                  { value: 'free', label: 'Free' },
+                  { value: 'paid', label: 'Paid' },
+                ]}
+              />
+            </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -183,7 +241,7 @@ const ProviderResourcesTab: React.FC = () => {
             <tbody className="divide-y divide-slate-100 text-sm">
               {isLoading ? (
                 <tr><td colSpan={6} className="p-12 text-center text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">Loading Resources...</td></tr>
-              ) : resources.length === 0 ? (
+              ) : filteredResources.length === 0 ? (
                 <tr>
                     <td colSpan={6} className="p-20 text-center">
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
@@ -195,7 +253,7 @@ const ProviderResourcesTab: React.FC = () => {
                     </td>
                 </tr>
               ) : (
-                resources.map((resource) => (
+                filteredResources.map((resource) => (
                   <tr key={resource.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">

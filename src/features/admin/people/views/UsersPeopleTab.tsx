@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, UserRole } from '@/types';
+import { StaffRole, User, UserRole } from '@/types';
 import { adminService, AccountStatus, GetUsersParams } from '@/services/admin';
+import { api } from '@/services/api';
 import { useToast } from '@/contexts/ToastContext';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Select } from '@/components/ui';
@@ -15,6 +16,15 @@ interface UsersPeopleTabProps {
 }
 
 const PAGE_SIZE = 20;
+const STAFF_ROLE_OPTIONS: StaffRole[] = [
+  'SUPER_ADMIN',
+  'OPS_ADMIN',
+  'PEOPLE_OPS',
+  'PROVIDER_OPS',
+  'CONTENT_LEAD',
+  'SUPPORT_LEAD',
+  'FINANCE_COMPLIANCE',
+];
 
 export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
   onAddUser,
@@ -70,6 +80,20 @@ export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
     },
   });
 
+  const staffRoleMutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: StaffRole }) =>
+      api.assignStaffRole(userId, role),
+    onSuccess: () => {
+      addToast('success', 'Staff role updated.');
+      queryClient.invalidateQueries({ queryKey: ['adminPeople'] });
+      queryClient.invalidateQueries({ queryKey: ['access'] });
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Failed to update staff role.';
+      addToast('error', message);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (userId: string) => adminService.deleteUser(userId),
     onSuccess: () => {
@@ -97,6 +121,24 @@ export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
     const action = suspend ? 'suspend' : 'reactivate';
     if (!window.confirm(`Are you sure you want to ${action} ${user.firstName} ${user.lastName}?`)) return;
     suspendMutation.mutate({ userId: user.id, suspend });
+  };
+
+  const handleAssignStaffRole = (user: User, role: string) => {
+    if (user.role !== UserRole.ADMIN) return;
+    if (!role) return;
+
+    const targetRole = role as StaffRole;
+    if (user.staffAccess?.staffRole === targetRole) return;
+
+    if (
+      !window.confirm(
+        `Assign ${user.firstName} ${user.lastName} to ${targetRole.replace('_', ' ')}?`,
+      )
+    ) {
+      return;
+    }
+
+    staffRoleMutation.mutate({ userId: user.id, role: targetRole });
   };
 
   const handleDelete = (user: User, e: React.MouseEvent) => {
@@ -186,6 +228,7 @@ export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
           <tr>
             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff Access</th>
             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Joined</th>
             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
@@ -197,6 +240,7 @@ export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
               <tr key={index}>
                 <td className="px-6 py-4"><Skeleton className="h-4 w-36 mb-2" /><Skeleton className="h-3 w-24" /></td>
                 <td className="px-6 py-4"><Skeleton className="h-8 w-28 rounded-lg" /></td>
+                <td className="px-6 py-4"><Skeleton className="h-8 w-36 rounded-lg" /></td>
                 <td className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
                 <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                 <td className="px-6 py-4 text-right"><Skeleton className="h-4 w-24 ml-auto" /></td>
@@ -204,7 +248,7 @@ export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
             ))
           ) : users.length === 0 ? (
             <tr>
-              <td colSpan={5} className="p-12 text-center text-slate-400 font-medium">No users found.</td>
+              <td colSpan={6} className="p-12 text-center text-slate-400 font-medium">No users found.</td>
             </tr>
           ) : (
             users.map((user) => (
@@ -218,15 +262,36 @@ export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
                   <p className="text-xs text-slate-500 font-mono">{user.email}</p>
                 </td>
                 <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                  <select
+                  <Select
+                    ariaLabel={`Change role for ${user.firstName} ${user.lastName}`}
                     value={user.role}
-                    onChange={(e) => handleChangeRole(user, e.target.value as UserRole)}
-                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest"
-                  >
-                    <option value={UserRole.ADMIN}>Admin</option>
-                    <option value={UserRole.PROVIDER}>Provider</option>
-                    <option value={UserRole.CLIENT}>Client</option>
-                  </select>
+                    onChange={(nextValue) => handleChangeRole(user, nextValue as UserRole)}
+                    className="w-[140px]"
+                    options={[
+                      { value: UserRole.ADMIN, label: 'Admin' },
+                      { value: UserRole.PROVIDER, label: 'Provider' },
+                      { value: UserRole.CLIENT, label: 'Client' },
+                    ]}
+                  />
+                </td>
+                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                  {user.role === UserRole.ADMIN ? (
+                    <Select
+                      ariaLabel={`Assign staff role for ${user.firstName} ${user.lastName}`}
+                      value={user.staffAccess?.staffRole || ''}
+                      onChange={(nextValue) => handleAssignStaffRole(user, nextValue)}
+                      className="w-[190px]"
+                      options={[
+                        { value: '', label: 'Legacy Admin (Full)' },
+                        ...STAFF_ROLE_OPTIONS.map((role) => ({
+                          value: role,
+                          label: role.replace('_', ' '),
+                        })),
+                      ]}
+                    />
+                  ) : (
+                    <span className="text-xs text-slate-400 font-medium">Not applicable</span>
+                  )}
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${

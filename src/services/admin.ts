@@ -3,6 +3,7 @@ import {
   User,
   ProviderProfile,
   ClientProfile,
+  PermissionCode,
   UserRole,
   ModerationStatus,
   SubscriptionTier,
@@ -12,6 +13,8 @@ import { api } from './api';
 import { authService } from './auth.service';
 import { providerService } from './provider.service';
 import { mockStore } from './mockStore';
+import { accessService } from './access.service';
+import { persistence } from './persistence';
 import { Database } from '../types/supabase'; // Import generated types
 
 type UserRow = Database['public']['Tables']['users']['Row'];
@@ -192,6 +195,18 @@ class AdminService {
     throw new Error(`Cannot ${suffix} the last active administrator.`);
   }
 
+  private async assertPermission(permission: PermissionCode): Promise<void> {
+    const actorId = persistence.getSession().userId;
+
+    // System calls (tests/migrations/offline tooling) can run without an actor context.
+    if (!actorId) return;
+
+    const allowed = await accessService.hasPermission(permission, actorId);
+    if (!allowed) {
+      throw new Error(`Permission denied: ${permission}`);
+    }
+  }
+
   async getStats() {
     if (!isConfigured || !supabase) {
         const users = await api.getAllUsers();
@@ -235,6 +250,8 @@ class AdminService {
     legacyPageSize = 20,
     legacySearch?: string,
   ): Promise<PaginatedResponse<User>> {
+    await this.assertPermission('people.users.read');
+
     const {
       page,
       pageSize,
@@ -328,6 +345,8 @@ class AdminService {
     legacyPageSize = 20,
     legacyStatus?: string,
   ): Promise<PaginatedResponse<ProviderProfile>> {
+    await this.assertPermission('people.providers.read');
+
     const {
       page,
       pageSize,
@@ -499,6 +518,8 @@ class AdminService {
   }
 
   async getClients(params: GetClientsParams): Promise<PaginatedResponse<AdminClientRecord>> {
+    await this.assertPermission('people.clients.read');
+
     const {
       page,
       pageSize,
@@ -599,6 +620,8 @@ class AdminService {
   }
 
   async getProviderApplications(): Promise<ProviderApplication[]> {
+    await this.assertPermission('people.providers.read');
+
     if (!isConfigured || !supabase) {
       const response = await api.getAllProviders({ page: 1, limit: 10000 });
       const providers = response.providers || [];
@@ -657,6 +680,8 @@ class AdminService {
   }
 
   async deleteUser(userId: string): Promise<void> {
+    await this.assertPermission('people.users.delete');
+
     const target = await this.getUserById(userId);
     if (!target) return;
 
@@ -684,6 +709,8 @@ class AdminService {
   }
 
   async updateUserRole(userId: string, role: UserRole): Promise<void> {
+    await this.assertPermission('platform.roles.assign');
+
     const target = await this.getUserById(userId);
     if (!target) throw new Error('User not found.');
 
@@ -723,6 +750,8 @@ class AdminService {
   }
 
   async setUserSuspended(userId: string, suspended: boolean): Promise<void> {
+    await this.assertPermission('people.users.write');
+
     const target = await this.getUserById(userId);
     if (!target) throw new Error('User not found.');
 
@@ -769,6 +798,8 @@ class AdminService {
   }
 
   async approveProvider(providerId: string): Promise<void> {
+    await this.assertPermission('people.providers.moderate');
+
     await api.moderateProvider(providerId, ModerationStatus.APPROVED);
 
     // Fix: Ensure user role is updated to PROVIDER to satisfy RLS
@@ -781,6 +812,8 @@ class AdminService {
   }
 
   async rejectProvider(providerId: string): Promise<void> {
+    await this.assertPermission('people.providers.moderate');
+
     await api.moderateProvider(providerId, ModerationStatus.REJECTED);
   }
 
@@ -791,6 +824,8 @@ class AdminService {
     role: UserRole; 
     subscriptionTier?: SubscriptionTier; 
   }): Promise<void> {
+    await this.assertPermission('people.users.write');
+
     if (!isConfigured || !supabase) {
       // Mock Mode
       const user = await authService.register({
@@ -832,6 +867,8 @@ class AdminService {
   }
 
   async approveApplication(applicationId: string): Promise<void> {
+    await this.assertPermission('people.providers.moderate');
+
     if (!isConfigured || !supabase) {
       await this.approveProvider(applicationId);
       return;
@@ -853,6 +890,8 @@ class AdminService {
   }
 
   async rejectApplication(applicationId: string, reason: string): Promise<void> {
+    await this.assertPermission('people.providers.moderate');
+
     if (!isConfigured || !supabase) {
       await this.rejectProvider(applicationId);
       return;
