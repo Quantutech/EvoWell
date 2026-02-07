@@ -260,7 +260,11 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                       
                       <div className="space-y-6">
                          <h4 className="text-sm font-black text-slate-900 border-b border-slate-100 pb-2">Digital Presence</h4>
-                         <SettingInput label="Public Website" value={editForm.website} onChange={(v: string) => updateField('website', v)} placeholder="https://..." />
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <SettingInput label="Public Website" value={editForm.website} onChange={(v: string) => updateField('website', v)} placeholder="https://..." />
+                            <SettingInput label="Intro Video URL (YouTube/Vimeo)" value={editForm.videoUrl || ''} onChange={(v: string) => updateField('videoUrl', v)} placeholder="https://youtube.com/watch?v=..." />
+                         </div>
                          
                          {/* Media Links Section */}
                          <div className="space-y-2">
@@ -303,6 +307,63 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                             <SettingInput label="Instagram" value={editForm.social?.instagram} onChange={(v: string) => updateField('social.instagram', v)} />
                             <SettingInput label="Twitter" value={editForm.social?.twitter} onChange={(v: string) => updateField('social.twitter', v)} />
                          </div>
+                      </div>
+
+                      {/* Pricing & Sliding Scale */}
+                      <div className="space-y-6 pt-6 border-t border-slate-100">
+                          <h4 className="text-sm font-black text-slate-900 border-b border-slate-100 pb-2">Pricing & Accessibility</h4>
+                          <div className="bg-brand-50/50 p-6 rounded-3xl border border-brand-100">
+                             <div className="flex flex-col md:flex-row gap-8">
+                                <div className="flex-1 space-y-2">
+                                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Standard Hourly Rate ($)</label>
+                                   <input
+                                      type="number"
+                                      value={editForm.pricing?.hourlyRate || 0}
+                                      onChange={e => updateField('pricing.hourlyRate', parseInt(e.target.value) || 0)}
+                                      className="w-full bg-white border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-brand-500/10 outline-none"
+                                   />
+                                </div>
+                                
+                                <div className="flex-1">
+                                   <div className="flex items-center gap-4 mb-4">
+                                      <input
+                                         type="checkbox"
+                                         id="slidingSettings"
+                                         checked={editForm.pricing?.slidingScale || false}
+                                         onChange={e => updateField('pricing.slidingScale', e.target.checked)}
+                                         className="w-5 h-5 rounded border-slate-200 text-brand-600 focus:ring-brand-500"
+                                      />
+                                      <div>
+                                         <label htmlFor="slidingSettings" className="text-xs font-bold text-slate-900 uppercase tracking-widest cursor-pointer block">Offer Sliding Scale</label>
+                                         <p className="text-[10px] text-slate-500 leading-tight mt-1">Make care accessible by setting a flexible fee range.</p>
+                                      </div>
+                                   </div>
+
+                                   {(editForm.pricing?.slidingScale) && (
+                                      <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                                         <div>
+                                            <label className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-1 block">Min Fee ($)</label>
+                                            <input
+                                               type="number"
+                                               value={editForm.pricing?.minFee || 0}
+                                               onChange={e => updateField('pricing.minFee', parseInt(e.target.value) || 0)}
+                                               className="w-full bg-white border border-brand-200 rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500/20 outline-none"
+                                            />
+                                         </div>
+                                         <div>
+                                            <label className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-1 block">Max Fee ($)</label>
+                                            <input
+                                               type="number"
+                                               value={editForm.pricing?.maxFee || 0}
+                                               onChange={e => updateField('pricing.maxFee', parseInt(e.target.value) || 0)}
+                                               className="w-full bg-white border border-brand-200 rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500/20 outline-none"
+                                            />
+                                         </div>
+                                      </div>
+                                   )}
+                                </div>
+                             </div>
+                          </div>
                       </div>
                    </div>
                 )}

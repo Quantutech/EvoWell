@@ -41,7 +41,11 @@ const ProviderCard: React.FC<ProviderCardProps> = ({ provider, className }) => {
                 </div>
                 <div className="hidden md:flex flex-col items-end">
                     <Heading level={3}>${provider.pricing.hourlyRate}<span className="text-[11px] text-slate-500 font-bold">/hr</span></Heading>
-                    {provider.pricing.slidingScale && <Label color="success">Sliding Scale</Label>}
+                    {provider.pricing.slidingScale && (
+                      <div className="inline-flex items-center gap-1.5 bg-brand-100 text-brand-700 px-2.5 py-1 rounded-md border border-brand-200 shadow-sm mt-1" title="This provider offers flexible pricing based on income">
+                        <span className="text-[10px] font-black uppercase tracking-widest">Sliding Scale Available</span>
+                      </div>
+                    )}
                 </div>
               </div>
               <div className="flex flex-wrap gap-4 my-3 text-[11px] font-medium text-slate-600 border-y border-slate-50 py-3">

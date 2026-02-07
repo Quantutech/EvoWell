@@ -170,9 +170,8 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
       gradient: 'from-slate-800 to-black',
       items: [
         { label: 'Why EvoWell', href: '#/benefits', icon: 'star', desc: 'Platform benefits & pricing' },
+        { label: 'Onboarding Guide', href: '#/provider-guide', icon: 'map', desc: 'Step-by-step walkthrough' },
         { label: 'ROI Calculator', href: '#/calculator', icon: 'dollar', desc: 'Estimate your earnings' },
-        { label: 'Apply to Join', href: '#/login?join=true', icon: 'userPlus', desc: 'Create your provider profile' },
-        { label: 'Provider Login', href: '#/login', icon: 'lock', desc: 'Access your dashboard' },
       ],
     },
   ];
@@ -368,8 +367,8 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
                 </div>
               ) : !user ? (
                 <div className="flex items-center gap-3">
-                  <Link href="#/login" className={`text-sm font-bold px-4 py-2 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${textColorClass}`}>
-                    Log In
+                  <Link href="#/login" className={`p-2 transition-colors rounded-full border border-slate-200 hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${textColorClass}`} aria-label="Log In">
+                    <Icon path={iconPaths.user} size={20} />
                   </Link>
                   <Link 
                     href="#/login?join=true" 

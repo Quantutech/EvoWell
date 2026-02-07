@@ -446,22 +446,30 @@ const ProviderOnboardingView: React.FC = () => {
                       />
                     </div>
 
-                    <div className="bg-brand-50/50 p-6 rounded-3xl border border-brand-100">
-                      <div className="flex items-center gap-4 mb-4">
-                        <input
-                          type="checkbox"
-                          id="sliding"
-                          checked={formData.pricing?.slidingScale || false}
-                          onChange={e => updateField('pricing.slidingScale', e.target.checked)}
-                          className="w-5 h-5 rounded border-slate-200 text-blue-500 focus:ring-blue-500"
-                        />
-                        <div>
-                          <label htmlFor="sliding" className="text-xs font-bold text-slate-900 uppercase tracking-widest cursor-pointer block">Offer Sliding Scale</label>
-                          <p className="text-[10px] text-slate-500 leading-tight mt-1">Make care accessible by setting a flexible fee range.</p>
+                      <div className="bg-brand-50 p-6 rounded-3xl border border-brand-200 shadow-sm relative overflow-hidden">
+                        {/* Highlight Badge */}
+                        <div className="absolute top-0 right-0 bg-brand-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest">Recommended</div>
+                        
+                        <div className="flex items-start gap-4 mb-4">
+                          <input
+                            type="checkbox"
+                            id="sliding"
+                            checked={formData.pricing?.slidingScale || false}
+                            onChange={e => updateField('pricing.slidingScale', e.target.checked)}
+                            className="w-5 h-5 mt-1 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          <div>
+                            <label htmlFor="sliding" className="text-xs font-bold text-brand-900 uppercase tracking-widest cursor-pointer block flex items-center gap-2">
+                              Offer Sliding Scale 
+                              <span className="text-[10px] text-brand-600 font-normal normal-case bg-white px-2 py-0.5 rounded-full border border-brand-100">Boosts Visibility</span>
+                            </label>
+                            <p className="text-[11px] text-brand-700/80 leading-relaxed mt-1 pr-8">
+                              Offering a sliding scale helps patients access care and significantly increases your profile's match rate in our Evo AI system.
+                            </p>
+                          </div>
                         </div>
-                      </div>
 
-                      {(formData.pricing?.slidingScale) && (
+                        {(formData.pricing?.slidingScale) && (
                         <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
                           <div>
                             <label className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-1 block">Min Fee ($)</label>

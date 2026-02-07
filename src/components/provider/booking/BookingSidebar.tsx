@@ -22,7 +22,7 @@ const BookingSidebar: React.FC<BookingSidebarProps> = ({
   selectedSlot, setSelectedSlot, availableDates, userTz, bookingStatus, handleBook
 }) => {
   return (
-    <div className="sticky top-28 space-y-6">
+    <div className="space-y-6">
       <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
         {/* Card Header */}
         <div className="bg-slate-900 p-6 text-white text-center relative overflow-hidden">

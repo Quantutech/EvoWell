@@ -11,6 +11,7 @@ import { PageHero, Section, Container, Grid } from '../components/layout';
 import { Heading, Text, Label } from '../components/typography';
 import { Button, Card, CardHeader, CardBody, Badge } from '../components/ui';
 import SEO from '../components/SEO';
+import { useEvo } from '../components/evo/EvoContext';
 
 interface FeaturedProvider extends ProviderProfile {
   firstName: string;
@@ -155,6 +156,7 @@ const HomeView: React.FC<{ specialties: Specialty[] }> = ({ specialties }) => {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const { navigate } = useNavigation();
+  const { openEvo } = useEvo();
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Search state
@@ -395,7 +397,7 @@ const HomeView: React.FC<{ specialties: Specialty[] }> = ({ specialties }) => {
                <div className="inline-block px-4 py-2 rounded-full bg-white/10 border border-white/10 text-brand-300 text-[11px] font-black uppercase tracking-widest mb-6 backdrop-blur-sm">Intelligent Matching</div>
                <Heading level={2} size="display" color="white" className="mb-6">Meet Evo.<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-300">Your Wellness Concierge.</span></Heading>
                <Text variant="lead" color="white" className="mb-10 opacity-80 max-w-xl">Not sure where to start? Evo uses advanced clinical logic to understand your needs and match you with the perfect specialist in seconds.</Text>
-               <Button variant="brand" leftIcon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>}>
+               <Button onClick={openEvo} variant="brand" leftIcon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>}>
                   Chat with Evo
                </Button>
             </div>

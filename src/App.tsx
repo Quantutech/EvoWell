@@ -15,6 +15,8 @@ import { logger } from './utils/logger';
 import Footer from './components/Footer';
 import IdleWarningModal from './components/IdleWarningModal';
 import PublicLayout from './layouts/PublicLayout';
+import { EvoProvider } from './components/evo/EvoContext';
+import EvoTrigger from './components/evo/EvoTrigger';
 
 // Lazy Load Views
 const HomeView = lazy(() => import('./views/HomeView'));
@@ -23,6 +25,7 @@ const DirectoryView = lazy(() => import('./views/DirectoryView'));
 const MapSearchView = lazy(() => import('./views/MapSearchView'));
 const ProviderProfileEditView = lazy(() => import('./views/ProviderProfileEditView'));
 const ProviderOnboardingView = lazy(() => import('./views/ProviderOnboardingView'));
+const ProviderGuideView = lazy(() => import('./views/ProviderGuideView'));
 const ExchangeView = lazy(() => import('./views/ExchangeView'));
 const ResourceDetailView = lazy(() => import('./views/ResourceDetailView'));
 const AdminDashboard = lazy(() => import('./views/AdminDashboard'));
@@ -333,25 +336,26 @@ const AppInner: React.FC = () => {
       <QueryProvider>
         <NavigationContext.Provider value={{ currentPath, navigate }}>
           <AuthContext.Provider value={{ user, provider, token, login, logout, isLoading }}>
-            <div className="min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
-              <a 
-                href="#main-content" 
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-500 focus:text-white focus:rounded-lg focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
-              >
-                Skip to main content
-              </a>
-              
-              <OfflineBanner />
-              <ScrollToTop />
-              
-              {showIdleWarning && (
-                <IdleWarningModal 
-                  remaining={remaining} 
-                  onStayLoggedIn={reset} 
-                />
-              )}
-              
-              <main id="main-content" className="flex-grow focus:outline-none" tabIndex={-1}>
+            <EvoProvider>
+              <div className="min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+                <a 
+                  href="#main-content" 
+                  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-500 focus:text-white focus:rounded-lg focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
+                >
+                  Skip to main content
+                </a>
+                
+                <OfflineBanner />
+                <ScrollToTop />
+                
+                {showIdleWarning && (
+                  <IdleWarningModal 
+                    remaining={remaining} 
+                    onStayLoggedIn={reset} 
+                  />
+                )}
+                
+                <main id="main-content" className="flex-grow focus:outline-none" tabIndex={-1}>
                 <Suspense fallback={<LoadingSpinner />}>
                   <Routes>
                     {/* Public Site Layout */}
@@ -366,6 +370,7 @@ const AppInner: React.FC = () => {
                       <Route path="/partners" element={<PartnersHubView />} />
                       <Route path="/benefits" element={<BenefitsView />} />
                       <Route path="/calculator" element={<PricingCalculatorView />} />
+                      <Route path="/provider-guide" element={<ProviderGuideView />} />
 
                       {/* Provider Exchange - Public */}
                       <Route path="/exchange" element={<ExchangeView />} />
@@ -432,7 +437,10 @@ const AppInner: React.FC = () => {
                   </Routes>
                 </Suspense>
               </main>
+              
+              <EvoTrigger />
             </div>
+            </EvoProvider>
           </AuthContext.Provider>
         </NavigationContext.Provider>
       </QueryProvider>

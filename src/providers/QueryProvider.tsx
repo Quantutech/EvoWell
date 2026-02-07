@@ -36,7 +36,7 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
     </QueryClientProvider>
   );
 };

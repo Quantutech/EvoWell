@@ -427,6 +427,8 @@ class MockProviderService implements IProviderService {
       }
       provider = await this.getProviderById(slugOrId);
       if (provider) return provider;
+      provider = await this.getProviderByUserId(slugOrId);
+      if (provider) return provider;
       provider = await this.getProviderBySlug(slugOrId);
       return provider;
   }
@@ -737,6 +739,8 @@ class SupabaseProviderService implements IProviderService {
         if (provider) return provider;
       }
       provider = await this.getProviderById(slugOrId);
+      if (provider) return provider;
+      provider = await this.getProviderByUserId(slugOrId);
       if (provider) return provider;
       provider = await this.getProviderBySlug(slugOrId);
       return provider;

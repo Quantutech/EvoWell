@@ -100,6 +100,50 @@ export const seedProviders: ProviderProfile[] = [
     metricsHistory: [],
     audit: { createdAt: '2023-02-15T10:00:00Z', updatedAt: '2023-11-20T14:30:00Z' },
     profileSlug: 'dr-sarah-chen'
+  },
+  {
+    id: 'prov-u-prov-002',
+    userId: 'u-prov-002',
+    professionalTitle: 'LCSW, Psychotherapist',
+    professionalCategory: 'Mental Health',
+    npi: '9876543210',
+    yearsExperience: 8,
+    education: 'MSW, Columbia University',
+    educationHistory: [
+      { degree: 'Master of Social Work', university: 'Columbia University', year: '2015' }
+    ],
+    bio: 'Marcus Thorne is a licensed clinical social worker focused on trauma and relationships.',
+    tagline: 'Healing through connection and understanding.',
+    imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=800',
+    gallery: [],
+    languages: ['English', 'Spanish'],
+    appointmentTypes: [AppointmentType.VIDEO, AppointmentType.IN_PERSON],
+    durations: [50],
+    specialties: ['s-trauma', 's-nutrition'],
+    licenses: [{ state: 'NY', number: 'LCSW-88776', verified: true }],
+    certificates: ['EMDR Trained'],
+    availability: {
+      days: ['Wed', 'Thu', 'Fri'],
+      hours: ['12:00', '13:00', '14:00', '15:00'],
+      schedule: [],
+      blockedDates: []
+    },
+    onboardingComplete: true,
+    subscriptionTier: SubscriptionTier.PROFESSIONAL,
+    subscriptionStatus: SubscriptionStatus.ACTIVE,
+    moderationStatus: ModerationStatus.APPROVED,
+    isPublished: true,
+    digitalProducts: [],
+    servicePackages: [],
+    insuranceAccepted: ['Cigna', 'UnitedHealthcare'],
+    paymentMethodsAccepted: ['Credit Card'],
+    pricing: { hourlyRate: 150, slidingScale: true },
+    compliance: { termsAccepted: true, verificationAgreed: true },
+    security: { question: 'City', answer: 'New York' },
+    metrics: { views: 800, inquiries: 30 },
+    metricsHistory: [],
+    audit: { createdAt: '2023-03-10T09:00:00Z', updatedAt: '2023-12-01T11:00:00Z' },
+    profileSlug: 'marcus-thorne'
   }
 ];
 

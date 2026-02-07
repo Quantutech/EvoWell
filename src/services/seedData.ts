@@ -264,7 +264,8 @@ const providers: ProviderProfile[] = [
     gender: 'Other',
     worksWith: ['Adults'],
     profileSlug: 'dr-test-provider',
-    pronouns: 'They/Them'
+    pronouns: 'They/Them',
+    videoUrl: 'https://www.youtube.com/watch?v=hnT1WfiU5GU&t=4s'
   },
   // --- END TEST PROVIDER ---
 
@@ -363,7 +364,8 @@ const providers: ProviderProfile[] = [
     mediaLinks: [
       { title: 'Understanding Anxiety', url: 'https://youtube.com/watch?v=example1', type: 'video' },
       { title: 'The Anxious Mind Podcast', url: 'https://spotify.com/example1', type: 'podcast' }
-    ]
+    ],
+    videoUrl: 'https://www.youtube.com/watch?v=hnT1WfiU5GU&t=4s'
   },
   {
     id: `prov-${PROV_ID_2}`,
@@ -431,7 +433,8 @@ const providers: ProviderProfile[] = [
     phoneNumber: '(212) 555-9989',
     mediaLinks: [
       { title: 'New Perspectives on Trauma', url: 'https://podcast.example.com/thorne', type: 'podcast' }
-    ]
+    ],
+    videoUrl: 'https://www.youtube.com/watch?v=hnT1WfiU5GU&t=4s'
   },
   {
     id: `prov-${PROV_ID_3}`,
@@ -502,7 +505,8 @@ const providers: ProviderProfile[] = [
     mediaLinks: [
       { title: 'Daily Mindfulness Routine', url: 'https://youtube.com/watch?v=mindful', type: 'video' },
       { title: 'Wellness Weekly Blog', url: 'https://medium.com/@elenav', type: 'article' }
-    ]
+    ],
+    videoUrl: 'https://www.youtube.com/watch?v=hnT1WfiU5GU&t=4s'
   },
   {
     id: `prov-${PROV_ID_4}`,
@@ -549,7 +553,8 @@ const providers: ProviderProfile[] = [
     phoneNumber: '(212) 555-1235',
     mediaLinks: [
       { title: 'Nutrition for Cognitive Focus', url: 'https://youtube.com/watch?v=nutrition', type: 'video' }
-    ]
+    ],
+    videoUrl: 'https://www.youtube.com/watch?v=hnT1WfiU5GU&t=4s'
   }
 ];
 

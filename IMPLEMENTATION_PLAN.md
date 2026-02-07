@@ -1,23 +1,63 @@
-# Implementation Plan - Provider Exchange Enhancements
+# Evo System Implementation Plan
 
-## Problem / Task
-1. Add more mock resources to the Provider Exchange.
-2. Refactor filters in `ExchangeView.tsx` to be a sticky horizontal bar above the featured tools section.
-3. Ensure "Notion-style" branding while keeping EvoWell's identity.
-4. Dynamically connect provider details (name, bio, email) in the digital product (resource) detail pages.
+## Overview
+Evo is a navigation intelligence layer designed to guide users to the right mental health support through structured conversational triage. This plan outlines the implementation of the Evo system, including the modal, conversation logic, recommendation engine, and integration into the existing EvoWell application.
 
-## Files Modified
-- `src/services/seedData.ts`: Added 10 new mock resources across various categories and access types.
-- `src/views/ExchangeView.tsx`: Refactored filters from sidebar to a horizontal, sticky, blurred-background bar. Added new sections for Clinical Templates and Worksheets & Guides.
-- `src/services/resource.service.ts`: Updated `getResourceById` to enrich the resource with provider's `bio` and `email`.
-- `src/views/ResourceDetailView.tsx`: Dynamically displaying the provider's `bio` and `email` (mailto link) in the sidebar expert card.
-- `src/types.ts`: Updated `Resource` interface to include `bio` and `email` in the enriched `provider` object.
+## Key Changes
+- **New Directory**: `src/components/evo` for all Evo-related components.
+- **Main Layout**: Integration of `EvoTrigger` (FAB) and `EvoModal` into `src/layouts/MainLayout.tsx`.
+- **New Components**:
+    - `EvoModal`: The main container for the conversation.
+    - `EvoTrigger`: Floating action button to launch Evo.
+    - `ConversationFlow`: Manages questions and user input.
+    - `RecommendationEngine`: Processes signals and fetches results.
+    - `EvoIcon`: Animated 3D icon.
 
-## Side Effects
-- Users may need to clear local storage or trigger a data reset to see the new mock resources if they have existing data in `evowell_mock_store`.
-- The `ExchangeView` layout is now more focused on content with filters taking up less vertical space in the sidebar.
+## Implementation Steps
 
-## Verification
-- Run `npm run build` to ensure type safety and successful compilation.
-- Manually verified the layout changes in `ExchangeView.tsx`.
-- Confirmed that provider details are correctly passed and displayed in `ResourceDetailView.tsx`.
+1.  **Project Setup & Types**
+    -   Define TypeScript interfaces for `UserSignal`, `Question`, `Recommendation`, etc.
+    -   Create `src/components/evo` directory.
+
+2.  **Evo Icon & Trigger**
+    -   Create `EvoIcon` (abstract 3D motif using CSS/SVG).
+    -   Create `EvoTrigger` component (Floating Action Button).
+    -   Add `EvoTrigger` to `src/layouts/MainLayout.tsx`.
+
+3.  **Evo Modal Structure**
+    -   Create `EvoModal` component with backdrop, animation, and dismiss logic.
+    -   Ensure accessibility (focus trap, escape key).
+
+4.  **Conversation Logic (State Machine)**
+    -   Implement the question flow (Layer 1 & Layer 2) as defined in the spec.
+    -   Create state management for answers and navigation (Next/Skip).
+    -   Implement Crisis Detection logic.
+
+5.  **Recommendation Engine**
+    -   Create a service or hook to process `UserSignal`.
+    -   Map signals to `SearchFilters` for `providerService`.
+    -   Map signals to resources (hardcoded or fetched).
+    -   Implement the logic to rank providers based on match score.
+
+6.  **Results UI**
+    -   Design and implement the recommendation output screen.
+    -   Show Primary Recommendation, Matched Providers, and Resources.
+    -   Implement "Transparency Line" for each recommendation.
+
+7.  **Integration & Testing**
+    -   Verify the flow from Trigger -> Conversation -> Results.
+    -   Test crisis triggers.
+    -   Ensure responsive design and theme consistency.
+
+## Technical Considerations
+-   **State Management**: Local state within `EvoModal` or a dedicated Context is sufficient as the conversation is ephemeral.
+-   **Performance**: Load Evo components lazily if possible, or keep them lightweight.
+-   **Safety**: Crisis detection must be robust and immediate.
+-   **Design**: Strict adherence to the "medical-grade trust" aesthetic (no emojis, calm colors).
+
+## Success Criteria
+-   User can open Evo from anywhere.
+-   Conversation flows logically through Layer 1 and optionally Layer 2.
+-   Crisis inputs trigger the safety protocol.
+-   Recommendations are relevant to the inputs.
+-   UI matches the EvoWell brand and Evo specific guidelines.
