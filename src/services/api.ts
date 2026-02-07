@@ -1,7 +1,7 @@
 import { 
   User, ProviderProfile, ClientProfile, Message, BlogPost, Testimonial, 
   SupportTicket, Specialty, Appointment, SearchFilters, 
-  InsuranceCompany, BlogCategory, JobPosting, UserRole,
+  InsuranceCompany, BlogCategory, JobPosting, UserRole, AppointmentType,
   SubscriptionTier, SubscriptionStatus, ModerationStatus,
   Availability, Conversation, AuditActionType, AuditResourceType
 } from '../types';
@@ -73,6 +73,15 @@ class ApiService {
   deleteUser(id: string) { return clientService.deleteUser(id); }
   getAllAppointments() { return clientService.getAllAppointments(); }
   getAppointmentsForUser(uid: string, role: UserRole) { return clientService.getAppointmentsForUser(uid, role); }
+  createAppointment(input: {
+    providerId: string;
+    clientId: string;
+    dateTime: string;
+    durationMinutes: number;
+    type: AppointmentType;
+    notes?: string;
+    amountCents?: number;
+  }) { return clientService.createAppointment(input); }
   bookAppointment(pid: string, cid: string, time: string) { return clientService.bookAppointment(pid, cid, time); }
   getConversations(uid?: string) { return clientService.getConversations(uid); }
   getMessages(cid: string) { return clientService.getMessages(cid); }
@@ -82,6 +91,14 @@ class ApiService {
   deleteMessage(id: string) { return clientService.deleteMessage(id); }
   deleteMessagesByRoom(cid: string) { return clientService.deleteMessagesByRoom(cid); }
   getUnreadCount(uid: string) { return clientService.getUnreadCount(uid); }
+  addClientJournalEntry(userId: string, note: string) { return clientService.addClientJournalEntry(userId, note); }
+  getClientJournalEntries(userId: string) { return clientService.getClientJournalEntries(userId); }
+  upsertProviderClientNote(providerId: string, clientId: string, note: string) {
+    return clientService.upsertProviderClientNote(providerId, clientId, note);
+  }
+  getProviderClientNote(providerId: string, clientId: string) {
+    return clientService.getProviderClientNote(providerId, clientId);
+  }
 
   // Content Service Delegates (includes Blog methods)
   getAllBlogs(params?: { page?: number, limit?: number }) { return contentService.getAllBlogs(params); }

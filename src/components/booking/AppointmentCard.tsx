@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Appointment, UserRole } from '../../types';
 import { formatInTimezone, getTimezoneAbbr, getUserTimezone } from '../../utils/timezone';
 import { appointmentService } from '../../services/appointments';
+import { api } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../App';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -12,18 +15,45 @@ interface AppointmentCardProps {
 
 const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, onRefresh, onClick }) => {
   const userTz = getUserTimezone();
+  const { user } = useAuth();
+  const { addToast } = useToast();
   const date = new Date(appointment.dateTime);
   const isPast = date < new Date();
   const [processing, setProcessing] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const cancelResetTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (cancelResetTimerRef.current) {
+        window.clearTimeout(cancelResetTimerRef.current);
+      }
+    },
+    [],
+  );
   
   const handleCancel = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to cancel this session?")) return;
+    if (!confirmingCancel) {
+      setConfirmingCancel(true);
+      addToast('warning', 'Press cancel again within 5 seconds to confirm.');
+      if (cancelResetTimerRef.current) {
+        window.clearTimeout(cancelResetTimerRef.current);
+      }
+      cancelResetTimerRef.current = window.setTimeout(() => setConfirmingCancel(false), 5000);
+      return;
+    }
+
+    setProcessing(true);
     try {
       await appointmentService.cancelAppointment(appointment.id, "User cancelled");
+      addToast('success', 'Appointment cancelled.');
+      setConfirmingCancel(false);
       onRefresh();
     } catch (err) {
-      alert("Failed to cancel.");
+      addToast('error', 'Failed to cancel appointment.');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -32,32 +62,66 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, on
       setProcessing(true);
       try {
           await appointmentService.updateStatus(appointment.id, status);
-          
-          if (status === 'CONFIRMED') {
-              alert(`Appointment Confirmed! Client ${appointment.client?.firstName || 'User'} has been notified via email.`);
-          }
-          
+          addToast('success', `Appointment ${status.toLowerCase()}.`);
           onRefresh();
       } catch (err) {
-          alert("Action failed.");
+          addToast('error', 'Failed to update appointment status.');
       } finally {
           setProcessing(false);
       }
   };
 
-  const handleSuggest = (e: React.MouseEvent) => {
+  const handleSuggest = async (e: React.MouseEvent) => {
       e.stopPropagation();
-      const newTime = prompt("Suggest a new time (e.g. Tomorrow at 2pm):");
-      if (newTime) {
-          alert(`Suggestion sent to client: "${newTime}". Waiting for their response.`);
+      setProcessing(true);
+      try {
+          const suggestionDate = new Date(appointment.dateTime);
+          suggestionDate.setDate(suggestionDate.getDate() + 1);
+
+          const availableSlots = await appointmentService.getProviderAvailability(
+            appointment.providerId,
+            suggestionDate,
+            appointment.durationMinutes || 60,
+          );
+          const nextSuggested = availableSlots[0]?.start || suggestionDate;
+
+          await appointmentService.rescheduleAppointment(appointment.id, nextSuggested);
+          addToast('info', 'A new time suggestion has been sent.');
+          onRefresh();
+      } catch {
+          addToast('error', 'Failed to suggest a new time.');
+      } finally {
+          setProcessing(false);
       }
   };
 
-  const handleMessage = (e: React.MouseEvent) => {
+  const handleMessage = async (e: React.MouseEvent) => {
       e.stopPropagation();
-      const msg = prompt(`Message to ${appointment.client?.firstName || 'Client'}:`);
-      if (msg) {
-          alert("Message sent successfully!");
+      if (!user) return;
+
+      try {
+          let targetUserId: string | undefined;
+          if (role === UserRole.PROVIDER) {
+              targetUserId = appointment.clientId;
+          } else {
+              const provider = await api.getProviderById(appointment.providerId);
+              targetUserId = provider?.userId;
+          }
+
+          if (!targetUserId) {
+              addToast('error', 'Unable to resolve conversation participant.');
+              return;
+          }
+
+          const conversation = await api.getOrCreateConversation(user.id, targetUserId);
+          await api.sendMessage({
+              conversationId: conversation.id,
+              senderId: user.id,
+              text: 'Hi, I am following up about this appointment.',
+          });
+          addToast('success', 'Message sent.');
+      } catch {
+          addToast('error', 'Failed to send message.');
       }
   };
 
@@ -114,10 +178,12 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, on
                                 Join Call
                              </a>
                              <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigator.clipboard.writeText(appointment.meetingLink || '');
-                                    alert("Link copied!");
+                                     onClick={(e) => {
+                                         e.stopPropagation();
+                                         navigator.clipboard
+                                           .writeText(appointment.meetingLink || '')
+                                           .then(() => addToast('success', 'Meeting link copied.'))
+                                           .catch(() => addToast('error', 'Failed to copy meeting link.'));
                                 }}
                                 className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200"
                                 title="Copy Link"
@@ -130,11 +196,10 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, on
                               className="flex-1 md:flex-none px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-blue-100 transition-all"
                               onClick={async (e) => {
                                   e.stopPropagation();
-                                  const link = prompt("Enter video meeting URL:");
-                                  if (link) {
-                                      await appointmentService.updateMeetingLink(appointment.id, link);
-                                      onRefresh();
-                                  }
+                                  const link = `https://meet.jit.si/evowell-${appointment.id}`;
+                                  await appointmentService.updateMeetingLink(appointment.id, link);
+                                  addToast('success', 'Meeting link added.');
+                                  onRefresh();
                               }}
                           >
                               Add Meeting Link
@@ -148,7 +213,12 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, on
                       </button>
                       <button 
                           onClick={handleCancel}
-                          className="p-2 text-red-400 hover:text-red-600 transition-colors"
+                          disabled={processing}
+                          className={`p-2 transition-colors disabled:opacity-50 ${
+                            confirmingCancel
+                              ? 'text-red-600'
+                              : 'text-red-400 hover:text-red-600'
+                          }`}
                           title="Cancel Appointment"
                       >
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -164,7 +234,11 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, on
                    className="px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg"
                    onClick={(e) => {
                        e.stopPropagation();
-                       alert("Video rooms integrated in next phase");
+                       if (appointment.meetingLink) {
+                         window.open(appointment.meetingLink, '_blank', 'noopener,noreferrer');
+                       } else {
+                         addToast('info', 'Meeting link is not available yet.');
+                       }
                    }}
                 >
                    Join Call
@@ -181,8 +255,6 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, on
       onClick={() => {
         if (onClick) {
           onClick(appointment);
-        } else {
-          alert(`Viewing details for ${displayName}. Full clinical records and messaging history integration coming in next phase.`);
         }
       }}
       className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-6 items-start md:items-center cursor-pointer group"
@@ -203,6 +275,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, role, on
             <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
                appointment.status === 'CONFIRMED' || appointment.status === 'PAID' ? 'bg-green-100 text-green-700' : 
                appointment.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 
+               appointment.status === 'CANCELLED' || appointment.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
                'bg-slate-100 text-slate-500'
             }`}>
                {appointment.status}

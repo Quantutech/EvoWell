@@ -1,47 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuth, useNavigation } from '../App';
 import Breadcrumb from '../components/Breadcrumb';
 import { notificationService } from '../services/notifications';
-import { Notification } from '../types';
+import { useRealtimeNotifications } from '../hooks/useRealtime';
 import { Section, Container } from '../components/layout';
 import { Heading, Text, Label } from '../components/typography';
-import { Button, Card, CardBody } from '../components/ui';
+import { Button, Card } from '../components/ui';
 
 const NotificationsView: React.FC = () => {
   const { user } = useAuth();
   const { navigate } = useNavigation();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      loadNotifications();
-    }
-  }, [user]);
-
-  const loadNotifications = async () => {
-    setLoading(true);
-    if (user) {
-      const data = await notificationService.getNotifications(user.id, 50);
-      setNotifications(data);
-    }
-    setLoading(false);
-  };
+  const { notifications, unreadCount, markAsRead, markAllRead, refresh } = useRealtimeNotifications(
+    user?.id || null,
+  );
 
   const handleMarkRead = async (id: string) => {
-    await notificationService.markAsRead(id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    await markAsRead(id);
   };
 
   const handleMarkAllRead = async () => {
-    if (!user) return;
-    await notificationService.markAllAsRead(user.id);
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    await markAllRead();
   };
 
   const handleDelete = async (id: string) => {
     await notificationService.deleteNotification(id);
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    await refresh();
   };
 
   return (
@@ -52,13 +35,13 @@ const NotificationsView: React.FC = () => {
         <Container size="narrow">
           <div className="flex justify-between items-center mb-8">
             <Heading level={1} size="h2">Notifications</Heading>
-            <Button variant="ghost" size="sm" onClick={handleMarkAllRead}>Mark all read</Button>
+            <Button variant="ghost" size="sm" onClick={handleMarkAllRead}>
+              {unreadCount > 0 ? `Mark all read (${unreadCount})` : 'Mark all read'}
+            </Button>
           </div>
 
           <Card variant="default" className="overflow-hidden p-0">
-            {loading ? (
-              <div className="p-12 text-center text-slate-400 animate-pulse font-bold text-xs uppercase tracking-widest">Loading...</div>
-            ) : notifications.length === 0 ? (
+            {notifications.length === 0 ? (
               <div className="p-20 text-center">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>

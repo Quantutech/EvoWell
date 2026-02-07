@@ -1,6 +1,73 @@
 import { seedUsers, seedProviders, seedBlogs, seedSpecialties, seedTestimonials } from '../seed/core';
 import { generateMockData } from '../mock/factories';
-import { Endorsement, ProviderProfile, User, UserRole } from '../../types';
+import { Conversation, Endorsement, Message, UserRole } from '../../types';
+import { SEED_DATA } from '../seed';
+
+function toConversations(messages: Message[]): Conversation[] {
+  const map = new Map<string, Conversation>();
+
+  for (const message of messages) {
+    const existing = map.get(message.conversation_id);
+    const timestamp = message.created_at;
+
+    if (!existing) {
+      map.set(message.conversation_id, {
+        id: message.conversation_id,
+        participant_1_id: message.sender_id,
+        participant_2_id: message.receiver_id,
+        last_message_at: timestamp,
+        created_at: timestamp,
+      });
+      continue;
+    }
+
+    if (new Date(timestamp).getTime() > new Date(existing.last_message_at).getTime()) {
+      existing.last_message_at = timestamp;
+    }
+  }
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime(),
+  );
+}
+
+function migrateLegacyMessages(): Message[] {
+  const legacyRaw = localStorage.getItem('evowell_messages');
+  if (!legacyRaw) return [];
+
+  try {
+    const legacy = JSON.parse(legacyRaw);
+    if (!Array.isArray(legacy)) return [];
+
+    return legacy
+      .map((item: any) => {
+        if (!item) return null;
+        const sender = item.sender_id || item.senderId;
+        const receiver = item.receiver_id || item.receiverId;
+        const content = item.content || item.text;
+        const conversationId = item.conversation_id || item.conversationId || item.roomId;
+        const createdAt = item.created_at || item.createdAt || item.timestamp;
+
+        if (!sender || !receiver || !content || !conversationId) {
+          return null;
+        }
+
+        return {
+          id: item.id || `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          conversation_id: conversationId,
+          sender_id: sender,
+          receiver_id: receiver,
+          content,
+          is_read: Boolean(item.is_read ?? item.read),
+          created_at: createdAt || new Date().toISOString(),
+        } as Message;
+      })
+      .filter(Boolean) as Message[];
+  } catch (error) {
+    console.error('Failed to migrate legacy messages', error);
+    return [];
+  }
+}
 
 const isProd = (import.meta as any).env?.PROD;
 const isDev = (import.meta as any).env?.DEV;
@@ -102,12 +169,22 @@ export const loadInitialData = () => {
       });
   });
 
+  const legacyMessages = migrateLegacyMessages();
+  const seededMessages = [...SEED_DATA.messages, ...legacyMessages];
+
   const initialStore = {
     users,
     providers,
     blogs,
     specialties: seedSpecialties,
     testimonials: seedTestimonials,
+    clientProfiles: [...SEED_DATA.clientProfiles],
+    appointments: [...SEED_DATA.appointments],
+    messages: seededMessages,
+    conversations: toConversations(seededMessages),
+    notifications: [],
+    clientJournalEntries: [],
+    providerClientNotes: [],
     endorsements,
     lastUpdated: Date.now(),
     isDemoMode: true

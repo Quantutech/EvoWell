@@ -12,6 +12,8 @@ interface BookingSidebarProps {
   selectedSlot: string | null;
   setSelectedSlot: (slot: string | null) => void;
   availableDates: Date[];
+  availableSlots: Date[];
+  slotsLoading: boolean;
   userTz: string;
   bookingStatus: string;
   handleBook: () => void;
@@ -19,7 +21,7 @@ interface BookingSidebarProps {
 
 const BookingSidebar: React.FC<BookingSidebarProps> = ({
   provider, bookingMode, setBookingMode, selectedDate, setSelectedDate,
-  selectedSlot, setSelectedSlot, availableDates, userTz, bookingStatus, handleBook
+  selectedSlot, setSelectedSlot, availableDates, availableSlots, slotsLoading, userTz, bookingStatus, handleBook
 }) => {
   return (
     <div className="space-y-6">
@@ -71,17 +73,35 @@ const BookingSidebar: React.FC<BookingSidebarProps> = ({
           {/* Time Slots */}
           <div className="mb-8">
             <span className="text-xs font-bold text-slate-900 mb-3 block">Available Times</span>
-            <div className="grid grid-cols-3 gap-2">
-              {provider.availability.hours.map(t => (
-                <button 
-                  key={t}
-                  onClick={() => setSelectedSlot(t)}
-                  className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${selectedSlot === t ? 'bg-brand-600 border-brand-600 text-white shadow-md' : 'bg-white border-slate-100 text-slate-600 hover:border-brand-200 hover:text-brand-600'}`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            {slotsLoading ? (
+              <div className="h-24 flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+                Loading slots...
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <div className="h-24 flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-widest text-center px-3">
+                No available slots for this date
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {availableSlots.map((slot) => {
+                  const slotValue = slot.toISOString();
+                  const label = formatInTimezone(slot, userTz, 'h:mm a');
+                  return (
+                    <button
+                      key={slotValue}
+                      onClick={() => setSelectedSlot(slotValue)}
+                      className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                        selectedSlot === slotValue
+                          ? 'bg-brand-600 border-brand-600 text-white shadow-md'
+                          : 'bg-white border-slate-100 text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <p className="text-[9px] text-center text-slate-400 mt-2">Times shown in your local timezone ({getTimezoneAbbr(userTz)})</p>
           </div>
 

@@ -2,8 +2,14 @@ import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo, useRe
 import { useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth, useNavigation } from '../App';
-import { ProviderProfile, Specialty, BlogPost, ModerationStatus, UserRole, Endorsement } from '../types';
+import {
+  ProviderProfile,
+  ModerationStatus,
+  UserRole,
+  AppointmentType,
+} from '../types';
 import { endorsementService } from '../services/endorsement.service';
+import { appointmentService } from '../services/appointments';
 import { getUserTimezone } from '../utils/timezone';
 import IdentityCard from '../components/provider/profile/IdentityCard';
 import { EndorsementCard } from '../components/provider/EndorsementCard';
@@ -14,6 +20,7 @@ import { Card, Badge, Icon } from '../components/ui';
 import { iconPaths } from '../components/ui/iconPaths';
 import { useQuery } from '@tanstack/react-query';
 import SEO from '../components/SEO';
+import { useToast } from '../contexts/ToastContext';
 
 const DynamicMap = lazy(() => import('../components/maps/DynamicMap'));
 
@@ -89,16 +96,18 @@ function getAvailableDates(p: ProviderProfile): Date[] {
 const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: propId }) => {
   const { user } = useAuth();
   const { navigate } = useNavigation();
+  const { addToast } = useToast();
   const params = useParams<{ providerId: string }>();
   const resolvedId = propId || params.providerId || '';
 
   const [userTz] = useState(getUserTimezone);
-  const [showAllEndorsements, setShowAllEndorsements] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [bookingMode, setBookingMode] = useState<'In Person' | 'Online'>('Online');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [bookingStatus, setBookingStatus] = useState('idle');
+  const [availableSlots, setAvailableSlots] = useState<Date[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
 
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const isManualScroll = useRef(false);
@@ -158,6 +167,31 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
       setSelectedDate(availableDates[0]);
     }
   }, [availableDates, selectedDate]);
+
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (!provider || !selectedDate) {
+        setAvailableSlots([]);
+        return;
+      }
+
+      setSlotsLoading(true);
+      try {
+        const slots = await appointmentService.getProviderAvailability(provider.id, selectedDate, 60);
+        const starts = slots.map((slot) => slot.start);
+        setAvailableSlots(starts);
+        setSelectedSlot((current) =>
+          current && !starts.some((slot) => slot.toISOString() === current) ? null : current,
+        );
+      } catch {
+        setAvailableSlots([]);
+      } finally {
+        setSlotsLoading(false);
+      }
+    };
+
+    fetchSlots();
+  }, [provider, selectedDate]);
 
   const tabs = useMemo(
     () => [
@@ -226,13 +260,37 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
 
     setBookingStatus('booking');
     try {
-      const dateStr = selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      await api.bookAppointment(provider.id, user.id, `${dateStr} at ${selectedSlot}`);
+      const appointmentDate = new Date(selectedSlot);
+
+      const slots = await appointmentService.getProviderAvailability(provider.id, selectedDate, 60);
+      const isStillAvailable = slots.some(
+        (slot) => slot.start.toISOString() === appointmentDate.toISOString(),
+      );
+
+      if (!isStillAvailable) {
+        setBookingStatus('error');
+        addToast('warning', 'Selected slot is no longer available. Please choose another time.');
+        return;
+      }
+
+      await api.createAppointment({
+        providerId: provider.id,
+        clientId: user.id,
+        dateTime: appointmentDate.toISOString(),
+        durationMinutes: 60,
+        type:
+          bookingMode === 'In Person'
+            ? AppointmentType.IN_PERSON
+            : AppointmentType.VIDEO,
+      });
       setBookingStatus('success');
+      addToast('success', 'Appointment request submitted.');
+      setSelectedSlot(null);
     } catch {
       setBookingStatus('error');
+      addToast('error', 'Unable to submit appointment request.');
     }
-  }, [user, selectedSlot, selectedDate, provider, navigate]);
+  }, [user, selectedSlot, selectedDate, provider, navigate, bookingMode, addToast]);
 
   if (loading) return <LoadingSkeleton />;
 
@@ -590,6 +648,8 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
               selectedSlot={selectedSlot}
               setSelectedSlot={setSelectedSlot}
               availableDates={availableDates}
+              availableSlots={availableSlots}
+              slotsLoading={slotsLoading}
               userTz={userTz}
               bookingStatus={bookingStatus}
               handleBook={handleBook}

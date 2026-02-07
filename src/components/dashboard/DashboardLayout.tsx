@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth, useNavigation } from '@/App';
-import { api } from '@/services/api';
-import { User, UserRole } from '@/types';
+import { User } from '@/types';
 import Logo from '@/components/brand/Logo';
+import { useRealtimeNotifications } from '@/hooks/useRealtime';
 
 interface NavItem {
   id: string;
@@ -27,25 +27,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const { logout } = useAuth();
   const { navigate } = useNavigation();
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Poll for unread messages
-  useEffect(() => {
-    if (!user) return;
-    const fetchUnread = async () => {
-      try {
-        const count = await api.getUnreadCount(user.id);
-        setUnreadCount(count);
-      } catch (err) {
-        console.error("Failed to fetch notifications", err);
-      }
-    };
-    fetchUnread();
-    const intervalId = setInterval(fetchUnread, 30000);
-    return () => clearInterval(intervalId);
-  }, [user]);
+  const { unreadCount } = useRealtimeNotifications(user?.id || null);
 
   const sidebarColor = role === 'admin' ? 'bg-[#0f311c]' : role === 'provider' ? 'bg-[#0f172a]' : 'bg-white';
   const sidebarTextColor = role === 'client' ? 'text-slate-500' : 'text-slate-400';
@@ -257,7 +241,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
 
               {/* Notification Bell */}
-              <button className="relative p-2 text-slate-400 hover:text-brand-500 transition-colors">
+              <button
+                onClick={() => navigate('#/notifications')}
+                className="relative p-2 text-slate-400 hover:text-brand-500 transition-colors"
+              >
                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                  {unreadCount > 0 && (
                    <div className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-black rounded-full h-4 w-4 flex items-center justify-center border border-white">

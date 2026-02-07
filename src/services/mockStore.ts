@@ -1,6 +1,33 @@
-import { User, ProviderProfile, ClientProfile, Resource, UserRole, Endorsement, WishlistEntry } from '../types';
+import {
+  User,
+  ProviderProfile,
+  ClientProfile,
+  Resource,
+  UserRole,
+  Endorsement,
+  WishlistEntry,
+  Appointment,
+  Conversation,
+  Message,
+  Notification,
+} from '../types';
 import { persistence } from './persistence';
 import { loadInitialData } from '../data/utils/loader';
+
+export interface ClientJournalEntry {
+  id: string;
+  userId: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface ProviderClientNote {
+  id: string;
+  providerId: string;
+  clientId: string;
+  note: string;
+  updatedAt: string;
+}
 
 interface MockStoreData {
   users: User[];
@@ -15,6 +42,12 @@ interface MockStoreData {
   hiddenResourceIds: string[];
   languages: string[];
   genders: string[];
+  appointments: Appointment[];
+  conversations: Conversation[];
+  messages: Message[];
+  notifications: Notification[];
+  clientJournalEntries: ClientJournalEntry[];
+  providerClientNotes: ProviderClientNote[];
   lastUpdated?: number;
   isDemoMode?: boolean;
 }
@@ -40,7 +73,15 @@ class MockStoreService {
       wishlist: (stored as any).wishlist || [],
       hiddenResourceIds: (stored as any).hiddenResourceIds || [],
       languages: stored.languages || ['English', 'Spanish', 'Mandarin', 'French', 'German'],
-      genders: stored.genders || ['Male', 'Female', 'Non-Binary', 'Prefer not to say']
+      genders: stored.genders || ['Male', 'Female', 'Non-Binary', 'Prefer not to say'],
+      appointments: (stored as any).appointments || initialData.appointments || [],
+      conversations: (stored as any).conversations || initialData.conversations || [],
+      messages: (stored as any).messages || initialData.messages || [],
+      notifications: (stored as any).notifications || initialData.notifications || [],
+      clientJournalEntries:
+        (stored as any).clientJournalEntries || initialData.clientJournalEntries || [],
+      providerClientNotes:
+        (stored as any).providerClientNotes || initialData.providerClientNotes || [],
     };
 
     // Load from seed data if persistence is empty

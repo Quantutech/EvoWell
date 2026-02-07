@@ -82,6 +82,7 @@ const ProviderLayout: React.FC = () => {
           availability={editForm.availability}
           onUpdateAvailability={(val: any) => updateField('availability', val)}
           onSave={handleSaveProfile}
+          onRefresh={fetchData}
         />
       )}
 

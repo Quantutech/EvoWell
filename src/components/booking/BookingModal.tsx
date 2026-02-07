@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { ProviderProfile, ServicePackage } from '../../types';
+import { AppointmentType, ProviderProfile, ServicePackage } from '../../types';
 import AvailabilityCalendar from './AvailabilityCalendar';
-import { appointmentService } from '../../services/appointments';
+import { api } from '../../services/api';
 import { useAuth } from '../../App';
-import { supabase } from '../../services/supabase';
+import { useToast } from '../../contexts/ToastContext';
 
 interface BookingModalProps {
   provider: ProviderProfile;
@@ -14,6 +14,7 @@ interface BookingModalProps {
 
 const BookingModal: React.FC<BookingModalProps> = ({ provider, onClose, onSuccess }) => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<ServicePackage | null>(null);
@@ -30,48 +31,22 @@ const BookingModal: React.FC<BookingModalProps> = ({ provider, onClose, onSucces
     try {
       const price = selectedPackage ? selectedPackage.priceCents / 100 : provider.pricing.hourlyRate;
       const amountCents = Math.round(price * 100);
-
-      // 1. Reserve Slot
-      const apptId = await appointmentService.bookAppointment({
+      await api.createAppointment({
         providerId: provider.id,
         clientId: user.id,
-        dateTime: selectedSlot,
+        dateTime: selectedSlot.toISOString(),
         durationMinutes: selectedPackage?.durationMinutes || 60,
-        servicePackageId: selectedPackage?.id,
+        type: AppointmentType.VIDEO,
+        notes,
         amountCents,
-        notes
       });
 
-      // 2. Initiate Stripe Checkout
-      const redirectUrl = `${window.location.origin}${window.location.pathname}#/dashboard?success=true`;
-      
-      const { data, error } = await supabase.functions.invoke('stripe-payments', {
-        body: {
-          action: 'create_checkout',
-          providerId: provider.id,
-          clientId: user.id,
-          price: price,
-          title: selectedPackage ? selectedPackage.name : `Session with ${provider.professionalTitle}`,
-          appointmentDate: selectedSlot.toISOString(),
-          redirectUrl,
-          metadata: { appointmentId: apptId }
-        }
-      });
-
-      if (error) throw error;
-      
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        // Fallback for mock environment
-        alert("Booking confirmed (Mock Payment)");
-        onSuccess();
-        onClose();
-      }
-
-    } catch (e: any) {
-      console.error(e);
-      alert(`Booking Failed: ${e.message}`);
+      addToast('success', 'Appointment request submitted.');
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      addToast('error', error instanceof Error ? error.message : 'Booking failed.');
     } finally {
       setLoading(false);
     }

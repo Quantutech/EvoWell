@@ -5,6 +5,7 @@ export * from './blog';
 export * from './resource';
 export * from './wellness';
 export * from './message';
+export * from './notification';
 export * from './job';
 export * from './audit';
 export * from './search';
