@@ -18,8 +18,8 @@ test.describe('Admin Dashboard Critical Journeys', () => {
     
     // Test Sidebar Scroll and Accordion
     await page.click('text=User Management'); // Toggle accordion
-    await page.click('text=Practitioners');
-    await expect(page.locator('text=Practitioner Directory')).toBeVisible();
+    await page.click('text=Providers');
+    await expect(page.locator('text=Providers')).toBeVisible();
   });
 
   // Journey 2: User Lifecycle Management

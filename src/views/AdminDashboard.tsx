@@ -1,23 +1,23 @@
 import React from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
-import { UserRole } from '../types';
+import { ModerationStatus, ProviderProfile, UserRole } from '../types';
 import AdminDashboardLayout from '../components/dashboard/AdminDashboardLayout';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 
 // Tabs
 import AdminOverviewTab from '../components/dashboard/tabs/admin/AdminOverviewTab';
 import AdminMessagesTab from '../components/dashboard/tabs/admin/AdminMessagesTab';
-import { UserManagementView } from '../features/admin/user-management/views/UserManagementView';
-import { PractitionersTab } from '../features/admin/user-management/views/PractitionersTab';
+import { UsersPeopleTab } from '../features/admin/people/views/UsersPeopleTab';
+import { ProvidersPeopleTab } from '../features/admin/people/views/ProvidersPeopleTab';
+import { ClientsPeopleTab } from '../features/admin/people/views/ClientsPeopleTab';
 import { ContentManagementView } from '../features/admin/content-management/views/ContentManagementView';
 import AdminTestimonialsTab from '../components/dashboard/tabs/admin/AdminTestimonialsTab';
 import AdminTicketsTab from '../components/dashboard/tabs/admin/AdminTicketsTab';
 import AdminConfigTab from '../components/dashboard/tabs/admin/AdminConfigTab';
 import AdminAuditTab from '../components/dashboard/tabs/admin/AdminAuditTab';
-import AdminApplicationsTab from '../components/dashboard/tabs/admin/AdminApplicationsTab';
 import AdminContentReviewTab from '../components/dashboard/tabs/admin/AdminContentReviewTab';
 import AdminEndorsementsTab from '../components/dashboard/tabs/admin/AdminEndorsementsTab';
-import AdminClientsTab from '../components/dashboard/tabs/admin/AdminClientsTab';
 import AdminJobsTab from '../components/dashboard/tabs/admin/AdminJobsTab';
 import { ResetDataButton } from '../components/dashboard/tabs/admin/ResetDataButton';
 import AddUserModal from '../components/dashboard/tabs/admin/AddUserModal';
@@ -48,43 +48,74 @@ const AdminDashboard: React.FC = () => {
     handleDeleteUser,
     refetchTestimonials,
   } = useAdminDashboard();
+  const queryClient = useQueryClient();
+  const normalizedView = activeView === 'applications' ? 'providers' : activeView;
+  const defaultProviderStatus =
+    activeView === 'applications' ? ModerationStatus.PENDING : 'ALL';
+
+  const { data: messageUsers = [] } = useQuery({
+    queryKey: ['adminMessagesUsers'],
+    queryFn: () => api.getAllUsers(),
+    enabled: normalizedView === 'messages' && !!user && user.role === UserRole.ADMIN,
+  });
+
+  const refreshAdminData = () => {
+    fetchContentData();
+    queryClient.invalidateQueries({ queryKey: ['adminPeople'] });
+  };
+
+  const handleSelectProvider = (provider: ProviderProfile) => {
+    setSelectedProvider(provider);
+    setSelectedUser({
+      id: provider.userId,
+      email: provider.email || '',
+      firstName: provider.firstName || 'Provider',
+      lastName: provider.lastName || '',
+      role: UserRole.PROVIDER,
+      createdAt: provider.audit?.createdAt || new Date().toISOString(),
+      updatedAt: provider.audit?.updatedAt || new Date().toISOString(),
+      isDeleted: false,
+    });
+  };
 
   if (!user || user.role !== UserRole.ADMIN) return null;
 
   return (
     <AdminDashboardLayout
       user={user}
-      activeView={activeView}
+      activeView={normalizedView}
       setActiveView={setActiveView}
       onLogout={logout}
       onAction={handleAction}
     >
-      {activeView === 'overview' && <AdminOverviewTab />}
+      {normalizedView === 'overview' && <AdminOverviewTab />}
 
-      {activeView === 'messages' && <AdminMessagesTab users={[]} />}
+      {normalizedView === 'messages' && <AdminMessagesTab users={messageUsers} />}
 
-      {activeView === 'users' && (
-        <UserManagementView
+      {normalizedView === 'users' && (
+        <UsersPeopleTab
           onAddUser={() => setIsAddUserModalOpen(true)}
-          onEditUser={(u) => setSelectedUser(u as any)}
+          onSelectUser={(selected) => {
+            setSelectedProvider(undefined);
+            setSelectedUser(selected);
+          }}
         />
       )}
 
-      {activeView === 'clients' && <AdminClientsTab />}
+      {normalizedView === 'clients' && <ClientsPeopleTab />}
 
-      {activeView === 'providers' && (
-        <PractitionersTab
-          onAddSpecialist={() => setIsAddUserModalOpen(true)}
+      {normalizedView === 'providers' && (
+        <ProvidersPeopleTab
+          defaultStatus={defaultProviderStatus}
+          onSelectProvider={handleSelectProvider}
         />
       )}
 
-      {activeView === 'applications' && <AdminApplicationsTab />}
+      {normalizedView === 'review' && <AdminContentReviewTab />}
 
-      {activeView === 'review' && <AdminContentReviewTab />}
+      {normalizedView === 'endorsements' && <AdminEndorsementsTab />}
 
-      {activeView === 'endorsements' && <AdminEndorsementsTab />}
-
-      {activeView === 'testimonials' && (
+      {normalizedView === 'testimonials' && (
         <AdminTestimonialsTab
           testimonials={testimonials}
           filter={testimonialFilter}
@@ -93,22 +124,22 @@ const AdminDashboard: React.FC = () => {
         />
       )}
 
-      {activeView === 'blogs' && <ContentManagementView />}
+      {normalizedView === 'blogs' && <ContentManagementView />}
 
-      {activeView === 'jobs' && <AdminJobsTab />}
+      {normalizedView === 'jobs' && <AdminJobsTab />}
 
-      {activeView === 'tickets' && <AdminTicketsTab tickets={tickets} />}
+      {normalizedView === 'tickets' && <AdminTicketsTab tickets={tickets} />}
 
-      {activeView === 'audit' && <AdminAuditTab />}
+      {normalizedView === 'audit' && <AdminAuditTab />}
 
-      {activeView === 'config' && <AdminConfigTab />}
+      {normalizedView === 'config' && <AdminConfigTab />}
 
-      {activeView === 'config' && <ResetDataButton />}
+      {normalizedView === 'config' && <ResetDataButton />}
 
       {isAddUserModalOpen && (
         <AddUserModal
           onClose={() => setIsAddUserModalOpen(false)}
-          onSuccess={() => { fetchContentData(); }}
+          onSuccess={refreshAdminData}
         />
       )}
 
@@ -125,8 +156,11 @@ const AdminDashboard: React.FC = () => {
           provider={selectedProvider}
           onClose={() => { setSelectedUser(null); setSelectedProvider(undefined); }}
           onUpdateProvider={async (id, data) => { await api.updateProvider(id, data); }}
-          onRefresh={fetchContentData}
-          onModerate={handleModerateProvider}
+          onRefresh={refreshAdminData}
+          onModerate={async (id, status) => {
+            await handleModerateProvider(id, status);
+            queryClient.invalidateQueries({ queryKey: ['adminPeople'] });
+          }}
           onDeleteUser={handleDeleteUser}
         />
       )}

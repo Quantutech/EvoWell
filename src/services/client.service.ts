@@ -83,7 +83,7 @@ function formatUser(row: any): User {
 
 class MockClientService implements IClientService {
   async getUserById(id: string): Promise<User | undefined> {
-    return SEED_DATA.users.find(u => u.id === id) || mockStore.store.users.find(u => u.id === id);
+    return mockStore.store.users.find((u) => u.id === id);
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<User> {
@@ -152,16 +152,18 @@ class MockClientService implements IClientService {
   }
 
   async getAllUsers(): Promise<User[]> {
-      const allUsers = [...SEED_DATA.users, ...mockStore.store.users];
-      return allUsers.filter((u, index, self) => 
-        index === self.findIndex(t => t.id === u.id)
-      );
+      return [...mockStore.store.users];
   }
 
   async deleteUser(id: string): Promise<void> {
-      // Not implemented in original api.ts for mock/tempStore modification of array (it only checked !isConfigured return)
-      // "async deleteUser(id: string): Promise<void> { if (!isConfigured) return; await supabase... }"
-      // So effectively do nothing in mock mode
+      mockStore.store.users = mockStore.store.users.filter((u) => u.id !== id);
+      mockStore.store.clientProfiles = mockStore.store.clientProfiles.filter(
+        (cp) => cp.userId !== id,
+      );
+      mockStore.store.providers = mockStore.store.providers.filter(
+        (provider) => provider.userId !== id,
+      );
+      mockStore.save();
   }
 
   // Mocks
@@ -192,6 +194,10 @@ class SupabaseClientService implements IClientService {
         const { error } = await (supabase.from('users') as any).update({
           first_name: data.firstName,
           last_name: data.lastName,
+          role: data.role,
+          email: data.email,
+          timezone: data.timezone,
+          is_deleted: data.isDeleted,
           updated_at: new Date().toISOString()
         }).eq('id', id);
         

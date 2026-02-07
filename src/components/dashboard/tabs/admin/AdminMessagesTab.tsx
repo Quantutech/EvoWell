@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, Conversation } from '@/types';
 import { api } from '@/services/api';
 import { useAuth } from '@/App';
 import { useRealtimeMessages } from '@/hooks/useRealtime';
+import { resolveConversationParticipantDisplayName } from '@/features/admin/people/utils/resolveMessageParticipant';
 
 interface AdminMessagesTabProps {
   users: User[];
@@ -15,6 +16,14 @@ const AdminMessagesTab: React.FC<AdminMessagesTabProps> = ({ users }) => {
   const [replyText, setReplyText] = useState('');
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const usersById = useMemo(
+    () =>
+      users.reduce<Record<string, User>>((acc, user) => {
+        acc[user.id] = user;
+        return acc;
+      }, {}),
+    [users],
+  );
 
   // Use Realtime Hook
   const { messages, isLoading: messagesLoading } = useRealtimeMessages(selectedConvId);
@@ -65,9 +74,11 @@ const AdminMessagesTab: React.FC<AdminMessagesTabProps> = ({ users }) => {
   };
 
   const getOtherParticipant = (conv: Conversation) => {
-      const otherId = conv.participant_1_id === currentUser?.id ? conv.participant_2_id : conv.participant_1_id;
-      const user = users.find(u => u.id === otherId);
-      return user ? `${user.firstName} ${user.lastName}` : 'Unknown User';
+      return resolveConversationParticipantDisplayName({
+        conversation: conv,
+        currentUserId: currentUser?.id,
+        usersById,
+      });
   };
 
   const scrollToBottom = () => {

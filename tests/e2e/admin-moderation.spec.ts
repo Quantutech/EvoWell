@@ -11,7 +11,7 @@ test('Admin Moderation Flow', async ({ page }) => {
   await expect(page).toHaveURL(/.*\/admin/);
 
   // 2. Go to Providers Tab
-  await page.click('button:has-text("Practitioners")');
+  await page.click('button:has-text("Providers")');
 
   // 3. Find Pending Provider
   await page.click('button:has-text("PENDING")');

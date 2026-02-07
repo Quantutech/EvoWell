@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../App';
 import { api } from '../services/api';
 import { adminService } from '../services/admin';
@@ -10,8 +10,26 @@ import { useQuery } from '@tanstack/react-query';
 export function useAdminDashboard() {
   const { user, logout } = useAuth();
 
+  const validViews = [
+    'overview',
+    'messages',
+    'users',
+    'providers',
+    'clients',
+    'review',
+    'endorsements',
+    'testimonials',
+    'blogs',
+    'jobs',
+    'tickets',
+    'audit',
+    'config',
+    'applications',
+  ] as const;
+  type AdminView = (typeof validViews)[number];
+
   // Selection / Modal State
-  const [activeView, setActiveView] = useState('overview');
+  const [activeView, setActiveView] = useState<AdminView>('overview');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<ProviderProfile | undefined>(undefined);
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
@@ -23,6 +41,15 @@ export function useAdminDashboard() {
 
   // Blog pagination
   const [blogsPage, setBlogsPage] = useState(1);
+
+  useEffect(() => {
+    const hash = window.location.hash || '';
+    const query = hash.includes('?') ? hash.split('?')[1] : '';
+    const tab = new URLSearchParams(query).get('tab');
+    if (tab && validViews.includes(tab as AdminView)) {
+      setActiveView(tab as AdminView);
+    }
+  }, []);
 
   // React Query Data Fetching
   const { data: stats = { users: 0, providers: 0, pending: 0, openTickets: 0 } } = useQuery({
@@ -80,7 +107,7 @@ export function useAdminDashboard() {
 
   const handleDeleteUser = async (id: string) => {
     if (window.confirm("Are you sure? This cannot be undone.")) {
-      await api.deleteUser(id);
+      await adminService.deleteUser(id);
       setSelectedUser(null);
     }
   };
