@@ -4,6 +4,7 @@ import { User, UserRole } from '@/types';
 import { adminService, AccountStatus, GetUsersParams } from '@/services/admin';
 import { useToast } from '@/contexts/ToastContext';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Select } from '@/components/ui';
 import { AdminTableLayout } from '@/components/dashboard/tabs/admin/AdminTableLayout';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAdminUsers } from '../hooks/useAdminUsers';
@@ -138,32 +139,36 @@ export const UsersPeopleTab: React.FC<UsersPeopleTabProps> = ({
           </svg>
         </div>
 
-        <select
+        <Select
+          ariaLabel="Filter users by role"
           value={roleFilter}
-          onChange={(e) => {
-            setRoleFilter(e.target.value as 'ALL' | UserRole);
+          onChange={(nextValue) => {
+            setRoleFilter(nextValue as 'ALL' | UserRole);
             setPage(1);
           }}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest"
-        >
-          <option value="ALL">All Roles</option>
-          <option value={UserRole.ADMIN}>Admin</option>
-          <option value={UserRole.PROVIDER}>Provider</option>
-          <option value={UserRole.CLIENT}>Client</option>
-        </select>
+          options={[
+            { value: 'ALL', label: 'All Roles' },
+            { value: UserRole.ADMIN, label: 'Admin' },
+            { value: UserRole.PROVIDER, label: 'Provider' },
+            { value: UserRole.CLIENT, label: 'Client' },
+          ]}
+          className="w-[150px]"
+        />
 
-        <select
+        <Select
+          ariaLabel="Filter users by account status"
           value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value as 'ALL' | AccountStatus);
+          onChange={(nextValue) => {
+            setStatusFilter(nextValue as 'ALL' | AccountStatus);
             setPage(1);
           }}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest"
-        >
-          <option value="ALL">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="SUSPENDED">Suspended</option>
-        </select>
+          options={[
+            { value: 'ALL', label: 'All Status' },
+            { value: 'ACTIVE', label: 'Active' },
+            { value: 'SUSPENDED', label: 'Suspended' },
+          ]}
+          className="w-[160px]"
+        />
       </div>
     </div>
   );

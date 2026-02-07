@@ -171,6 +171,7 @@ const AdminMessagesTab: React.FC<AdminMessagesTabProps> = ({ users }) => {
                   placeholder="Type a message..."
                 />
                 <button
+                  type="submit"
                   disabled={sendMutation.isPending}
                   className="bg-blue-600 text-white px-8 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-60"
                 >

@@ -66,18 +66,29 @@ export class MockProviderService implements IProviderService {
         const limit = params?.limit || 10;
         const start = (page - 1) * limit;
 
-        const allProviders = [...SEED_DATA.providers, ...mockStore.store.providers];
-        const users = [...SEED_DATA.users, ...mockStore.store.users];
-        
-        const uniqueProviders = allProviders.filter((p, index, self) => 
-          index === self.findIndex(t => t.id === p.id)
-        );
+        // Seed order is retained, but mutable mock rows override seeded duplicates.
+        const providersById = new Map<string, ProviderProfile>();
+        for (const provider of SEED_DATA.providers) {
+          providersById.set(provider.id, provider);
+        }
+        for (const provider of mockStore.store.providers) {
+          providersById.set(provider.id, provider);
+        }
+        const uniqueProviders = Array.from(providersById.values());
+
+        const usersById = new Map<string, (typeof SEED_DATA.users)[number]>();
+        for (const user of SEED_DATA.users) {
+          usersById.set(user.id, user);
+        }
+        for (const user of mockStore.store.users) {
+          usersById.set(user.id, user);
+        }
 
         const total = uniqueProviders.length;
         const paged = uniqueProviders.slice(start, start + limit);
 
         const providers = paged.map(p => {
-          const user = users.find(u => u.id === p.userId);
+          const user = usersById.get(p.userId);
           return {
             ...p,
             firstName: p.firstName || user?.firstName || 'Unknown',
@@ -123,7 +134,18 @@ export class MockProviderService implements IProviderService {
             mockStore.store.providers[idx].isPublished = true;
         }
         mockStore.save();
+        return;
       }
+
+      const seedProvider = SEED_DATA.providers.find((provider) => provider.id === id);
+      if (!seedProvider) return;
+
+      mockStore.store.providers.push({
+        ...seedProvider,
+        moderationStatus: status,
+        isPublished: status === ModerationStatus.APPROVED ? true : seedProvider.isPublished,
+      });
+      mockStore.save();
   }
 
   async updateProviderSlug(providerId: string, firstName: string, lastName: string, specialty?: string, city?: string): Promise<string> {

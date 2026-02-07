@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AdminClientRecord } from '@/services/admin';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Select } from '@/components/ui';
 import { AdminTableLayout } from '@/components/dashboard/tabs/admin/AdminTableLayout';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAdminClients } from '../hooks/useAdminClients';
@@ -54,18 +55,20 @@ export const ClientsPeopleTab: React.FC = () => {
           </svg>
         </div>
 
-        <select
+        <Select
+          ariaLabel="Filter clients by intake status"
           value={intakeFilter}
-          onChange={(e) => {
-            setIntakeFilter(e.target.value as 'ALL' | 'PENDING' | 'COMPLETED');
+          onChange={(value) => {
+            setIntakeFilter(value as 'ALL' | 'PENDING' | 'COMPLETED');
             setPage(1);
           }}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest"
-        >
-          <option value="ALL">All Intake</option>
-          <option value="PENDING">Pending</option>
-          <option value="COMPLETED">Completed</option>
-        </select>
+          options={[
+            { value: 'ALL', label: 'All Intake' },
+            { value: 'PENDING', label: 'Pending' },
+            { value: 'COMPLETED', label: 'Completed' },
+          ]}
+          className="w-[160px]"
+        />
       </div>
     </div>
   );

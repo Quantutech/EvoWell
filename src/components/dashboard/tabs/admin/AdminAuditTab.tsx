@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { auditService } from '@/services/audit';
 import { AuditLog } from '@/types';
+import { Select } from '@/components/ui';
 
 const AdminAuditTab: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -42,18 +43,20 @@ const AdminAuditTab: React.FC = () => {
             onChange={(e) => setFilterUser(e.target.value)}
             className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500/10 outline-none w-48"
           />
-          <select 
-            value={filterAction} 
-            onChange={(e) => setFilterAction(e.target.value)}
-            className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500/10 outline-none cursor-pointer"
-          >
-            <option value="">All Actions</option>
-            <option value="LOGIN">Login</option>
-            <option value="VIEW">View Record</option>
-            <option value="UPDATE">Update Data</option>
-            <option value="CREATE">Create Data</option>
-            <option value="DELETE">Delete Data</option>
-          </select>
+          <Select
+            ariaLabel="Filter audit logs by action"
+            value={filterAction}
+            onChange={setFilterAction}
+            options={[
+              { value: '', label: 'All Actions' },
+              { value: 'LOGIN', label: 'Login' },
+              { value: 'VIEW', label: 'View Record' },
+              { value: 'UPDATE', label: 'Update Data' },
+              { value: 'CREATE', label: 'Create Data' },
+              { value: 'DELETE', label: 'Delete Data' },
+            ]}
+            className="w-44"
+          />
           <button onClick={fetchLogs} className="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-800">Refresh</button>
         </div>
       </div>

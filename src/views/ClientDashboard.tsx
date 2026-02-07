@@ -12,6 +12,7 @@ import ClientSavedProviders from '@/components/dashboard/tabs/ClientSavedProvide
 import { BarChart, DonutChart, SettingInput } from '@/components/dashboard/DashboardComponents';
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
 import ProfileImage from '@/components/ui/ProfileImage';
+import { Select } from '@/components/ui';
 
 const EMPTY_ADDRESS = {
   street: '',
@@ -363,28 +364,26 @@ const ClientDashboard: React.FC = () => {
                   Keep your provider updated on your daily well-being between sessions.
                 </p>
                 <div className="grid grid-cols-3 gap-2 text-xs">
-                  <select
-                    value={wellnessMood}
-                    onChange={(event) => setWellnessMood(Number(event.target.value))}
-                    className="bg-white/10 border border-white/20 rounded-lg px-2 py-2 text-white"
-                  >
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <option key={value} value={value} className="text-slate-900">
-                        Mood {value}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={wellnessEnergy}
-                    onChange={(event) => setWellnessEnergy(Number(event.target.value))}
-                    className="bg-white/10 border border-white/20 rounded-lg px-2 py-2 text-white"
-                  >
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <option key={value} value={value} className="text-slate-900">
-                        Energy {value}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    ariaLabel="Wellness mood score"
+                    variant="dark"
+                    value={String(wellnessMood)}
+                    onChange={(nextValue) => setWellnessMood(Number(nextValue))}
+                    options={[1, 2, 3, 4, 5].map((value) => ({
+                      value: String(value),
+                      label: `Mood ${value}`,
+                    }))}
+                  />
+                  <Select
+                    ariaLabel="Wellness energy score"
+                    variant="dark"
+                    value={String(wellnessEnergy)}
+                    onChange={(nextValue) => setWellnessEnergy(Number(nextValue))}
+                    options={[1, 2, 3, 4, 5].map((value) => ({
+                      value: String(value),
+                      label: `Energy ${value}`,
+                    }))}
+                  />
                   <input
                     type="number"
                     min={0}
