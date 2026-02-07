@@ -15,3 +15,18 @@ export const AGE_GROUPS = [
   'Adults (26-64)',
   'Seniors (65+)'
 ];
+
+export const LANGUAGES_LIST = [
+  'English', 'Spanish', 'Mandarin', 'French', 'German', 'Hindi', 'Arabic', 'Portuguese', 'Bengali', 'Russian',
+  'Japanese', 'Punjabi', 'Wu', 'Javanese', 'Korean', 'Vietnamese', 'Telugu', 'Marathi', 'Tamil', 'Turkish',
+  'Urdu', 'Italian', 'Thai', 'Gujarati', 'Persian', 'Polish', 'Pashto', 'Kannada', 'Malayalam', 'Sundanese',
+  'Hausa', 'Odia', 'Burmese', 'Hakka', 'Ukrainian', 'Bhojpuri', 'Tagalog', 'Yoruba', 'Maithili', 'Uzbek',
+  'Sindhi', 'Amharic', 'Fula', 'Romanian', 'Oromo', 'Igbo', 'Azerbaijani', 'Dutch', 'Kurdish', 'Greek',
+  'Hebrew', 'Swedish', 'Czech', 'Sign Language (ASL)'
+];
+
+export const PROVIDER_CATEGORIES = [
+  'Mental Health Provider',
+  'Wellness Coach',
+  'Clinical Consultant'
+];

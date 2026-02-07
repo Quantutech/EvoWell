@@ -5,6 +5,7 @@ import { Appointment, UserRole, SupportTicket, ClientProfile, WellnessEntry, Hab
 import ClientDashboardLayout from '@/components/dashboard/ClientDashboardLayout';
 import ClientSupportTab from '@/components/dashboard/tabs/client/ClientSupportTab';
 import { BarChart, DonutChart, SettingInput } from '@/components/dashboard/DashboardComponents';
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
 
 const ClientDashboard: React.FC = () => {
   const { user, login } = useAuth();
@@ -24,6 +25,7 @@ const ClientDashboard: React.FC = () => {
   const [editGender, setEditGender] = useState('');
   const [editPronouns, setEditPronouns] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState(profile?.address || { street: '', city: '', state: '', zip: '', country: 'USA' });
   const [isSaving, setIsSaving] = useState(false);
 
   // Journal State
@@ -43,6 +45,7 @@ const ClientDashboard: React.FC = () => {
           setEditGender(data.gender || '');
           setEditPronouns(data.pronouns || '');
           setEditPhone(data.phoneNumber || '');
+          setEditAddress(data.address || { street: '', city: '', state: '', zip: '', country: 'USA' });
         }
         setLoading(false);
       });
@@ -60,7 +63,8 @@ const ClientDashboard: React.FC = () => {
         dateOfBirth: editDOB, 
         gender: editGender, 
         pronouns: editPronouns,
-        phoneNumber: editPhone 
+        phoneNumber: editPhone,
+        address: editAddress
       });
       await login(editEmail);
       alert("Profile updated successfully!");
@@ -293,6 +297,31 @@ const ClientDashboard: React.FC = () => {
                  <SettingInput label="Preferred Gender" value={editGender} onChange={setEditGender} />
                  <SettingInput label="Pronouns" value={editPronouns} onChange={setEditPronouns} />
                  <SettingInput label="Phone Number" value={editPhone} onChange={setEditPhone} />
+               </div>
+            </div>
+
+            {/* Address Section */}
+            <div className="space-y-6">
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Mailing Address</h3>
+               <div className="space-y-6">
+                  <AddressAutocomplete 
+                    value={editAddress}
+                    onChange={setEditAddress}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
+                      <input value={editAddress?.city || ''} readOnly className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-500 cursor-not-allowed outline-none" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">State</label>
+                      <input value={editAddress?.state || ''} readOnly className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-500 cursor-not-allowed outline-none" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Zip Code</label>
+                      <input value={editAddress?.zip || ''} readOnly className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-500 cursor-not-allowed outline-none" />
+                    </div>
+                  </div>
                </div>
             </div>
 

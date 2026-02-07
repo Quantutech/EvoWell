@@ -61,7 +61,16 @@ export const createMockProvider = (user: User, specialties: string[]): ProviderP
     metricsHistory: [],
     audit: { createdAt: user.createdAt, updatedAt: user.updatedAt },
     profileSlug: faker.helpers.slugify(user.firstName + ' ' + user.lastName).toLowerCase(),
-    rating: faker.number.float({ min: 4.0, max: 5.0, fractionDigits: 1 })
+    rating: faker.number.float({ min: 4.0, max: 5.0, fractionDigits: 1 }),
+    address: {
+      street: faker.location.streetAddress(),
+      city: faker.location.city(),
+      state: faker.location.state({ abbreviated: true }),
+      zip: faker.location.zipCode(),
+      country: 'USA',
+      lat: faker.location.latitude({ min: 25, max: 48 }),
+      lng: faker.location.longitude({ min: -124, max: -70 })
+    }
   };
 };
 

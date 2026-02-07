@@ -75,7 +75,7 @@ const FeaturedProviders: React.FC<{ providers: FeaturedProvider[] }> = ({ provid
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-50/50 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
       
       <div className="max-w-[1440px] mx-auto px-6 relative z-10">
-        <div className="max-w-7xl mx-auto mb-10 md:mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div className="max-w-[1440px] mx-auto mb-10 md:mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
           <div>
             <p className="text-brand-500 text-xs font-bold uppercase tracking-widest mb-4">Our Network</p>
             <h2 className={`${designSystem.typography.h1} mb-4`}>Real People. Real Support.</h2>

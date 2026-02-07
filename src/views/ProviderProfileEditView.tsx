@@ -9,6 +9,7 @@ import {
   ModerationStatus
 } from '@/types';
 import ScheduleBuilder from '@/components/ScheduleBuilder';
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
 
 // Separate Input Component to prevent focus loss
 const FormInput = ({ label, value, onChange, type = "text", placeholder = "" }: any) => (
@@ -173,12 +174,32 @@ const ProviderProfileEditView: React.FC = () => {
             )}
 
             {activeSection === 'contact' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormInput label="Office Phone" value={formData.phone} onChange={(v: any) => updateField('phone', v)} />
-                <FormInput label="Street Address" value={formData.address?.street} onChange={(v: any) => updateField('address.street', v)} />
-                <FormInput label="City" value={formData.address?.city} onChange={(v: any) => updateField('address.city', v)} />
-                <FormInput label="State" value={formData.address?.state} onChange={(v: any) => updateField('address.state', v)} />
-                <FormInput label="Zip Code" value={formData.address?.zip} onChange={(v: any) => updateField('address.zip', v)} />
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <FormInput label="Office Phone" value={formData.phone} onChange={(v: any) => updateField('phone', v)} />
+                </div>
+                
+                <div className="pt-6 border-t border-slate-50 space-y-6">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Office Address</h3>
+                  <AddressAutocomplete 
+                    value={formData.address}
+                    onChange={(addr) => updateField('address', addr)}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
+                      <input value={formData.address?.city || ''} readOnly className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-sm font-medium text-slate-500 cursor-not-allowed outline-none" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">State</label>
+                      <input value={formData.address?.state || ''} readOnly className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-sm font-medium text-slate-500 cursor-not-allowed outline-none" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Zip Code</label>
+                      <input value={formData.address?.zip || ''} readOnly className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-sm font-medium text-slate-500 cursor-not-allowed outline-none" />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

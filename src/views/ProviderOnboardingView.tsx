@@ -9,17 +9,8 @@ import { ProviderProfile, AppointmentType, Specialty, ModerationStatus } from '@
 import { storageService } from '@/services/storageService';
 import ScheduleBuilder from '@/components/ScheduleBuilder';
 import { Select } from '@/components/ui';
-import { US_STATES, AGE_GROUPS } from '@/data/constants';
-
-// --- Shared Constants ---
-const LANGUAGES_LIST = [
-  'English', 'Spanish', 'Mandarin', 'French', 'German', 'Hindi', 'Arabic', 'Portuguese', 'Bengali', 'Russian',
-  'Japanese', 'Punjabi', 'Wu', 'Javanese', 'Korean', 'Vietnamese', 'Telugu', 'Marathi', 'Tamil', 'Turkish',
-  'Urdu', 'Italian', 'Thai', 'Gujarati', 'Persian', 'Polish', 'Pashto', 'Kannada', 'Malayalam', 'Sundanese',
-  'Hausa', 'Odia', 'Burmese', 'Hakka', 'Ukrainian', 'Bhojpuri', 'Tagalog', 'Yoruba', 'Maithili', 'Uzbek',
-  'Sindhi', 'Amharic', 'Fula', 'Romanian', 'Oromo', 'Igbo', 'Azerbaijani', 'Dutch', 'Kurdish', 'Greek',
-  'Hebrew', 'Swedish', 'Czech', 'Sign Language (ASL)'
-];
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
+import { US_STATES, AGE_GROUPS, LANGUAGES_LIST, PROVIDER_CATEGORIES } from '@/data/constants';
 
 const MultiSelect = ({ label, options, selected, onChange, placeholder }: { label: string, options: string[], selected: string[], onChange: (val: string[]) => void, placeholder: string }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -205,7 +196,7 @@ const ProviderOnboardingView: React.FC = () => {
   const handleFinish = async () => {
     setIsSaving(true);
     try {
-      const newCertificates = [...formData.certificates];
+      const newCertificates = [...(formData.certificates || [])];
 
       if (idFile) {
         const idUrl = await storageService.uploadFile(idFile, `verification/${formData.id}/id_${Date.now()}`);
@@ -332,11 +323,7 @@ const ProviderOnboardingView: React.FC = () => {
                       value={formData.professionalCategory || ''}
                       onChange={(val) => updateField('professionalCategory', val)}
                       placeholder="Select category"
-                      options={[
-                        'Mental Health Provider',
-                        'Wellness Coach',
-                        'Clinical Consultant'
-                      ]}
+                      options={PROVIDER_CATEGORIES}
                     />
                   </div>
                 </div>
@@ -365,48 +352,41 @@ const ProviderOnboardingView: React.FC = () => {
                   />
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-100 space-y-6">
                   <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Office Address</h4>
-                  <div className="space-y-4">
+                  
+                  <AddressAutocomplete 
+                    value={formData.address}
+                    onChange={(addr) => updateField('address', addr)}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Street Address</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
                       <input
-                        value={formData.address?.street || ''}
-                        onChange={e => updateField('address.street', e.target.value)}
-                        placeholder="123 Wellness Ave, Suite 400"
-                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
+                        value={formData.address?.city || ''}
+                        readOnly
+                        placeholder="City"
+                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-sm font-medium text-slate-500 cursor-not-allowed outline-none"
                       />
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
-                        <input
-                          value={formData.address?.city || ''}
-                          onChange={e => updateField('address.city', e.target.value)}
-                          placeholder="City"
-                          className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Select 
-                          label="State"
-                          options={US_STATES}
-                          value={formData.address?.state || ''}
-                          onChange={val => updateField('address.state', val)}
-                          placeholder="Select State"
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Zip Code</label>
-                        <input
-                          value={formData.address?.zip || ''}
-                          onChange={e => updateField('address.zip', e.target.value)}
-                          placeholder="12345"
-                          className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none"
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">State</label>
+                      <input
+                        value={formData.address?.state || ''}
+                        readOnly
+                        placeholder="State"
+                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-sm font-medium text-slate-500 cursor-not-allowed outline-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Zip Code</label>
+                      <input
+                        value={formData.address?.zip || ''}
+                        readOnly
+                        placeholder="Zip Code"
+                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-sm font-medium text-slate-500 cursor-not-allowed outline-none"
+                      />
                     </div>
                   </div>
                 </div>
@@ -513,7 +493,7 @@ const ProviderOnboardingView: React.FC = () => {
               <div className="animate-in fade-in slide-in-from-right-4">
                 <p className="text-slate-500 font-medium mb-8">Set your recurring weekly availability.</p>
                 <ScheduleBuilder
-                  value={formData.availability || []}
+                  value={formData.availability || { days: [], hours: [], schedule: [], blockedDates: [] }}
                   onChange={(val) => updateField('availability', val)}
                 />
               </div>

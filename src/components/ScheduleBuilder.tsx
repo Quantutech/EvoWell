@@ -14,11 +14,12 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ value, onChange }) =>
 
   // Initialize schedule if empty (legacy data migration)
   useEffect(() => {
-    if (!value.schedule || value.schedule.length === 0) {
+    if (!value?.schedule || value.schedule.length === 0) {
+      const initialDays = value?.days || [];
       const initialSchedule: DaySchedule[] = DAYS_ORDER.map(day => ({
         day,
-        active: value.days.includes(day),
-        timeRanges: value.days.includes(day) 
+        active: initialDays.includes(day),
+        timeRanges: initialDays.includes(day) 
           ? [{ start: '09:00', end: '17:00' }] 
           : []
       }));

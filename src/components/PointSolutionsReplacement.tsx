@@ -91,7 +91,7 @@ const PointSolutionsReplacement: React.FC = () => {
 
   return (
     <section className="py-24 bg-white overflow-hidden border-y border-slate-100/50">
-      <div className="max-w-7xl mx-auto px-6 text-center reveal">
+      <div className="max-w-[1440px] mx-auto px-6 text-center reveal">
         <p className="text-[10px] font-black text-brand-500 uppercase tracking-[0.3em] mb-4">What does EvoWell do?</p>
         <h2 className="text-3xl lg:text-5xl font-black text-slate-900 mb-16 tracking-tight leading-tight">
           One platform. <br/><span className="text-slate-400">To replace them all.</span>

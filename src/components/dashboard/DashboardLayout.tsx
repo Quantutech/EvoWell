@@ -54,9 +54,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const sidebarWidth = isCollapsed ? 'w-20' : 'w-72';
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc]">
+    <div className="flex min-h-screen bg-slate-50 selection:bg-brand-500 selection:text-white">
       {/* Sidebar */}
-      <aside className={`${sidebarWidth} fixed top-0 bottom-0 z-30 flex flex-col justify-between hidden lg:flex shadow-2xl transition-all duration-300 ${sidebarColor} ${role === 'client' ? 'border-r border-slate-200' : ''}`}>
+      <aside className={`${sidebarWidth} fixed top-0 bottom-0 z-30 flex flex-col justify-between hidden lg:flex shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] transition-all duration-500 ${sidebarColor} ${role === 'client' ? 'border-r border-slate-200' : ''}`}>
         <div className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-8">
              {!isCollapsed && (
@@ -105,11 +105,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                         key={link.id}
                         onClick={() => onTabChange(link.id)}
                         title={isCollapsed ? link.label : ''}
-                        className={`w-full flex items-center gap-4 px-3 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all ${
+                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${
                           activeTab === link.id 
-                            ? `${activeBg} ${sidebarActiveText} shadow-lg` 
-                            : `${sidebarTextColor} ${role === 'client' ? 'hover:bg-slate-100/50 hover:text-slate-900' : 'hover:bg-white/10 hover:text-white'}`
-                        } ${isCollapsed ? 'justify-center' : ''}`}
+                            ? `${activeBg} ${sidebarActiveText} shadow-xl shadow-brand-500/20 scale-[1.02]` 
+                            : `${sidebarTextColor} ${role === 'client' ? 'hover:bg-slate-50 hover:text-brand-600' : 'hover:bg-white/5 hover:text-white'}`
+                        } ${isCollapsed ? 'justify-center px-0' : ''}`}
                       >
                         <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} /></svg>
                         {!isCollapsed && <span>{link.label}</span>}
@@ -199,9 +199,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-grow ${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} transition-all duration-300 min-h-screen flex flex-col`}>
+      <main className={`flex-grow ${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} transition-all duration-500 min-h-screen flex flex-col`}>
         {/* Header */}
-        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 z-20 bg-[#f8fafc]/95 backdrop-blur-sm border-b border-slate-200/50">
+        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-100">
            <div className="flex items-center gap-4">
               <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors">
                  <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -229,7 +229,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </header>
 
         {/* Content */}
-        <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto w-full">
+        <div className="p-4 md:p-8 lg:p-12 max-w-[1440px] mx-auto w-full">
            {children}
         </div>
       </main>

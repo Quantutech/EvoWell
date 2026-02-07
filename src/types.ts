@@ -435,9 +435,11 @@ export interface SearchFilters {
   query?: string;
   state?: string;
   format?: SessionFormat;
+  appointmentTypes?: AppointmentType[];
   gender?: string;
   language?: string;
   maxPrice?: number;
+  agesServed?: string[];
   day?: string;
   limit?: number;
   offset?: number;

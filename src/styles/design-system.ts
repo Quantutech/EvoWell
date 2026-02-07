@@ -26,7 +26,7 @@ export const spacing = {
 // ============================================
 export const containers = {
   full: 'max-w-[1440px]',    // Hero sections, full-bleed
-  content: 'max-w-7xl',       // Standard content (1280px)
+  content: 'max-w-[1440px]', // Adjusted to match Navbar width
   narrow: 'max-w-4xl',        // Legal, blog post (896px)
   tight: 'max-w-2xl',         // Forms, modals (672px)
 } as const;

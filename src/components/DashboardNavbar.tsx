@@ -21,7 +21,7 @@ const DashboardNavbar: React.FC = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-100 h-20 shadow-sm">
-      <div className="h-full px-6 lg:px-10 flex justify-between items-center max-w-[1920px] mx-auto">
+      <div className="h-full px-6 lg:px-10 flex justify-between items-center max-w-[1440px] mx-auto">
         <div className="flex items-center gap-12">
           <div className="cursor-pointer flex items-center gap-2" onClick={() => navigate('#/dashboard')}>
             <Logo className="h-8" />

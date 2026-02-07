@@ -4,6 +4,7 @@ import { ProviderProfile, Specialty, User } from '@/types';
 import { LANGUAGES_LIST } from '@/components/dashboard/constants';
 import { getCommonTimezones, getUserTimezone } from '@/utils/timezone';
 import { Select } from '@/components/ui';
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
 import { US_STATES, AGE_GROUPS } from '@/data/constants';
 
 interface ProviderSettingsProps {
@@ -235,23 +236,25 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                          {/* Updated Phone Field */}
                          <SettingInput label="Office Phone" value={editForm.phoneNumber || editForm.phone} onChange={(v: string) => { updateField('phoneNumber', v); updateField('phone', v); }} placeholder="(555) 123-4567" />
                          
-                         <SettingInput label="Street Address" value={editForm.address?.street} onChange={(v: string) => updateField('address.street', v)} />
-                         <div className="grid grid-cols-2 gap-4">
-                            <SettingInput label="City" value={editForm.address?.city} onChange={(v: string) => updateField('address.city', v)} />
+                         <AddressAutocomplete 
+                            value={editForm.address}
+                            onChange={(addr) => updateField('address', addr)}
+                            label="Office Address"
+                         />
+
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
-                              <Select 
-                                options={US_STATES} 
-                                value={editForm.address?.state || ''} 
-                                onChange={val => updateField('address.state', val)} 
-                                placeholder="Select State"
-                                className="w-full"
-                              />
+                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                               <input value={editForm.address?.city || ''} readOnly className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 cursor-not-allowed outline-none" />
                             </div>
-                         </div>
-                         <div className="grid grid-cols-2 gap-4">
-                            <SettingInput label="Zip Code" value={editForm.address?.zip} onChange={(v: string) => updateField('address.zip', v)} />
-                            <SettingInput label="Country" value={editForm.address?.country} onChange={(v: string) => updateField('address.country', v)} />
+                            <div className="space-y-1">
+                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
+                               <input value={editForm.address?.state || ''} readOnly className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 cursor-not-allowed outline-none" />
+                            </div>
+                            <div className="space-y-1">
+                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Zip Code</label>
+                               <input value={editForm.address?.zip || ''} readOnly className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 cursor-not-allowed outline-none" />
+                            </div>
                          </div>
                       </div>
                       
@@ -312,36 +315,25 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                          <SettingInput label="Tax ID / EIN" value={editForm.businessInfo?.taxId} onChange={(v: string) => updateField('businessInfo.taxId', v)} />
                          
                          {/* Business Address Section */}
-                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Address</p>
-                            <input 
-                               value={editForm.businessAddress?.street || ''} 
-                               onChange={e => updateField('businessAddress', { ...editForm.businessAddress, street: e.target.value })} 
-                               placeholder="Street Address" 
-                               className="w-full bg-white rounded-lg px-3 py-2 text-xs font-bold outline-none"
+                         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-6">
+                            <AddressAutocomplete 
+                               value={editForm.businessAddress}
+                               onChange={(addr) => updateField('businessAddress', addr)}
+                               label="Registered Business Address"
                             />
-                            <div className="grid grid-cols-3 gap-2">
-                               <input 
-                                  value={editForm.businessAddress?.city || ''} 
-                                  onChange={e => updateField('businessAddress', { ...editForm.businessAddress, city: e.target.value })} 
-                                  placeholder="City" 
-                                  className="bg-white rounded-lg px-3 py-2 text-xs font-bold outline-none"
-                               />
-                               <div className="min-w-0">
-                                 <Select 
-                                    options={US_STATES} 
-                                    value={editForm.businessAddress?.state || ''} 
-                                    onChange={val => updateField('businessAddress', { ...editForm.businessAddress, state: val })} 
-                                    placeholder="State"
-                                    className="w-full h-full text-xs"
-                                 />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                               <div className="space-y-1">
+                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                                  <input value={editForm.businessAddress?.city || ''} readOnly className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-500 cursor-not-allowed outline-none" />
                                </div>
-                               <input 
-                                  value={editForm.businessAddress?.zip || ''} 
-                                  onChange={e => updateField('businessAddress', { ...editForm.businessAddress, zip: e.target.value })} 
-                                  placeholder="Zip" 
-                                  className="bg-white rounded-lg px-3 py-2 text-xs font-bold outline-none"
-                               />
+                               <div className="space-y-1">
+                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
+                                  <input value={editForm.businessAddress?.state || ''} readOnly className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-500 cursor-not-allowed outline-none" />
+                               </div>
+                               <div className="space-y-1">
+                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Zip Code</label>
+                                  <input value={editForm.businessAddress?.zip || ''} readOnly className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-500 cursor-not-allowed outline-none" />
+                               </div>
                             </div>
                          </div>
                       </div>

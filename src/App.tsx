@@ -20,6 +20,7 @@ import PublicLayout from './layouts/PublicLayout';
 const HomeView = lazy(() => import('./views/HomeView'));
 const SearchView = lazy(() => import('./views/SearchView'));
 const DirectoryView = lazy(() => import('./views/DirectoryView'));
+const MapSearchView = lazy(() => import('./views/MapSearchView'));
 const ProviderProfileEditView = lazy(() => import('./views/ProviderProfileEditView'));
 const ProviderOnboardingView = lazy(() => import('./views/ProviderOnboardingView'));
 const AdminDashboard = lazy(() => import('./views/AdminDashboard'));
@@ -357,6 +358,7 @@ const AppInner: React.FC = () => {
                     <Route element={<PublicLayout />}>
                       <Route path="/" element={<HomeView specialties={specialties} />} />
                       <Route path="/search" element={<SearchViewWrapper specialties={specialties} />} />
+                      <Route path="/search-map" element={<MapSearchViewWrapper specialties={specialties} />} />
                       <Route path="/directory" element={<DirectoryView />} />
                       
                       <Route path="/docs" element={<DocumentationView />} />
@@ -448,6 +450,11 @@ const WrapperJobDetails = () => {
 const WrapperProviderProfile = () => {
   const params = useLocation().pathname.split('/').pop() || '';
   return <ProviderProfileView providerId={params} />;
+};
+
+const MapSearchViewWrapper: React.FC<{ specialties: Specialty[] }> = ({ specialties }) => {
+  const [searchParams] = useSearchParams();
+  return <MapSearchView specialties={specialties} initialParams={searchParams} />;
 };
 
 const App: React.FC = () => {

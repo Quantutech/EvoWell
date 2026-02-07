@@ -19,5 +19,6 @@ export const APP_CONFIG = {
     login: '#/login',
     dashboard: '#/dashboard',
     search: '#/search',
-  }
+  },
+  mapboxToken: 'pk.eyJ1IjoicnNoYWZpZWUtZXZvd2VsbCIsImEiOiJjbWxiZ29hbHYwbmZ4M2VzOXNvNnl2N2kyIn0.qTyOIHMqfrH0gTGJ3wHTYg'
 };

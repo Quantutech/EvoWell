@@ -131,8 +131,7 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
       items: [
         { label: 'Provider Directory', href: '#/directory', icon: 'clinic', desc: 'Browse all verified providers', badge: 'New' },
         { label: 'Search Providers', href: '#/search', icon: 'search', desc: 'Filter by specialty, location & more' },
-        { label: 'Telehealth', href: '#/search?format=REMOTE', icon: 'video', desc: 'Video & remote sessions' },
-        { label: 'In-Person', href: '#/search?format=IN_PERSON', icon: 'clinic', desc: 'Find a local office' },
+        { label: 'Provider Map', href: '#/search-map', icon: 'map', desc: 'Find clinicians near you' },
       ],
     },
     {
