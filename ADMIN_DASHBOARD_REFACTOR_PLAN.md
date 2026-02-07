@@ -1,53 +1,65 @@
-# Admin Dashboard Refactor Plan
+# Admin Dashboard Implementation & Refactor Plan
 
-## Overview
-This plan addresses the need to reorganize the Admin Dashboard navigation into logical groups to improve usability and manage the growing number of features. It also ensures that all CRUD operations are robust.
+## **1. Overview**
+This plan outlines a phased approach to transform the current Admin Dashboard into a professional, scalable, and high-performance administration suite. The focus is on decoupling components, improving UX with modern patterns, and establishing a robust testing foundation.
 
-## 1. Navigation Reorganization
-The current flat list of 13 items is overwhelming. We will introduce **Grouped Navigation** with the following structure:
+## **2. Component Architecture Proposal**
+*   **Folder Structure:**
+    ```
+    src/features/admin/
+    ├── components/         # Admin-specific UI components
+    │   ├── navigation/     # Accordion-based Sidebar
+    │   ├── widgets/        # Dynamic Dashboard Cards
+    │   └── tables/         # Specialized Data Tables
+    ├── hooks/              # Admin-specific logic (useAdminStats, useUserManagement)
+    ├── services/           # Admin API layer
+    ├── views/              # Entry points (AdminDashboardView)
+    └── types/              # Admin-specific interfaces
+    ```
+*   **State Management:** Standardize on **TanStack Query** for all data fetching, using cache invalidation for real-time-like updates. Use **Zustand** for global UI state (sidebar collapse, active tab persistence).
 
-### **Group 1: Overview**
-- **Dashboard** (`overview`): High-level stats and activity.
+## **3. Implementation Steps**
 
-### **Group 2: User Management**
-- **Users** (`users`): Manage internal users and system access.
-- **Practitioners** (`providers`): Manage provider profiles and status.
-- **Clients** (`clients`): View client accounts.
-- **Applications** (`applications`): **New/Pending** provider applications waiting for review.
+### **Phase 1: Foundation & Navigation (Week 1-2)**
+1.  **Refactor Sidebar:** Modify `DashboardLayout.tsx` to support collapsible accordion sections and `overflow-y-auto`.
+2.  **Dynamic Navigation:** Move navigation configuration to a central config file or fetch from an API.
+3.  **Audit Fixes:** Fix CSS overflow issues and implement basic accessibility (ARIA).
+4.  **Component Decomposition:** Break down `AdminDashboard.tsx` into smaller, tab-specific view components.
 
-### **Group 3: Content Management**
-- **Content Review** (`review`): Moderation queue for sensitive content.
-- **Blog Posts** (`blogs`): Manage articles (Create, Edit, Delete, Approve).
-- **Testimonials** (`testimonials`): Manage user testimonials.
+### **Phase 2: Dashboard & User Management (Week 3-4)**
+5.  **Dynamic Cards:** Implement `AdminOverviewTab` with real-time stats and initial charts (e.g., User Growth).
+6.  **Advanced Data Table:** Create a shared `AdminDataTable` component with:
+    *   Multi-column filtering
+    *   Bulk actions (Select all, Bulk delete)
+    *   Inline editing for simple fields (Status, Role)
+7.  **Unified User View:** Implement the "WordPress-style" user listing with advanced filters.
+8.  **Activity Feed:** Add a "Recent Actions" widget to the overview.
 
-### **Group 4: Support & Operations**
-- **Message Center** (`messages`): System-wide messages.
-- **Support Tickets** (`tickets`): Help desk tickets.
-- **Career Jobs** (`jobs`): Manage job listings.
+### **Phase 3: Content Management & Workflow (Week 5-6)**
+9.  **Workflow Implementation:** Enhance `AdminContentReviewTab` with a full workflow (Draft -> Pending -> Approved -> Published).
+10. **Content Calendar:** Add a calendar view for scheduled blog posts.
+11. **Media Library:** Implement a basic media management tab with tagging.
+12. **SEO Tools:** Integrate SEO preview and validation into the `BlogEditor`.
 
-### **Group 5: System**
-- **Audit Logs** (`audit`): Security and action logs.
-- **Configuration** (`config`): Dropdown values (Specialties, Languages, etc.).
+### **Phase 4: Advanced Features & Polish (Week 7-8)**
+13. **Role-Based Access Control (RBAC):** Refine navigation visibility based on sub-admin permissions.
+14. **Audit Logs:** Expand the `AdminAuditTab` with detailed change tracking (Diffs).
+15. **System Metrics:** Add server health and performance monitoring widgets.
+16. **Final Polish:** Animation refinements, dark mode optimization, and mobile responsive tweaks.
 
-## 2. Technical Implementation
+## **4. Testing Strategy**
+*   **Unit Testing:** Vitest for utility functions and custom hooks.
+*   **Integration Testing:** React Testing Library for Admin tabs, mocking API calls with MSW.
+*   **E2E Testing:** Playwright for critical paths (User deletion, Content approval).
+*   **Visual Regression:** Chromatic or similar for UI consistency.
 
-### **A. Update `DashboardLayout.tsx`**
-- Modify `NavItem` interface to include an optional `category?: string` field.
-- Update rendering logic to group items by `category` and display section headers (e.g., "User Management", "Content").
-- Ensure backward compatibility for `ProviderDashboard` (which won't use categories initially).
+## **5. Technical Considerations**
+*   **Performance:** Implement virtualization for large user lists (e.g., `@tanstack/react-virtual`).
+*   **Security:** Ensure all administrative API endpoints have strict server-side role validation.
+*   **Scalability:** Use feature-based folder structure to prevent the `src/components` folder from becoming a bottleneck.
 
-### **B. Update `AdminDashboardLayout.tsx`**
-- Reorder `sidebarLinks` array.
-- Add `category` property to each link corresponding to the groups above.
-
-## 3. CRUD & Functionality Check
-- **Blogs**: Already refactored to full CRUD with `BlogEditor`.
-- **Users/Providers**: Verify `DetailModal` handles updates correctly (it seems to).
-- **Applications**: Ensure `AdminApplicationsTab` allows approving/rejecting (which moves them to Providers list).
-- **Config**: Ensure `AdminConfigTab` allows adding/removing items (it does).
-
-## 4. Execution Steps
-1.  Modify `DashboardLayout.tsx` to support grouped rendering.
-2.  Update `AdminDashboardLayout.tsx` with the new grouped structure.
-3.  Verify the layout in the Admin Dashboard.
-4.  Verify Provider Dashboard is unaffected.
+## **6. Success Metrics**
+*   90%+ Test coverage for Admin business logic.
+*   < 2s Load time for the main Admin Dashboard.
+*   30% Reduction in time taken for common tasks (e.g., approving a provider).
+*   Zero reported UI overflow issues across supported resolutions.

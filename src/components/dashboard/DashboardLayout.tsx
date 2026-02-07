@@ -53,11 +53,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const activeBg = themeColor; 
   const sidebarWidth = isCollapsed ? 'w-20' : 'w-72';
 
+  // State for collapsible sections
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('dashboard_sidebar_sections');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const toggleSection = (category: string) => {
+    const newState = { ...openSections, [category]: !openSections[category] };
+    setOpenSections(newState);
+    localStorage.setItem('dashboard_sidebar_sections', JSON.stringify(newState));
+  };
+
+  // Keyboard navigation for sections
+  const handleSectionKeyDown = (e: React.KeyboardEvent, category: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSection(category);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 selection:bg-brand-500 selection:text-white">
       {/* Sidebar */}
-      <aside className={`${sidebarWidth} fixed top-0 bottom-0 z-30 flex flex-col justify-between hidden lg:flex shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] transition-all duration-500 ${sidebarColor} ${role === 'client' ? 'border-r border-slate-200' : ''}`}>
-        <div className="p-4 md:p-6">
+      <aside className={`${sidebarWidth} fixed top-0 bottom-0 z-30 flex flex-col hidden lg:flex shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] transition-all duration-500 ${sidebarColor} ${role === 'client' ? 'border-r border-slate-200' : ''}`}>
+        {/* Logo Section */}
+        <div className="p-4 md:p-6 shrink-0">
           <div className="flex items-center justify-between mb-8">
              {!isCollapsed && (
                <div className="flex items-center gap-3" onClick={() => navigate('#/')} style={{cursor: 'pointer'}}>
@@ -80,47 +101,66 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                    )}
                 </div>
              )}
-             
-             {/* Collapse Toggle Removed from Top */}
           </div>
-          
-          <nav className="space-y-6">
+        </div>
+
+        {/* Scrollable Nav Area */}
+        <div className="flex-grow overflow-y-auto px-4 md:px-6 custom-scrollbar">
+          <nav className="space-y-6 pb-6">
             {Object.entries(navItems.reduce((acc, item) => {
                 const cat = item.category || 'General';
                 if (!acc[cat]) acc[cat] = [];
                 acc[cat].push(item);
                 return acc;
-            }, {} as Record<string, NavItem[]>)).map(([category, items], idx, arr) => (
-                <div key={category} className="space-y-2">
-                    {category !== 'General' && !isCollapsed && (
-                        <h4 className={`px-4 text-[10px] font-black uppercase tracking-widest ${role === 'client' ? 'text-slate-400' : 'text-slate-500'}`}>
-                            {category}
-                        </h4>
-                    )}
-                    {category !== 'General' && isCollapsed && idx > 0 && (
-                        <div className={`mx-3 h-px ${role === 'client' ? 'bg-slate-100' : 'bg-white/5'} my-2`}></div>
-                    )}
-                    {items.map(link => (
-                      <button 
-                        key={link.id}
-                        onClick={() => onTabChange(link.id)}
-                        title={isCollapsed ? link.label : ''}
-                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${
-                          activeTab === link.id 
-                            ? `${activeBg} ${sidebarActiveText} shadow-xl shadow-brand-500/20 scale-[1.02]` 
-                            : `${sidebarTextColor} ${role === 'client' ? 'hover:bg-slate-50 hover:text-brand-600' : 'hover:bg-white/5 hover:text-white'}`
-                        } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                      >
-                        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} /></svg>
-                        {!isCollapsed && <span>{link.label}</span>}
-                      </button>
-                    ))}
-                </div>
-            ))}
+            }, {} as Record<string, NavItem[]>)).map(([category, items], idx, arr) => {
+                const isOpen = openSections[category] !== false; // Default to open
+                return (
+                    <div key={category} className="space-y-2">
+                        {category !== 'General' && !isCollapsed && (
+                            <button 
+                                onClick={() => toggleSection(category)}
+                                onKeyDown={(e) => handleSectionKeyDown(e, category)}
+                                className="w-full flex items-center justify-between px-4 text-[10px] font-black uppercase tracking-widest text-left"
+                            >
+                                <span className={role === 'client' ? 'text-slate-400' : 'text-slate-500'}>
+                                    {category}
+                                </span>
+                                <svg 
+                                    className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${role === 'client' ? 'text-slate-300' : 'text-slate-600'}`} 
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        )}
+                        {category !== 'General' && isCollapsed && idx > 0 && (
+                            <div className={`mx-3 h-px ${role === 'client' ? 'bg-slate-100' : 'bg-white/5'} my-2`}></div>
+                        )}
+                        <div className={`space-y-1 transition-all duration-300 ${isOpen || isCollapsed ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+                            {items.map(link => (
+                              <button 
+                                key={link.id}
+                                onClick={() => onTabChange(link.id)}
+                                title={isCollapsed ? link.label : ''}
+                                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${
+                                  activeTab === link.id 
+                                    ? `${activeBg} ${sidebarActiveText} shadow-xl shadow-brand-500/20 scale-[1.02]` 
+                                    : `${sidebarTextColor} ${role === 'client' ? 'hover:bg-slate-50 hover:text-brand-600' : 'hover:bg-white/5 hover:text-white'}`
+                                } ${isCollapsed ? 'justify-center px-0' : ''}`}
+                              >
+                                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} /></svg>
+                                {!isCollapsed && <span>{link.label}</span>}
+                              </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
           </nav>
         </div>
 
-        <div className="px-4 md:px-6 pb-4 mt-auto">
+        {/* Footer Actions */}
+        <div className="px-4 md:px-6 pb-4 shrink-0">
            {/* Collapse Toggle Button (Bottom Position) */}
            <button 
              onClick={() => setIsCollapsed(!isCollapsed)}

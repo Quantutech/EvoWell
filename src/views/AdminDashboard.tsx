@@ -13,10 +13,10 @@ import { useQuery } from '@tanstack/react-query';
 // Tabs
 import AdminOverviewTab from '../components/dashboard/tabs/admin/AdminOverviewTab';
 import AdminMessagesTab from '../components/dashboard/tabs/admin/AdminMessagesTab';
-import AdminUsersTab from '../components/dashboard/tabs/admin/AdminUsersTab';
-import AdminProvidersTab from '../components/dashboard/tabs/admin/AdminProvidersTab';
+import { UserManagementView } from '../features/admin/user-management/views/UserManagementView';
+import { PractitionersTab } from '../features/admin/user-management/views/PractitionersTab';
+import { ContentManagementView } from '../features/admin/content-management/views/ContentManagementView';
 import AdminTestimonialsTab from '../components/dashboard/tabs/admin/AdminTestimonialsTab';
-import AdminBlogsTab from '../components/dashboard/tabs/admin/AdminBlogsTab';
 import AdminTicketsTab from '../components/dashboard/tabs/admin/AdminTicketsTab';
 import AdminConfigTab from '../components/dashboard/tabs/admin/AdminConfigTab';
 import AdminAuditTab from '../components/dashboard/tabs/admin/AdminAuditTab';
@@ -228,21 +228,22 @@ const AdminDashboard: React.FC = () => {
       onLogout={logout}
       onAction={handleAction}
     >
-      {activeView === 'overview' && <AdminOverviewTab users={[]} providers={[]} tickets={tickets} />}
+      {activeView === 'overview' && <AdminOverviewTab />}
       
       {activeView === 'messages' && <AdminMessagesTab users={[]} />}
       
       {activeView === 'users' && (
-        <AdminUsersTab 
-            onSelectUser={(u, p) => { setSelectedUser(u); setSelectedProvider(p); }} 
+        <UserManagementView 
+          onAddUser={() => setIsAddUserModalOpen(true)}
+          onEditUser={(u) => setSelectedUser(u as any)}
         />
       )}
 
       {activeView === 'clients' && <AdminClientsTab />}
       
       {activeView === 'providers' && (
-        <AdminProvidersTab 
-            onSelectProvider={(p, u) => { setSelectedProvider(p); setSelectedUser(u || null); }} 
+        <PractitionersTab 
+          onAddSpecialist={() => setIsAddUserModalOpen(true)} // Using same modal for now
         />
       )}
 
@@ -263,20 +264,7 @@ const AdminDashboard: React.FC = () => {
         />
       )}
       
-      {activeView === 'blogs' && (
-        <AdminBlogsTab 
-            blogs={blogs} 
-            editingBlog={editingBlog} 
-            setEditingBlog={setEditingBlog} 
-            onSave={handleSaveBlog} 
-            onApprove={handleApproveBlog} 
-            onDelete={handleDeleteBlog}
-            currentPage={blogsPage}
-            totalPages={blogsTotalPages}
-            onPageChange={setBlogsPage}
-            isLoading={blogsLoading}
-        />
-      )}
+      {activeView === 'blogs' && <ContentManagementView />}
 
       {activeView === 'jobs' && <AdminJobsTab />}
       

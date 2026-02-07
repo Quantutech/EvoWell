@@ -1,0 +1,63 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - link "Skip to main content" [ref=e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - main [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - generic [ref=e8]:
+            - button "Back to Site" [ref=e9] [cursor=pointer]:
+              - img [ref=e10]
+              - text: Back to Site
+            - generic [ref=e13]:
+              - img "EvoWell Logo" [ref=e14]
+              - generic [ref=e16]: EvoWell
+            - heading "Welcome back" [level=1] [ref=e17]
+            - paragraph [ref=e18]: Enter your credentials to access the secure portal.
+          - generic [ref=e19]:
+            - button "Google" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+              - generic [ref=e26]: Google
+            - button "Apple" [ref=e27] [cursor=pointer]:
+              - img [ref=e28]
+              - generic [ref=e30]: Apple
+          - generic [ref=e35]: Or continue with email
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - text: Email Address
+              - textbox "name@example.com" [ref=e38]: admin@evowell.com
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]: Password
+                - button "Forgot password?" [ref=e42] [cursor=pointer]
+              - textbox "••••••••" [active] [ref=e43]: password
+            - button "Sign In" [ref=e44] [cursor=pointer]
+          - paragraph [ref=e46]:
+            - text: Don't have an account yet?
+            - button "Join Now" [ref=e47] [cursor=pointer]
+          - generic [ref=e49]:
+            - generic [ref=e50]: 🩺
+            - generic [ref=e51]:
+              - paragraph [ref=e52]: Are you a healthcare provider?
+              - paragraph [ref=e53]: Join our network and grow your practice.
+            - button "Join →" [ref=e54] [cursor=pointer]
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - heading "\"The most comprehensive tool for modern wellness providers.\"" [level=2] [ref=e61]
+            - paragraph [ref=e62]: Join 10,000+ clinicians managing their practice with sovereignty and ease.
+            - paragraph [ref=e68]: Trusted by leading practitioners
+          - generic [ref=e69]:
+            - img [ref=e70]
+            - generic [ref=e72]: HIPAA Compliant • SOC 2 Certified
+    - button "Chat with Evo" [ref=e73] [cursor=pointer]:
+      - generic [ref=e80]:
+        - generic [ref=e81]: Chat with Evo
+        - generic [ref=e82]: Navigation Assistant
+  - generic [ref=e83]:
+    - img [ref=e85]
+    - button "Open Tanstack query devtools" [ref=e133] [cursor=pointer]:
+      - img [ref=e134]
+```

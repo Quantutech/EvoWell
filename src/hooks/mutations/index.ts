@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { ProviderProfile, User, Appointment, UserRole } from '../../types';
@@ -99,7 +98,25 @@ export const useUpdateBlog = () => {
     onSuccess: (_, variables) => {
       addToast('success', 'Blog post updated');
       queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all });
-      // If we had a detail key via ID (currently slug), we'd invalidate that too.
+      queryClient.invalidateQueries({ queryKey: queryKeys.blogs.detail(variables.id) });
     }
   });
 };
+
+export const useDeleteBlog = () => {
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => api.deleteBlog(id),
+    onSuccess: () => {
+      addToast('success', 'Blog post deleted');
+      queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all });
+    }
+  });
+};
+
+// Aliases for backward compatibility
+export const useCreateBlogPost = useCreateBlog;
+export const useUpdateBlogPost = useUpdateBlog;
+export const useDeleteBlogPost = useDeleteBlog;

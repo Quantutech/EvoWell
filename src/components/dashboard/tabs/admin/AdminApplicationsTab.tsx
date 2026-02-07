@@ -18,8 +18,8 @@ const AdminApplicationsTab: React.FC = () => {
     setLoading(true);
     try {
       // CHANGE: Fetch providers with PENDING status instead of separate applications
-      const allProviders = await api.getAllProviders();
-      const pendingProviders = allProviders.filter(p => p.moderationStatus === ModerationStatus.PENDING);
+      const response = await api.getAllProviders();
+      const pendingProviders = (response.providers || []).filter(p => p.moderationStatus === ModerationStatus.PENDING);
       setApplications(pendingProviders);
     } catch (e) {
       console.error("Failed to load applications", e);

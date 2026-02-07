@@ -43,9 +43,7 @@ const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
   const headerActions = (
     <div className="flex gap-4">
-       {activeView === 'users' && onAction && <button onClick={() => onAction('addUser')} className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">+ Add User</button>}
        {activeView === 'testimonials' && onAction && <button onClick={() => onAction('addTestimonial')} className="bg-brand-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-brand-600 transition-all">+ New Testimonial</button>}
-       {activeView === 'blogs' && onAction && <button onClick={() => onAction('addBlog')} className="bg-brand-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-brand-600 transition-all">+ Write Post</button>}
     </div>
   );
 

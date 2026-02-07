@@ -32,7 +32,7 @@ class ApiService {
   login(email: string, password?: string) { return authService.login(email, password); }
   register(data: any) { return authService.register(data); }
   logout() { return authService.logout(); }
-
+  
   // Provider Service Delegates
   search(filters: SearchFilters) { return providerService.search(filters); }
   getProviderById(id: string) { return providerService.getProviderById(id); }
@@ -83,7 +83,7 @@ class ApiService {
   deleteMessagesByRoom(cid: string) { return clientService.deleteMessagesByRoom(cid); }
   getUnreadCount(uid: string) { return clientService.getUnreadCount(uid); }
 
-  // Content Service Delegates
+  // Content Service Delegates (includes Blog methods)
   getAllBlogs(params?: { page?: number, limit?: number }) { return contentService.getAllBlogs(params); }
   getBlogBySlug(slug: string) { return contentService.getBlogBySlug(slug); }
   getBlogsByProvider(id: string) { return contentService.getBlogsByProvider(id); }
