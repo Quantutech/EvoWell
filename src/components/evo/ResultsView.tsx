@@ -3,6 +3,7 @@ import { UserSignal, Recommendation } from './types';
 import { KNOWLEDGE_BASE } from './knowledge';
 import { ProviderProfile } from '@/types';
 import { providerService } from '@/services/provider.service';
+import { wishlistService } from '@/services/wishlist.service';
 import ProviderCard from '@/components/provider/ProviderCard';
 import { Heading, Text } from '@/components/typography';
 import { Button } from '@/components/ui';
@@ -16,6 +17,7 @@ interface ResultsViewProps {
 
 const ResultsView: React.FC<ResultsViewProps> = ({ signal, onReset, onClose }) => {
   const [providers, setProviders] = useState<ProviderProfile[]>([]);
+  const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const { navigate } = useNavigation();
 
@@ -48,7 +50,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ signal, onReset, onClose }) =
         const { providers } = await providerService.search(filters);
         
         // Prioritize sliding scale if budget is a concern
-        let sortedProviders = [...providers];
+        const sortedProviders = [...providers];
         if (signal.budget_sensitivity === 'yes' || signal.budget_sensitivity === 'somewhat') {
              sortedProviders.sort((a, b) => {
                  if (a.pricing.slidingScale && !b.pricing.slidingScale) return -1;
@@ -57,7 +59,19 @@ const ResultsView: React.FC<ResultsViewProps> = ({ signal, onReset, onClose }) =
              });
         }
         
-        setProviders(sortedProviders.slice(0, 3)); 
+        const displayedProviders = sortedProviders.slice(0, 3);
+        setProviders(displayedProviders);
+
+        // Batch check wishlist status
+        if (displayedProviders.length > 0 && !isSpecialRole) {
+          try {
+            const ids = displayedProviders.map(p => p.id);
+            const statuses = await wishlistService.checkWishlistStatus(ids);
+            setSavedStatus(statuses);
+          } catch (e) {
+            console.error("Failed to check wishlist status", e);
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch recommendations", err);
       } finally {
@@ -162,7 +176,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({ signal, onReset, onClose }) =
             </Text>
             
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <ProviderCard provider={primaryRecommendation} className="border-0 shadow-none" />
+                <ProviderCard 
+                  provider={primaryRecommendation} 
+                  className="border-0 shadow-none" 
+                  isSaved={savedStatus[primaryRecommendation.id]}
+                  onToggleSave={(saved) => setSavedStatus(prev => ({ ...prev, [primaryRecommendation.id]: saved }))}
+                />
                 <div className="px-6 py-3 bg-slate-50 border-t border-slate-100">
                     <Text variant="small" className="text-slate-500 italic">
                         <strong>Why this match?</strong> You mentioned {signal.primary_concern} and prefer {signal.session_format || 'flexible'} sessions.
@@ -179,7 +198,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({ signal, onReset, onClose }) =
             <Heading level={4} className="mb-4">Other great matches</Heading>
             <div className="space-y-4">
                 {providers.slice(1).map(provider => (
-                    <ProviderCard key={provider.id} provider={provider} />
+                    <ProviderCard 
+                      key={provider.id} 
+                      provider={provider} 
+                      isSaved={savedStatus[provider.id]}
+                      onToggleSave={(saved) => setSavedStatus(prev => ({ ...prev, [provider.id]: saved }))}
+                    />
                 ))}
             </div>
         </section>

@@ -4,6 +4,7 @@ import { MOCK_REVENUE_DATA, MOCK_DEMOGRAPHICS } from '@/components/dashboard/con
 import { useAuth } from '@/App';
 import { ModerationStatus } from '@/types';
 import { Heading, Text } from '@/components/typography';
+import ProviderInterestedClients from '@/components/dashboard/tabs/ProviderInterestedClients';
 
 const ProviderOverview: React.FC = () => {
   const { user, provider } = useAuth();
@@ -65,7 +66,7 @@ const ProviderOverview: React.FC = () => {
             { label: 'Total Revenue', value: '$32,450', trend: '+12%', color: 'text-slate-900', icon: '💰' },
             { label: 'Active Patients', value: '42', trend: '+4', color: 'text-brand-600', icon: '👥' },
             { label: 'Completion Rate', value: '94%', trend: '+1.2%', color: 'text-blue-600', icon: '📈' },
-            { label: 'Patient Satisfaction', value: '4.9/5', trend: 'stable', color: 'text-amber-500', icon: '⭐' }
+            { label: 'Verified Endorsements', value: provider?.endorsements?.peerCount || 0, trend: 'up', color: 'text-teal-600', icon: '🛡️' }
          ].map((stat, i) => (
             <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
                <div>
@@ -77,6 +78,9 @@ const ProviderOverview: React.FC = () => {
             </div>
          ))}
       </div>
+
+      {/* Interested Clients */}
+      <ProviderInterestedClients />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          {/* Revenue Chart */}

@@ -1,4 +1,4 @@
-# Supabase vs. Firebase: Strategic Analysis & Migration Plan
+dev# Supabase vs. Firebase: Strategic Analysis & Migration Plan
 
 ## 1. Technical Comparison
 

@@ -22,6 +22,7 @@ import AdminConfigTab from '../components/dashboard/tabs/admin/AdminConfigTab';
 import AdminAuditTab from '../components/dashboard/tabs/admin/AdminAuditTab';
 import AdminApplicationsTab from '../components/dashboard/tabs/admin/AdminApplicationsTab';
 import AdminContentReviewTab from '../components/dashboard/tabs/admin/AdminContentReviewTab';
+import AdminEndorsementsTab from '../components/dashboard/tabs/admin/AdminEndorsementsTab';
 import AdminClientsTab from '../components/dashboard/tabs/admin/AdminClientsTab';
 import AdminJobsTab from '../components/dashboard/tabs/admin/AdminJobsTab';
 import { ResetDataButton } from '../components/dashboard/tabs/admin/ResetDataButton';
@@ -249,6 +250,9 @@ const AdminDashboard: React.FC = () => {
 
       {/* New Content Moderation Tab */}
       {activeView === 'review' && <AdminContentReviewTab />}
+
+      {/* Endorsements Management */}
+      {activeView === 'endorsements' && <AdminEndorsementsTab />}
       
       {activeView === 'testimonials' && (
         <AdminTestimonialsTab 

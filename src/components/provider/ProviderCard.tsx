@@ -3,13 +3,17 @@ import { ProviderProfile } from '@/types';
 import { Card, CardBody, Badge, Button } from '@/components/ui';
 import { Heading, Text, Label } from '@/components/typography';
 import { useNavigation } from '@/App';
+import { EndorsementBadge } from './EndorsementBadge';
+import { WishlistButton } from './WishlistButton';
 
 interface ProviderCardProps {
   provider: ProviderProfile;
   className?: string;
+  isSaved?: boolean;
+  onToggleSave?: (saved: boolean) => void;
 }
 
-const ProviderCard: React.FC<ProviderCardProps> = ({ provider, className }) => {
+const ProviderCard: React.FC<ProviderCardProps> = ({ provider, className, isSaved, onToggleSave }) => {
   const { navigate } = useNavigation();
 
   const getNextAvailable = (days: string[]) => {
@@ -20,7 +24,14 @@ const ProviderCard: React.FC<ProviderCardProps> = ({ provider, className }) => {
   const displayName = provider.firstName ? `Dr. ${provider.firstName} ${provider.lastName}` : `Dr. ${provider.id.split('-')[1].toUpperCase()}`;
 
   return (
-    <Card className={`reveal group p-0 overflow-hidden ${className}`} hoverable>
+    <Card className={`group p-0 overflow-hidden relative ${className}`} hoverable>
+      <div className="absolute top-2 right-2 z-30">
+        <WishlistButton 
+          providerId={provider.id} 
+          initialIsSaved={isSaved} 
+          onToggle={onToggleSave}
+        />
+      </div>
       <div className="flex flex-col md:flex-row h-full">
         <div className="md:w-60 lg:w-64 shrink-0 bg-slate-100 relative min-h-[250px] md:min-h-full">
           <img src={provider.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt={displayName} />
@@ -50,9 +61,19 @@ const ProviderCard: React.FC<ProviderCardProps> = ({ provider, className }) => {
               </div>
               <div className="flex flex-wrap gap-4 my-3 text-[11px] font-medium text-slate-600 border-y border-slate-50 py-3">
                 <div className="flex items-center gap-2"><span className="text-base">🎓</span><span className="font-bold">{provider.yearsExperience} Years Exp.</span></div>
-                <div className="flex items-center gap-2"><span className="text-base">⭐</span><span className="font-bold">{provider.averageRating || 'New'} ({provider.totalReviews || 0})</span></div>
+                {/* Note: Star ratings removed in favor of professional endorsements */}
                 <div className="flex items-center gap-2"><span className="text-base">📍</span><span className="font-bold">{provider.address?.city || 'Remote'}, {provider.address?.state}</span></div>
               </div>
+
+              {/* Endorsements Row */}
+              {(provider.endorsements?.evowell || (provider.endorsements?.peerCount ?? 0) > 0) && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {provider.endorsements?.evowell && <EndorsementBadge type="evowell" />}
+                  {(provider.endorsements?.peerCount ?? 0) > 0 && (
+                    <EndorsementBadge type="peer" count={provider.endorsements?.peerCount} />
+                  )}
+                </div>
+              )}
               <Text variant="small" color="muted" className="mb-4 line-clamp-2">"{provider.bio}"</Text>
               <div className="flex flex-wrap gap-2 mb-4">
                 {provider.languages.map(lang => <Badge key={lang} variant="neutral">{lang}</Badge>)}

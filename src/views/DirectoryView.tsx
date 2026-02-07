@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { api } from '../services/api';
+import { wishlistService } from '../services/wishlist.service';
 import { useNavigation } from '../App';
 import { ProviderProfile, Specialty } from '../types';
 import Breadcrumb from '../components/Breadcrumb';
@@ -12,7 +13,7 @@ import { SearchFilters, SessionFormat } from '../types';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
-type SortOption = 'name-asc' | 'name-desc' | 'rating' | 'newest';
+type SortOption = 'name_asc' | 'name_desc' | 'endorsements' | 'newest';
 type ViewMode = 'list' | 'grid';
 
 interface EnrichedProvider extends ProviderProfile {
@@ -20,7 +21,6 @@ interface EnrichedProvider extends ProviderProfile {
   lastName?: string;
   sortName?: string;
   slug?: string;
-  rating?: number | string;
   title?: string;
   credentials?: string;
   createdAt?: string;
@@ -45,9 +45,9 @@ const ProviderGridCard: React.FC<{ provider: EnrichedProvider }> = ({ provider }
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
-        {provider.rating && (
-          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-black text-slate-800 shadow-sm">
-            ★ {typeof provider.rating === 'number' ? provider.rating.toFixed(1) : provider.rating}
+        {provider.endorsements?.evowell && (
+          <div className="absolute top-3 right-3 bg-[#0f311c] border border-[#1e663a]/30 px-2.5 py-1 rounded-lg text-[9px] font-black text-teal-400 shadow-sm uppercase tracking-widest">
+            Endorsed
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -77,11 +77,12 @@ const ProviderGridCard: React.FC<{ provider: EnrichedProvider }> = ({ provider }
 
 const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = [] }) => {
   const { navigate } = useNavigation();
-  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [sortBy, setSortBy] = useState<SortOption>('name_asc');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(20);
+  const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -93,8 +94,8 @@ const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = 
   
   const searchFilters: SearchFilters = useMemo(() => ({
     specialty: selectedSpecialty || undefined,
-    // Add other filters as needed if Directory supports more complex filtering
-  }), [selectedSpecialty]);
+    sortBy: sortBy === 'endorsements' ? 'endorsements' : sortBy === 'name_asc' ? 'name_asc' : undefined
+  }), [selectedSpecialty, sortBy]);
 
   const {
     data,
@@ -123,7 +124,6 @@ const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = 
       firstName: p.firstName || 'Unknown',
       lastName: p.lastName || 'Provider',
       sortName: `${p.lastName || 'Provider'} ${p.firstName || 'Unknown'}`.trim().toLowerCase(),
-      rating: (p as any).rating,
       createdAt: (p as any).audit?.createdAt || (p as any).createdAt,
       slug: (p as any).profileSlug || (p as any).slug
     } as EnrichedProvider));
@@ -143,14 +143,18 @@ const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = 
     }
 
     switch (sortBy) {
-      case 'name-asc':
+      case 'name_asc':
         list.sort((a, b) => (a.sortName || '').localeCompare(b.sortName || ''));
         break;
-      case 'name-desc':
+      case 'name_desc':
         list.sort((a, b) => (b.sortName || '').localeCompare(a.sortName || ''));
         break;
-      case 'rating':
-        list.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+      case 'endorsements':
+        list.sort((a, b) => {
+            const scoreA = (a.endorsements?.evowell ? 50 : 0) + Math.min((a.endorsements?.peerCount || 0) * 5, 75);
+            const scoreB = (b.endorsements?.evowell ? 50 : 0) + Math.min((b.endorsements?.peerCount || 0) * 5, 75);
+            return scoreB - scoreA;
+        });
         break;
       case 'newest':
         list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
@@ -227,6 +231,15 @@ const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = 
     setVisibleCount(20);
   }, [selectedSpecialty, selectedLetter, sortBy]);
 
+  const visibleIds = useMemo(() => visible.map(p => p.id).join(','), [visible]);
+
+  useEffect(() => {
+    if (visibleIds) {
+      const ids = visibleIds.split(',');
+      wishlistService.checkWishlistStatus(ids).then(setSavedStatus).catch(console.error);
+    }
+  }, [visibleIds]);
+
   return (
     <div className="bg-[#f8fafc] min-h-screen">
       <Breadcrumb items={[{ label: 'Directory' }]} />
@@ -301,9 +314,9 @@ const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = 
                   value={sortBy}
                   onChange={(val) => setSortBy(val as SortOption)}
                   options={[
-                    { value: 'name-asc', label: 'Name A → Z' },
-                    { value: 'name-desc', label: 'Name Z → A' },
-                    { value: 'rating', label: 'Highest Rated' },
+                    { value: 'name_asc', label: 'Name A → Z' },
+                    { value: 'name_desc', label: 'Name Z → A' },
+                    { value: 'endorsements', label: 'Most Trusted' },
                     { value: 'newest', label: 'Newest First' },
                   ]}
                   className="bg-slate-50 border-none"
@@ -327,7 +340,7 @@ const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = 
                   aria-label="Grid view"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                   </svg>
                 </button>
               </div>
@@ -389,7 +402,11 @@ const DirectoryView: React.FC<{ specialties?: Specialty[] }> = ({ specialties = 
                   <div className="space-y-5">
                     {visible.map(p => (
                       <div key={p.id} className="reveal">
-                        <ProviderCard provider={p} />
+                        <ProviderCard 
+                          provider={p} 
+                          isSaved={savedStatus[p.id]}
+                          onToggleSave={(saved) => setSavedStatus(prev => ({ ...prev, [p.id]: saved }))}
+                        />
                       </div>
                     ))}
                   </div>

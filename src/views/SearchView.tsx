@@ -11,7 +11,7 @@ import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
-type SortOption = 'relevance' | 'rating' | 'name-asc' | 'price-low' | 'price-high';
+type SortOption = 'relevance' | 'endorsements' | 'name_asc' | 'price_low' | 'price_high';
 
 /* ─── Active filter pill ─────────────────────────────────────────────── */
 
@@ -37,6 +37,7 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
     language: undefined,
     maxPrice: undefined,
     day: undefined,
+    evowellEndorsedOnly: undefined,
   });
 
   const [inputValue, setInputValue] = useState(initialParams?.get('query') || '');
@@ -66,8 +67,8 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['searchProviders', filters],
-    queryFn: ({ pageParam = 0 }) => api.search({ ...filters, limit: LIMIT, offset: pageParam * LIMIT }),
+    queryKey: ['searchProviders', filters, sortBy],
+    queryFn: ({ pageParam = 0 }) => api.search({ ...filters, sortBy, limit: LIMIT, offset: pageParam * LIMIT }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       const fetched = allPages.flatMap(p => p.providers).length;
@@ -85,16 +86,21 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
   const results = useMemo(() => {
     const list = [...rawResults];
     switch (sortBy) {
-      case 'rating':
-        list.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+      case 'endorsements':
+        // Client-side backup if API enrichment is missing
+        list.sort((a, b) => {
+           const scoreA = (a.endorsements?.evowell ? 50 : 0) + Math.min((a.endorsements?.peerCount || 0) * 5, 75);
+           const scoreB = (b.endorsements?.evowell ? 50 : 0) + Math.min((b.endorsements?.peerCount || 0) * 5, 75);
+           return scoreB - scoreA;
+        });
         break;
-      case 'name-asc':
+      case 'name_asc':
         list.sort((a, b) => (a.firstName || a.id).localeCompare(b.firstName || b.id));
         break;
-      case 'price-low':
+      case 'price_low':
         list.sort((a, b) => (Number(a.pricing?.hourlyRate) || 0) - (Number(b.pricing?.hourlyRate) || 0));
         break;
-      case 'price-high':
+      case 'price_high':
         list.sort((a, b) => (Number(b.pricing?.hourlyRate) || 0) - (Number(a.pricing?.hourlyRate) || 0));
         break;
       default: // relevance — keep API order
@@ -154,6 +160,7 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
     if (filters.gender) pills.push({ label: filters.gender, clear: () => updateFilter('gender', undefined) });
     if (filters.day) pills.push({ label: filters.day, clear: () => updateFilter('day', undefined) });
     if (filters.maxPrice) pills.push({ label: `Under $${filters.maxPrice}/hr`, clear: () => updateFilter('maxPrice', undefined) });
+    if (filters.evowellEndorsedOnly) pills.push({ label: 'EvoWell Endorsed', clear: () => updateFilter('evowellEndorsedOnly', undefined) });
     return pills;
   }, [filters, specialties, updateFilter]);
 
@@ -161,6 +168,34 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
 
   const FilterPanelContent = () => (
     <div className="space-y-7">
+      {/* EvoWell Endorsed Toggle (Temporarily Disabled) */}
+      {/* 
+      <div>
+        <label className="flex items-center justify-between p-4 bg-[#0f311c]/5 border border-[#0f311c]/10 rounded-2xl cursor-pointer group hover:bg-[#0f311c]/10 transition-all">
+          <div className="flex items-center gap-3">
+             <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${filters.evowellEndorsedOnly ? 'bg-[#0f311c] text-teal-400' : 'bg-slate-100 text-slate-400'}`}>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+             </div>
+             <div>
+                <p className="text-[13px] font-bold text-slate-800">EvoWell Endorsed</p>
+                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Top Tier Trust Only</p>
+             </div>
+          </div>
+          <div className={`w-12 h-6 rounded-full relative transition-all duration-300 ${filters.evowellEndorsedOnly ? 'bg-[#0f311c]' : 'bg-slate-200'}`}>
+             <input 
+               type="checkbox" 
+               className="sr-only" 
+               checked={!!filters.evowellEndorsedOnly}
+               onChange={(e) => updateFilter('evowellEndorsedOnly', e.target.checked || undefined)}
+             />
+             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${filters.evowellEndorsedOnly ? 'left-7' : 'left-1'}`} />
+          </div>
+        </label>
+      </div>
+      */}
+
       {/* Session format */}
       <div>
         <Label className="mb-3 block text-xs">Session Format</Label>
@@ -293,10 +328,10 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
             <div className="hidden lg:flex bg-slate-50 p-1 rounded-xl border border-slate-100">
                 {[
                     { label: 'Relevant', value: 'relevance' },
-                    { label: 'Rated', value: 'rating' },
-                    { label: 'A-Z', value: 'name-asc' },
-                    { label: '$ Low', value: 'price-low' },
-                    { label: '$ High', value: 'price-high' },
+                    { label: 'Trusted', value: 'endorsements' },
+                    { label: 'A-Z', value: 'name_asc' },
+                    { label: '$ Low', value: 'price_low' },
+                    { label: '$ High', value: 'price_high' },
                 ].map((opt: any) => (
                     <button
                         key={opt.value}
@@ -318,10 +353,10 @@ const SearchView: React.FC<{ specialties: Specialty[]; initialParams?: URLSearch
               onChange={(val) => setSortBy(val as SortOption)}
               options={[
                 { value: 'relevance', label: 'Most Relevant' },
-                { value: 'rating', label: 'Highest Rated' },
-                { value: 'name-asc', label: 'Name A → Z' },
-                { value: 'price-low', label: 'Price: Low → High' },
-                { value: 'price-high', label: 'Price: High → Low' },
+                { value: 'endorsements', label: 'Most Endorsed' },
+                { value: 'name_asc', label: 'Name A → Z' },
+                { value: 'price_low', label: 'Price: Low → High' },
+                { value: 'price_high', label: 'Price: High → Low' },
               ]}
               className="lg:hidden min-w-[160px]"
             />

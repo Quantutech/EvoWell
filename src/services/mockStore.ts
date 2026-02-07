@@ -1,4 +1,4 @@
-import { User, ProviderProfile, ClientProfile, Resource, UserRole } from '../types';
+import { User, ProviderProfile, ClientProfile, Resource, UserRole, Endorsement, WishlistEntry } from '../types';
 import { persistence } from './persistence';
 import { loadInitialData } from '../data/utils/loader';
 
@@ -10,6 +10,8 @@ interface MockStoreData {
   testimonials: any[];
   clientProfiles: ClientProfile[];
   resources: Resource[];
+  endorsements: Endorsement[];
+  wishlist: WishlistEntry[];
   hiddenResourceIds: string[];
   languages: string[];
   genders: string[];
@@ -34,6 +36,8 @@ class MockStoreService {
       ...initialData,
       clientProfiles: stored.clientProfiles || [],
       resources: (stored as any).resources || [],
+      endorsements: (stored as any).endorsements || initialData.endorsements || [],
+      wishlist: (stored as any).wishlist || [],
       hiddenResourceIds: (stored as any).hiddenResourceIds || [],
       languages: stored.languages || ['English', 'Spanish', 'Mandarin', 'French', 'German'],
       genders: stored.genders || ['Male', 'Female', 'Non-Binary', 'Prefer not to say']
@@ -59,6 +63,20 @@ class MockStoreService {
         preferences: { communication: 'email' as const, language: 'English' }
       }));
       store.clientProfiles = [...store.clientProfiles, ...generated];
+    }
+
+    // Auto-generate wishlist items if missing
+    if (store.wishlist.length === 0) {
+        const client = store.users.find(u => u.role === UserRole.CLIENT);
+        const providers = store.providers.slice(0, 3);
+        if (client && providers.length > 0) {
+            store.wishlist = providers.map((p, index) => ({
+                id: `wl-mock-${index}`,
+                providerId: p.id,
+                clientId: client.id,
+                createdAt: new Date().toISOString()
+            }));
+        }
     }
 
     return store;

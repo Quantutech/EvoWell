@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo, useRe
 import { useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth, useNavigation } from '../App';
-import { ProviderProfile, Specialty, BlogPost, ModerationStatus, UserRole } from '../types';
+import { ProviderProfile, Specialty, BlogPost, ModerationStatus, UserRole, Endorsement } from '../types';
+import { endorsementService } from '../services/endorsement.service';
 import { getUserTimezone } from '../utils/timezone';
 import IdentityCard from '../components/provider/profile/IdentityCard';
+import { EndorsementCard } from '../components/provider/EndorsementCard';
+import { EndorseButton } from '../components/provider/EndorseButton';
 import BookingSidebar from '../components/provider/booking/BookingSidebar';
 import { Heading, Text, Label } from '../components/typography';
 import { Card, Badge, Icon } from '../components/ui';
@@ -34,7 +37,7 @@ const getVideoEmbedUrl = (url: string): string | null => {
   if (!url) return null;
   
   // YouTube
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
   if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
   
   // Vimeo
@@ -90,6 +93,7 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
   const resolvedId = propId || params.providerId || '';
 
   const [userTz] = useState(getUserTimezone);
+  const [showAllEndorsements, setShowAllEndorsements] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [bookingMode, setBookingMode] = useState<'In Person' | 'Online'>('Online');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -99,12 +103,20 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const isManualScroll = useRef(false);
 
-  const { data: provider, isLoading: loading, error: providerError } = useQuery({
+  const { data: provider, isLoading: loading, error: providerError, refetch: refetchProvider } = useQuery({
     queryKey: ['provider', resolvedId],
     queryFn: () => api.fetchProviderBySlugOrId(resolvedId),
     enabled: !!resolvedId,
     retry: 1,
   });
+
+  const { data: endorsements = [], refetch: refetchEndorsements } = useQuery({
+    queryKey: ['endorsements', provider?.id],
+    queryFn: () => endorsementService.getEndorsementsForProvider(provider!.id),
+    enabled: !!provider?.id,
+  });
+
+  const peerEndorsements = useMemo(() => endorsements.filter(e => e.endorsementType === 'peer'), [endorsements]);
 
   const { data: specialties = [] } = useQuery({
     queryKey: ['specialties'],
@@ -149,8 +161,9 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
 
   const tabs = useMemo(
     () => [
-      { label: 'Overview', id: 'section-overview' },
-      { label: 'About', id: 'section-about' },
+      { label: 'Introduction', id: 'section-overview' },
+      { label: 'Credentials', id: 'section-about' },
+      { label: 'Endorsements', id: 'section-endorsements' },
       { label: 'Media', id: 'section-media' },
       { label: 'Articles', id: 'section-articles' },
       { label: 'Location', id: 'section-location' },
@@ -415,6 +428,106 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
                     )}
                   </div>
                 )}
+              </Card>
+
+              {/* Trust & Endorsements Section */}
+              <Card id="section-endorsements" ref={registerSection('section-endorsements')} className="scroll-mt-36 p-8 md:p-10 border-slate-200/60 shadow-xl shadow-slate-200/40 animate-in fade-in slide-in-from-bottom-4 duration-500" role="tabpanel">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+                  <SectionHeading icon="🛡️">Trust & Endorsements</SectionHeading>
+                  {provider && (
+                    <EndorseButton 
+                      provider={provider} 
+                      onSuccess={() => {
+                        refetchEndorsements();
+                        refetchProvider();
+                      }} 
+                    />
+                  )}
+                </div>
+
+                {provider?.endorsements?.evowell && (
+                  <div className="bg-[#0f311c] border border-[#1e663a]/30 p-6 rounded-[24px] mb-10 shadow-lg shadow-[#0f311c]/10">
+                    <div className="flex items-start gap-5">
+                      <div className="w-14 h-14 bg-[#1e663a]/20 rounded-2xl flex items-center justify-center shrink-0 text-teal-400 border border-[#1e663a]/30">
+                         <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            <path d="M12 11V15M12 11L10 9M12 11L14 9" strokeWidth="2" />
+                         </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-bold text-teal-50 leading-tight mb-2">Endorsed by EvoWell Team</h4>
+                        <p className="text-teal-100/70 text-sm leading-relaxed max-w-2xl">
+                          Verified for quality, ethics, and alignment with platform standards. This provider has undergone a rigorous manual review by our clinical board.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-8">
+                  <div className="flex items-center gap-4">
+                     <div className="h-px flex-grow bg-slate-100"></div>
+                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">
+                       Verified Peer Endorsements ({peerEndorsements.length})
+                     </span>
+                     <div className="h-px flex-grow bg-slate-100"></div>
+                     {peerEndorsements.length > 0 && (
+                        <div className="flex gap-2">
+                           <button 
+                             onClick={() => {
+                               const el = document.getElementById('endorsement-slider');
+                               if (el) el.scrollBy({ left: -320, behavior: 'smooth' });
+                             }}
+                             className="w-8 h-8 bg-white rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:border-brand-300 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-500 hover:text-brand-600"
+                             aria-label="Scroll left"
+                           >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                           </button>
+                           <button 
+                             onClick={() => {
+                               const el = document.getElementById('endorsement-slider');
+                               if (el) el.scrollBy({ left: 320, behavior: 'smooth' });
+                             }}
+                             className="w-8 h-8 bg-white rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:border-brand-300 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-500 hover:text-brand-600"
+                             aria-label="Scroll right"
+                           >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                           </button>
+                        </div>
+                     )}
+                  </div>
+
+                  {peerEndorsements.length > 0 ? (
+                    <div className="relative group/slider">
+                        <div 
+                          id="endorsement-slider" 
+                          className="flex gap-4 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scroll-smooth"
+                          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                          <style>{`
+                            #endorsement-slider::-webkit-scrollbar { 
+                              display: none; 
+                            }
+                          `}</style>
+                          {peerEndorsements.map((e) => (
+                            <div key={e.id} className="snap-start shrink-0 w-[300px]">
+                                <EndorsementCard endorsement={e} />
+                            </div>
+                          ))}
+                        </div>
+                    </div>
+                  ) : (
+                    <div className="py-12 bg-slate-50/50 rounded-[24px] border-2 border-dashed border-slate-200 text-center">
+                      <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <Text variant="small" weight="bold" color="muted">No peer endorsements yet.</Text>
+                      <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">Endorsements only come from verified wellness professionals.</p>
+                    </div>
+                  )}
+                </div>
               </Card>
 
               <Card id="section-media" ref={registerSection('section-media')} className="scroll-mt-36 p-8 md:p-10" role="tabpanel">

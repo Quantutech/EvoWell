@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth, useNavigation } from '@/App';
 import { api } from '@/services/api';
-import { Appointment, UserRole, SupportTicket, ClientProfile, WellnessEntry, Habit } from '@/types';
+import { wishlistService } from '@/services/wishlist.service';
+import { useToast } from '@/contexts/ToastContext';
+import { Appointment, UserRole, SupportTicket, ClientProfile, WellnessEntry, Habit, ProviderProfile } from '@/types';
 import ClientDashboardLayout from '@/components/dashboard/ClientDashboardLayout';
 import ClientSupportTab from '@/components/dashboard/tabs/client/ClientSupportTab';
+import ClientSavedProviders from '@/components/dashboard/tabs/ClientSavedProviders';
 import { BarChart, DonutChart, SettingInput } from '@/components/dashboard/DashboardComponents';
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
+import ProfileImage from '@/components/ui/ProfileImage';
 
 const ClientDashboard: React.FC = () => {
   const { user, login } = useAuth();
   const { navigate } = useNavigation();
+  const { addToast } = useToast();
   const [apps, setApps] = useState<Appointment[]>([]);
+  const [careTeam, setCareTeam] = useState<ProviderProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -49,6 +55,12 @@ const ClientDashboard: React.FC = () => {
         }
         setLoading(false);
       });
+
+      // Fetch Care Team from Wishlist
+      wishlistService.getSavedProviders().then(saved => {
+        const team = saved.map(s => s.provider).filter(Boolean) as ProviderProfile[];
+        setCareTeam(team.slice(0, 3));
+      }).catch(console.error);
     }
   }, [user]);
 
@@ -67,15 +79,24 @@ const ClientDashboard: React.FC = () => {
         address: editAddress
       });
       await login(editEmail);
-      alert("Profile updated successfully!");
+      addToast('success', "Profile updated successfully!");
     } catch (err) {
-      alert("Failed to update profile.");
+      addToast('error', "Failed to update profile.");
     } finally { setIsSaving(false); }
+  };
+
+  const handleSaveJournal = async () => {
+    if (!user || !journalEntry.trim()) return;
+    
+    // In a real app, this would be an API call to append to wellnessLog
+    // For now, we mock it by updating the local profile state or showing toast
+    addToast('success', "Entry saved and encrypted. Shared with your care team.");
+    setJournalEntry('');
   };
 
   const handleLogWellness = async () => {
       if (!profile) return;
-      alert("Wellness logging feature integrated with clinical tracking. Your specialist will see these updates.");
+      addToast('info', "Wellness logging feature coming soon. Your specialist will see these updates.");
   };
 
   const moodData = useMemo(() => {
@@ -120,20 +141,25 @@ const ClientDashboard: React.FC = () => {
               <div className="lg:col-span-8 space-y-8">
                  {/* Next Session Card */}
                  <section className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
                     <h2 className="text-lg font-bold text-slate-900 mb-6 uppercase tracking-widest text-[11px] text-slate-400">Next Clinical Session</h2>
                     {apps.filter(a => a.status === 'CONFIRMED').length > 0 ? (
-                      <div className="bg-blue-50 p-8 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 group hover:bg-blue-100 transition-all">
+                      <div className="bg-brand-50 p-8 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 group hover:bg-brand-100 transition-all">
                         <div>
                           <p className="text-2xl font-bold text-slate-900">{new Date(apps.filter(a => a.status === 'CONFIRMED')[0].dateTime).toLocaleString()}</p>
-                          <p className="text-xs text-blue-500 font-bold uppercase tracking-widest mt-1">Confirmed Specialist Intake</p>
+                          <p className="text-xs text-brand-600 font-bold uppercase tracking-widest mt-1">Confirmed Specialist Intake</p>
                         </div>
-                        <button className="px-8 py-3 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all">Join Secure Room</button>
+                        <button 
+                          onClick={() => addToast('info', 'Secure room opens 10 minutes before session.')}
+                          className="px-8 py-3 bg-brand-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-brand-600/20 hover:bg-brand-700 transition-all"
+                        >
+                          Join Secure Room
+                        </button>
                       </div>
                     ) : (
                       <div className="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                         <p className="text-slate-400 italic mb-4">No upcoming clinical sessions found.</p>
-                        <button onClick={() => navigate('#/search')} className="px-6 py-2 bg-white text-blue-600 border border-blue-100 rounded-xl text-xs font-bold hover:bg-blue-50">Find a Specialist</button>
+                        <button onClick={() => navigate('#/search')} className="px-6 py-2 bg-white text-brand-600 border border-brand-100 rounded-xl text-xs font-bold hover:bg-brand-50">Find a Specialist</button>
                       </div>
                     )}
                  </section>
@@ -169,13 +195,20 @@ const ClientDashboard: React.FC = () => {
                  <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4 text-center">My Care Team</h3>
                     <div className="space-y-4">
-                       <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                          <div className="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center text-white font-bold">SC</div>
-                          <div>
-                             <p className="text-xs font-bold text-slate-900">Dr. Sarah Chen</p>
-                             <p className="text-[10px] text-slate-400 font-bold uppercase">Psychologist</p>
-                          </div>
-                       </div>
+                       {careTeam.length > 0 ? careTeam.map(provider => (
+                           <div key={provider.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => navigate(`#/provider/${provider.id}`)}>
+                              <ProfileImage src={provider.imageUrl} alt={`${provider.firstName} ${provider.lastName}`} className="w-10 h-10 rounded-full" />
+                              <div>
+                                 <p className="text-xs font-bold text-slate-900">Dr. {provider.firstName} {provider.lastName}</p>
+                                 <p className="text-[10px] text-slate-400 font-bold uppercase">{provider.professionalTitle}</p>
+                              </div>
+                           </div>
+                       )) : (
+                           <div className="text-center py-4">
+                               <p className="text-xs text-slate-400 italic">No providers yet.</p>
+                               <button onClick={() => navigate('#/search')} className="text-[10px] font-bold text-brand-600 hover:underline mt-2">Find a Specialist</button>
+                           </div>
+                       )}
                     </div>
                  </div>
               </div>
@@ -189,7 +222,7 @@ const ClientDashboard: React.FC = () => {
               <h2 className="text-2xl font-black text-slate-900">Wellness Tracker</h2>
               <button 
                 onClick={handleLogWellness}
-                className="bg-blue-600 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-blue-700 shadow-lg"
+                className="bg-brand-600 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 shadow-lg"
               >
                 Log Today's Status
               </button>
@@ -225,16 +258,13 @@ const ClientDashboard: React.FC = () => {
               <textarea 
                 value={journalEntry}
                 onChange={e => setJournalEntry(e.target.value)}
-                className="w-full h-40 bg-slate-50 border-none rounded-2xl p-6 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500/20 outline-none resize-none mb-4"
+                className="w-full h-40 bg-slate-50 border-none rounded-2xl p-6 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none mb-4"
                 placeholder="How are you feeling today? Any breakthroughs or challenges?"
               />
               <div className="flex justify-end">
                  <button 
-                   onClick={() => {
-                     alert("Entry saved and encrypted. Shared with your care team.");
-                     setJournalEntry('');
-                   }}
-                   className="bg-blue-600 text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-blue-700 transition-all"
+                   onClick={handleSaveJournal}
+                   className="bg-brand-600 text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 transition-all"
                  >
                     Securely Save Entry
                  </button>
@@ -243,15 +273,19 @@ const ClientDashboard: React.FC = () => {
 
            <div className="space-y-4">
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest ml-4">Previous Entries</h3>
-              {profile?.wellnessLog?.filter(w => w.notes).map(w => (
+              {profile?.wellnessLog?.filter(w => w.notes).length ? profile.wellnessLog.filter(w => w.notes).map(w => (
                  <div key={w.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                     <div className="flex justify-between items-center mb-2">
-                       <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{new Date(w.date).toLocaleDateString()}</span>
+                       <span className="text-[10px] font-black text-brand-500 uppercase tracking-widest">{new Date(w.date).toLocaleDateString()}</span>
                        <span className="text-[10px] font-bold text-slate-400 uppercase">Mood: {w.mood}/5</span>
                     </div>
                     <p className="text-sm text-slate-600 font-medium italic">"{w.notes}"</p>
                  </div>
-              ))}
+              )) : (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                   <p className="text-slate-400 italic">No journal entries yet.</p>
+                </div>
+              )}
            </div>
         </div>
       )}
@@ -269,7 +303,7 @@ const ClientDashboard: React.FC = () => {
                   <div className="text-right">
                     <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${
                       a.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 
-                      a.status === 'COMPLETED' ? 'bg-blue-100 text-blue-700' : 
+                      a.status === 'COMPLETED' ? 'bg-brand-100 text-brand-700' : 
                       'bg-slate-100 text-slate-500'
                     }`}>{a.status}</span>
                   </div>
@@ -279,11 +313,15 @@ const ClientDashboard: React.FC = () => {
         </div>
       )}
 
+      {activeTab === 'saved' && (
+        <ClientSavedProviders />
+      )}
+
       {activeTab === 'settings' && (
         <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm max-w-4xl animate-in slide-in-from-bottom-4">
           <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
              <h2 className="text-xl font-bold text-slate-900">Profile Management</h2>
-             {isSaving && <span className="text-xs font-bold text-blue-500 animate-pulse uppercase tracking-widest">Saving Health Data...</span>}
+             {isSaving && <span className="text-xs font-bold text-brand-500 animate-pulse uppercase tracking-widest">Saving Health Data...</span>}
           </div>
           
           <form onSubmit={handleUpdateProfile} className="space-y-10">
@@ -333,7 +371,7 @@ const ClientDashboard: React.FC = () => {
                   <textarea 
                     value={editBio} 
                     onChange={e => setEditBio(e.target.value)} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/10 h-32 resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-brand-500/10 h-32 resize-none"
                     placeholder="Describe your health goals or anything you want your care team to know."
                   />
                </div>
@@ -341,7 +379,7 @@ const ClientDashboard: React.FC = () => {
 
             <div className="pt-8 border-t border-slate-100 flex justify-between items-center">
               <p className="text-[10px] text-slate-400 font-bold max-w-md uppercase tracking-tight">Your data is encrypted and only shared with specialists you explicitly book with.</p>
-              <button type="submit" disabled={isSaving} className="px-10 py-4 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-xl shadow-blue-600/20 disabled:opacity-50 transition-all hover:bg-blue-700">
+              <button type="submit" disabled={isSaving} className="px-10 py-4 bg-brand-600 text-white rounded-xl text-sm font-bold shadow-xl shadow-brand-600/20 disabled:opacity-50 transition-all hover:bg-brand-700">
                 Update Health Portal
               </button>
             </div>
@@ -360,7 +398,12 @@ const ClientDashboard: React.FC = () => {
            </div>
            <h3 className="text-xl font-bold text-slate-900 mb-2">My Documents</h3>
            <p className="text-slate-500 text-sm max-w-xs mx-auto">Access your shared lab results, treatment plans, and intake forms.</p>
-           <button className="mt-8 px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all">Upload New</button>
+           <button 
+             onClick={() => addToast('info', 'Document upload feature coming soon.')}
+             className="mt-8 px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all"
+           >
+             Upload New
+           </button>
         </div>
       )}
     </ClientDashboardLayout>

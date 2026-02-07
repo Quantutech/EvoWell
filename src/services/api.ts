@@ -12,10 +12,11 @@ import { providerService } from './provider.service';
 import { clientService } from './client.service';
 import { contentService } from './content.service';
 import { resourceService } from './resource.service';
+import { endorsementService } from './endorsement.service';
 import { mockStore } from './mockStore';
 
 // Re-export services for direct usage
-export { authService, providerService, clientService, contentService, resourceService, mockStore };
+export { authService, providerService, clientService, contentService, resourceService, endorsementService, mockStore };
 
 class ApiService {
   private audit = auditService;
@@ -53,6 +54,13 @@ class ApiService {
   getAllGenders() { return providerService.getAllGenders(); }
   createGender(name: string) { return providerService.createGender(name); }
   deleteGender(name: string) { return providerService.deleteGender(name); }
+
+  // Endorsement Service Delegates
+  createEndorsement(pid: string, reason?: any) { return endorsementService.createEndorsement(pid, reason); }
+  getEndorsementsForProvider(pid: string) { return endorsementService.getEndorsementsForProvider(pid); }
+  revokeEndorsement(eid: string) { return endorsementService.revokeEndorsement(eid); }
+  hasEndorsed(pid: string, uid: string) { return endorsementService.hasEndorsed(pid, uid); }
+  getEndorsementSummary(pid: string) { return endorsementService.getEndorsementSummary(pid); }
 
   // Client Service Delegates
   getUserById(id: string) { return clientService.getUserById(id); }

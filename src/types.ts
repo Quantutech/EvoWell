@@ -262,6 +262,11 @@ export interface ProviderProfile {
   freeConsultation?: boolean;
   videoUrl?: string;
   headline?: string;
+  endorsements?: {
+      evowell: boolean;
+      peerCount: number;
+      items?: Endorsement[]; 
+  };
 }
 
 export interface WellnessEntry {
@@ -443,6 +448,8 @@ export interface SearchFilters {
   maxPrice?: number;
   agesServed?: string[];
   day?: string;
+  evowellEndorsedOnly?: boolean;
+  sortBy?: 'relevance' | 'endorsements' | 'price_low' | 'price_high' | 'experience' | 'name_asc';
   limit?: number;
   offset?: number;
 }
@@ -534,4 +541,47 @@ export interface Resource {
       bio?: string;
       email?: string;
   }
+}
+
+export type EndorsementType = 'evowell' | 'peer';
+
+export type EndorsementReason =
+  | 'clinical_expertise'
+  | 'professional_collaboration'
+  | 'ethical_practice'
+  | 'strong_outcomes'
+  | 'community_contribution';
+
+export interface Endorsement {
+  id: string;
+  endorsedProviderId: string;
+  endorserUserId: string;
+  endorserRole: 'admin' | 'provider';
+  endorsementType: EndorsementType;
+  reason?: EndorsementReason;
+  createdAt: string;
+  deletedAt?: string;
+  endorser?: { // Enriched
+      firstName: string;
+      lastName: string;
+      professionalTitle?: string;
+      imageUrl?: string;
+      profileSlug?: string;
+  }
+}
+
+export interface WishlistEntry {
+  id: string;
+  providerId: string;
+  clientId: string;
+  createdAt: string;
+  provider?: ProviderProfile;
+  client?: {
+    id: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
+    imageUrl?: string;
+    location?: string;
+  };
 }

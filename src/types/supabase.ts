@@ -197,6 +197,58 @@ export interface Database {
           created_at?: string
         }
       }
+      endorsements: {
+        Row: {
+          id: string
+          endorsed_provider_id: string
+          endorser_user_id: string
+          endorser_role: 'admin' | 'provider'
+          endorsement_type: 'evowell' | 'peer'
+          reason: string | null
+          created_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          endorsed_provider_id: string
+          endorser_user_id: string
+          endorser_role: 'admin' | 'provider'
+          endorsement_type: 'evowell' | 'peer'
+          reason?: string | null
+          created_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          endorsed_provider_id?: string
+          endorser_user_id?: string
+          endorser_role?: 'admin' | 'provider'
+          endorsement_type?: 'evowell' | 'peer'
+          reason?: string | null
+          created_at?: string
+          deleted_at?: string | null
+        }
+      }
+      provider_wishlists: {
+        Row: {
+          id: string
+          provider_id: string
+          client_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          provider_id: string
+          client_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          provider_id?: string
+          client_id?: string
+          created_at?: string
+        }
+      }
       resources: {
         Row: {
           id: string
