@@ -1,563 +1,472 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Specialty, ProviderProfile, BlogPost, Testimonial } from '../types';
-import { useNavigation } from '../App';
-import { api } from '../services/api';
-import AnimatedCounter from '../components/AnimatedCounter';
-import PointSolutionsReplacement from '../components/PointSolutionsReplacement';
-import SimpleChart from '../components/SimpleChart';
-import FeaturedProviders from '../components/home/FeaturedProviders';
-import TestimonialsSection from '../components/home/TestimonialsSection';
-import { PageHero, Section, Container, Grid } from '../components/layout';
-import { Heading, Text, Label } from '../components/typography';
-import { Button, Card, CardHeader, CardBody, Badge } from '../components/ui';
-import SEO from '../components/SEO';
-import { useEvo } from '../components/evo/EvoContext';
+import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { BlogPost, ModerationStatus, ProviderProfile, Specialty } from '@/types';
+import { useNavigation } from '@/App';
+import { api } from '@/services/api';
+import { useEvo } from '@/components/evo/EvoContext';
+import { homePageContent as content } from '@/content/homePageContent';
+import { HomeCtaTargetKey, HomeCtaTargetMap } from '@/types/ui/homePage';
+import { Section, Container } from '@/components/layout';
+import { Heading, Label, Text } from '@/components/typography';
+import { Badge, Button, Card, CardBody } from '@/components/ui';
+import Icon from '@/components/ui/Icon';
+import { iconPaths } from '@/components/ui/iconPaths';
+import FeaturedProvidersGrid from '@/components/home/FeaturedProvidersGrid';
 
 interface FeaturedProvider extends ProviderProfile {
   firstName: string;
   lastName: string;
 }
 
-/* ─── Hero visual (unchanged) ────────────────────────────────────────── */
+const providerJoinPath = '/login?join=true&role=provider';
 
-const HomeHeroVisual = () => {
-  const heroChartData = [
-    { date: '2024-01-01', views: 20, inquiries: 2 },
-    { date: '2024-01-02', views: 45, inquiries: 5 },
-    { date: '2024-01-03', views: 30, inquiries: 3 },
-    { date: '2024-01-04', views: 60, inquiries: 8 },
-    { date: '2024-01-05', views: 80, inquiries: 12 },
-    { date: '2024-01-06', views: 110, inquiries: 15 },
-  ];
-
-  return (
-    <div className="relative w-full max-w-lg transform scale-90 md:scale-100 origin-center md:origin-right transition-transform">
-       <div className="bg-white/80 backdrop-blur-xl border border-white/50 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl w-full relative z-20 transform rotate-[-2deg] hover:rotate-0 transition-transform duration-500">
-          <div className="flex justify-between items-center mb-8">
-             <div>
-                <Label variant="overline" color="muted" className="mb-1">Weekly Growth</Label>
-                <Heading level={3} size="h3">$8,450</Heading>
-             </div>
-             <Badge variant="success" size="md">+24%</Badge>
-          </div>
-          <div className="h-40 mb-8">
-             <SimpleChart data={heroChartData} dataKey="views" color="#257a46" height={160} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-             <div className="bg-slate-50 p-4 rounded-2xl">
-                <Label variant="overline" color="muted" className="mb-1">New Patients</Label>
-                <Text variant="lead" weight="bold" color="primary">12</Text>
-             </div>
-             <div className="bg-slate-50 p-4 rounded-2xl">
-                <Label variant="overline" color="muted" className="mb-1">Retention</Label>
-                <Text variant="lead" weight="bold" color="primary">98%</Text>
-             </div>
-          </div>
-       </div>
-
-       <Card className="absolute top-20 -right-8 z-30 animate-bounce-slow hidden md:block w-auto" size="sm">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-xl">📅</div>
-             <div>
-                <Text variant="small" weight="bold">New Booking</Text>
-                <Text variant="caption" color="muted">Just now • Sarah M.</Text>
-             </div>
-          </div>
-       </Card>
-
-       <Card className="absolute bottom-20 -left-8 bg-slate-900 text-white z-30 animate-bounce-slow hidden md:block w-auto border-none" size="sm">
-          <div className="flex items-center gap-4">
-             <div className="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center font-black">5.0</div>
-             <div>
-                <Text variant="small" weight="bold" color="white">Stellar Review</Text>
-                <div className="flex text-amber-400 text-[10px]">★★★★★</div>
-             </div>
-          </div>
-       </Card>
-    </div>
-  );
+const HOME_CTA_TARGETS: HomeCtaTargetMap = {
+  FIND_PROVIDER: { type: 'route', path: '/search' },
+  FOR_PROVIDERS: { type: 'route', path: '/benefits' },
+  CHAT_WITH_EVO: { type: 'action', action: 'OPEN_EVO' },
+  BROWSE_DIRECTORY: { type: 'route', path: '/search' },
+  CREATE_PROVIDER_PROFILE: { type: 'route', path: providerJoinPath },
+  VIEW_ALL_PROVIDERS: { type: 'route', path: '/search' },
+  BROWSE_EXCHANGE: { type: 'route', path: '/exchange' },
+  SELL_RESOURCE: { type: 'route', path: '/exchange/sell' },
+  TALK_TO_SUPPORT: { type: 'route', path: '/contact' },
 };
 
-/* ─── Inline Featured Providers ──────────────────────────────────────── */
-/* 
-   The original FeaturedProviders component may have visibility issues,
-   so we render an explicit fallback grid here that links directly.
-   If FeaturedProviders works fine, you can remove this and keep the import.
-*/
-
-const FeaturedProvidersGrid: React.FC<{ providers: FeaturedProvider[]; navigate: (path: string) => void }> = ({ providers, navigate }) => {
-  if (providers.length === 0) return null;
-
-  return (
-    <Section spacing="md" background="white">
-      <Container>
-        <div className="flex justify-between items-end mb-10 reveal">
-          <div>
-            <Label variant="overline" color="brand" className="mb-3">Top Rated</Label>
-            <Heading level={2}>Featured Providers</Heading>
-          </div>
-          <Button variant="ghost" onClick={() => navigate('#/search')}>View All →</Button>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 reveal">
-          {providers.slice(0, 10).map((p) => {
-            const slug = p.profileSlug || p.id;
-            return (
-              <div
-                key={p.id}
-                onClick={() => navigate(`#/provider/${slug}`)}
-                className="group cursor-pointer"
-              >
-                <div className="relative rounded-[1.75rem] overflow-hidden aspect-[3/4] bg-slate-100 mb-3 shadow-sm group-hover:shadow-xl transition-all duration-300">
-                  <img
-                    src={p.imageUrl || `https://ui-avatars.com/api/?name=${p.firstName}+${p.lastName}&size=400&background=e2e8f0&color=475569&bold=true`}
-                    alt={`${p.firstName} ${p.lastName}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                  {/* Rating badge (Disabled - Missing Property) */}
-                  {/* {p.rating && (
-                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-black text-slate-800 shadow-sm">
-                      ★ {typeof p.rating === 'number' ? p.rating.toFixed(1) : p.rating}
-                    </div>
-                  )} */}
-
-                  {/* Hover overlay info */}
-                  <div className="absolute bottom-0 left-0 w-full p-4 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                    <span className="text-white text-xs font-bold bg-brand-500/80 backdrop-blur-sm px-3 py-1 rounded-full">
-                      View Profile →
-                    </span>
-                  </div>
-                </div>
-
-                <div className="px-1">
-                  <p className="font-bold text-sm text-slate-800 truncate group-hover:text-brand-600 transition-colors">
-                    {p.firstName} {p.lastName}
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    {p.professionalTitle || 'Licensed Provider'}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Container>
-    </Section>
-  );
-};
-
-/* ─── Main view ──────────────────────────────────────────────────────── */
-
-const HomeView: React.FC<{ specialties: Specialty[] }> = ({ specialties }) => {
-  const [featured, setFeatured] = useState<FeaturedProvider[]>([]);
-  const [blogs, setBlogs] = useState<BlogPost[]>([]);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+const HomeView: React.FC<{ specialties: Specialty[] }> = ({ specialties: _specialties }) => {
   const { navigate } = useNavigation();
   const { openEvo } = useEvo();
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // Search state
-  const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('');
-  const [searchFocused, setSearchFocused] = useState(false);
-
-  const handleSearchSubmit = useCallback(() => {
-    const params = new URLSearchParams();
-    if (query) params.set('query', query);
-    if (location) params.set('state', location);
-    navigate(`#/search?${params.toString()}`);
-  }, [query, location, navigate]);
+  const [featuredProviders, setFeaturedProviders] = useState<FeaturedProvider[]>([]);
+  const [featuredBlogs, setFeaturedBlogs] = useState<BlogPost[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLocation, setSearchLocation] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      const [searchRes, allUsers, allBlogsResponse, homeTestimonials] = await Promise.all([
-        api.search({}),
-        api.getAllUsers(),
-        api.getAllBlogs({ limit: 10 }),
-        api.getTestimonials('home'),
-      ]);
+    let isActive = true;
 
-      const allBlogs = allBlogsResponse.data || [];
+    const loadHomepageData = async () => {
+      try {
+        const [providersResponse, users, blogsResponse] = await Promise.all([
+          api.getAllProviders({ page: 1, limit: 40 }),
+          api.getAllUsers(),
+          api.getAllBlogs({ limit: 8 }),
+        ]);
 
-      const providersWithNames = searchRes.providers.map(p => {
-        const user = allUsers.find(u => u.id === p.userId);
-        return { ...p, firstName: user?.firstName || 'Unknown', lastName: user?.lastName || 'Provider' };
-      });
+        if (!isActive) return;
 
-      const shuffled = providersWithNames.sort(() => 0.5 - Math.random());
-      setFeatured(shuffled.slice(0, 10));
-      setBlogs(allBlogs.slice(0, 3));
-      setTestimonials(homeTestimonials);
+        const providers = providersResponse.providers || [];
+        const enrichedProviders = providers.map((provider) => {
+          const user = users.find((row) => row.id === provider.userId);
+          return {
+            ...provider,
+            firstName: user?.firstName || 'EvoWell',
+            lastName: user?.lastName || 'Provider',
+          };
+        });
+
+        const approvedProviders = enrichedProviders.filter(
+          (provider) =>
+            provider.moderationStatus === ModerationStatus.APPROVED && provider.isPublished,
+        );
+
+        const source = approvedProviders.length > 0 ? approvedProviders : enrichedProviders;
+        const ranked = [...source].sort(
+          (a, b) => (b.metrics?.views || 0) - (a.metrics?.views || 0),
+        );
+        setFeaturedProviders(ranked.slice(0, 10));
+
+        const allBlogs = blogsResponse.data || [];
+        const publishedBlogs = allBlogs.filter((blog) => blog.status === 'APPROVED');
+        const sortedBlogs = [...publishedBlogs].sort(
+          (a, b) =>
+            new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime(),
+        );
+        setFeaturedBlogs(sortedBlogs.slice(0, 3));
+      } catch (error) {
+        if (isActive) {
+          setFeaturedProviders([]);
+          setFeaturedBlogs([]);
+        }
+      }
     };
 
-    fetchData();
+    loadHomepageData();
+    return () => {
+      isActive = false;
+    };
   }, []);
 
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      entries => entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); }),
-      { threshold: 0.1 },
-    );
-    
-    const observeElements = () => {
-      document.querySelectorAll('.reveal').forEach(el => observerRef.current?.observe(el));
-    };
+  const handleSearchSubmit = () => {
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) {
+      params.set('query', searchQuery.trim());
+    }
+    if (searchLocation.trim()) {
+      params.set('state', searchLocation.trim());
+    }
+    const queryString = params.toString();
+    navigate(queryString ? `/search?${queryString}` : '/search');
+  };
 
-    observeElements();
-    
-    // Also re-observe after a short delay to catch elements rendered after data fetch
-    const timeoutId = setTimeout(observeElements, 1000);
+  const handleCta = (targetKey: HomeCtaTargetKey) => {
+    const target = HOME_CTA_TARGETS[targetKey];
 
-    return () => {
-      observerRef.current?.disconnect();
-      clearTimeout(timeoutId);
-    };
-  }, [featured, blogs, testimonials]);
+    if (target.type === 'action' && target.action === 'OPEN_EVO') {
+      openEvo();
+      return;
+    }
 
-  const areasOfSupport = [
-    { name: 'Addiction', img: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?auto=format&fit=crop&q=80&w=600', id: 's7' },
-    { name: 'Parenting', img: 'https://images.unsplash.com/photo-1536640712-4d4c36ff0e4e?auto=format&fit=crop&q=80&w=600', id: 's5' },
-    { name: 'Nutrition', img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=600', id: 's7' },
-    { name: 'Relational', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=600', id: 's6' },
-    { name: 'Trauma & PTSD', img: 'https://images.unsplash.com/photo-1474418397713-7ede21d49118?auto=format&fit=crop&q=80&w=600', id: 's4' },
-    { name: 'ADHD', img: 'https://images.unsplash.com/photo-1517021897933-0e0319cfbc28?auto=format&fit=crop&q=80&w=600', id: 's8' },
-  ];
+    if (target.type === 'route') {
+      navigate(target.path);
+    }
+  };
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans">
-      <SEO 
-        title="EvoWell | The Sovereign Practice OS"
-        description="The next evolution in clinical care. A trusted network of verified experts for patients, and a complete operating system for providers."
-      />
+    <div className="bg-[#F8FAFC] min-h-screen">
+      <Helmet>
+        <title>{content.seo.title}</title>
+        <meta name="description" content={content.seo.description} />
+      </Helmet>
 
-      {/* ── Hero ──────────────────────────────────────────────────── */}
-      <PageHero
-        overline="The Sovereign Practice OS"
-        title={
-          <>
-            The next evolution<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-brand-700">in clinical care.</span>
-          </>
-        }
-        description="For Patients: A trusted network of verified experts. For Providers: A complete operating system to grow your practice on your terms."
-        variant="split"
-        visual={<HomeHeroVisual />}
-        actions={
-          <div className="w-full max-w-xl">
-            {/* ── Search Bar (refined) ─────────────────────────── */}
-            <div
-              className={`bg-white rounded-[1.25rem] border transition-all duration-300 ${
-                searchFocused
-                  ? 'shadow-[0_8px_40px_-8px_rgba(0,0,0,0.12)] border-brand-200 ring-4 ring-brand-50'
-                  : 'shadow-xl shadow-slate-200/50 border-slate-100 hover:shadow-[0_8px_40px_-8px_rgba(0,0,0,0.1)]'
-              }`}
-            >
-              <div className="flex flex-col md:flex-row">
-                {/* Query field */}
-                <div className="flex-1 relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center group-focus-within:bg-brand-100 transition-colors">
-                    <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    onFocus={() => setSearchFocused(true)}
-                    onBlur={() => setSearchFocused(false)}
-                    placeholder="Condition, specialty, or name…"
-                    className="w-full pl-16 pr-4 py-5 bg-transparent border-none text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-medium focus:ring-0 outline-none"
-                    onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
-                  />
-                </div>
+      <section className="relative overflow-hidden bg-white pb-20 pt-24 md:pb-24 md:pt-28">
+        <div className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-brand-100/70 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-0 h-72 w-72 rounded-full bg-blue-100/70 blur-3xl" />
 
-                {/* Divider */}
-                <div className="hidden md:flex items-center px-0">
-                  <div className="w-px h-8 bg-slate-150 bg-slate-200"></div>
-                </div>
-                <div className="md:hidden mx-4">
-                  <div className="h-px bg-slate-100"></div>
-                </div>
+        <Container size="full">
+          <div className="mx-auto max-w-5xl text-center">
+            <Heading level={1} size="display" className="mb-6 text-slate-900">
+              {content.hero.title}
+            </Heading>
+            <Text variant="lead" className="mx-auto mb-10 max-w-4xl text-slate-600">
+              {content.hero.subhead}
+            </Text>
 
-                {/* Location field */}
-                <div className="flex-1 relative flex items-center group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center group-focus-within:bg-brand-50 transition-colors">
-                    <svg className="w-4 h-4 text-slate-500 group-focus-within:text-brand-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={e => setLocation(e.target.value)}
-                    onFocus={() => setSearchFocused(true)}
-                    onBlur={() => setSearchFocused(false)}
-                    placeholder="Zip code or 'Remote'"
-                    className="w-full pl-16 pr-4 py-5 bg-transparent border-none text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-medium focus:ring-0 outline-none"
-                    onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
-                  />
-
-                  {/* Submit button — sits inside the bar on desktop */}
-                  <div className="hidden md:block pr-2.5 shrink-0">
-                    <button
-                      onClick={handleSearchSubmit}
-                      className="bg-brand-500 hover:bg-brand-600 active:scale-95 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
-                    >
-                      Find Care
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mobile submit button */}
-              <div className="md:hidden p-3 pt-0">
-                <button
-                  onClick={handleSearchSubmit}
-                  className="w-full bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white py-4 rounded-xl text-sm font-bold transition-all"
-                >
-                  Find Care
-                </button>
-              </div>
-            </div>
-
-            {/* Quick-link pills under search */}
-            <div className="flex flex-wrap items-center gap-2 mt-5">
-              <span className="text-xs font-medium text-slate-400 mr-1">Popular:</span>
-              {['Anxiety', 'Depression', 'ADHD', 'Couples Therapy'].map(term => (
-                <button
-                  key={term}
-                  onClick={() => { setQuery(term); navigate(`#/search?query=${encodeURIComponent(term)}`); }}
-                  className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-full hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50 transition-all"
-                >
-                  {term}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-6 mt-7">
-               <Label variant="overline" color="muted">Founding Partners</Label>
-               <div className="flex -space-x-2">
-                  <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-200"></div>
-                  <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-300"></div>
-                  <div className="w-8 h-8 rounded-full border-2 border-white bg-brand-500 flex items-center justify-center text-[8px] text-white font-bold">50+</div>
-               </div>
-               <Label variant="overline" color="muted">Clinicians</Label>
-            </div>
-          </div>
-        }
-      />
-
-      {/* ── Insurance ────────────────────────────────────────────── */}
-      <Section spacing="md" background="white">
-         <Container>
-            <div className="text-center mb-12 reveal">
-               <Heading level={2} className="mb-4">We Accept Major Insurance Plans</Heading>
-               <Text className="max-w-2xl mx-auto">
-                  Our providers are in-network with top carriers. We handle the verification and billing so you can focus on your health.
-               </Text>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 md:gap-6 reveal">
-               {['Aetna', 'Cigna', 'BlueCross BlueShield', 'UnitedHealthcare', 'Medicare', 'Oscar'].map((name, i) => (
-                  <div key={i} className="bg-slate-50 border border-slate-200 px-6 py-3 md:px-8 md:py-4 rounded-xl flex items-center justify-center min-w-[120px] md:min-w-[140px] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                     <span className="text-base md:text-lg font-black italic tracking-tight text-slate-700">{name}</span>
-                  </div>
-               ))}
-               <div className="bg-white border-2 border-dashed border-slate-200 px-6 py-3 md:px-8 md:py-4 rounded-xl flex items-center justify-center min-w-[120px] md:min-w-[140px] text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest">
-                  + FSA / HSA
-               </div>
-            </div>
-         </Container>
-      </Section>
-
-      {/* ── Stats ────────────────────────────────────────────────── */}
-      <Section spacing="md" background="default">
-        <Container>
-          <Grid cols={2} md={4} gap="lg" className="reveal">
-              <AnimatedCounter target={50} label="Founding Providers" prefix="+" />
-              <AnimatedCounter target={15} label="Specialties" prefix="+" />
-              <AnimatedCounter target={100} label="Available Online" suffix="%" />
-              <AnimatedCounter target={500} label="Waitlist Access" prefix="+" />
-          </Grid>
-        </Container>
-      </Section>
-
-      {/* ── Meet Evo AI ──────────────────────────────────────────── */}
-      <Section spacing="md" background="dark" className="relative overflow-hidden">
-         <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-500/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-
-         <Container className="relative z-10">
-           <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div className="reveal">
-               <div className="inline-block px-4 py-2 rounded-full bg-white/10 border border-white/10 text-brand-300 text-[11px] font-black uppercase tracking-widest mb-6 backdrop-blur-sm">Intelligent Matching</div>
-               <Heading level={2} size="display" color="white" className="mb-6">Meet Evo.<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-300">Your Wellness Concierge.</span></Heading>
-               <Text variant="lead" color="white" className="mb-10 opacity-80 max-w-xl">Not sure where to start? Evo uses advanced clinical logic to understand your needs and match you with the perfect specialist in seconds.</Text>
-               <Button onClick={openEvo} variant="brand" leftIcon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>}>
-                  Chat with Evo
-               </Button>
-            </div>
-            <div className="reveal relative flex justify-center">
-               <div className="relative w-full max-w-md bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl">
-                  <div className="space-y-4">
-                     <div className="flex items-end gap-3"><div className="w-8 h-8 rounded-full bg-slate-700"></div><div className="bg-slate-700 text-slate-200 px-5 py-3 rounded-2xl rounded-bl-none text-sm font-medium">I'm feeling anxious about work.</div></div>
-                     <div className="flex items-end gap-3 flex-row-reverse"><div className="w-8 h-8 rounded-full bg-brand-500"></div><div className="bg-brand-600 text-white px-5 py-3 rounded-2xl rounded-br-none text-sm font-medium shadow-lg">I understand. Are you looking for a therapist or a performance coach?</div></div>
-                  </div>
-               </div>
-            </div>
-           </div>
-         </Container>
-      </Section>
-
-      {/* ── How it Works ─────────────────────────────────────────── */}
-      <Section spacing="md" background="default">
-         <Container>
-           <div className="grid lg:grid-cols-2 gap-20 items-center reveal">
-            <div className="relative">
-               <div className="bg-brand-100 rounded-[3rem] overflow-hidden aspect-[4/3] relative">
-                  <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover mix-blend-multiply opacity-90" alt="Platform Dashboard" />
-               </div>
-               <Card className="absolute -bottom-10 -right-10 hidden md:block max-w-xs" variant="default" size="lg">
-                  <CardHeader>
-                     <Heading level={3} color="brand" className="mb-2">3 Simple Steps</Heading>
-                  </CardHeader>
-                  <CardBody>
-                     <Text variant="small">To start your wellness journey today.</Text>
-                  </CardBody>
-               </Card>
-            </div>
-            <div>
-               <Heading level={2} className="mb-12">How it works</Heading>
-               <div className="space-y-12">
-                  {[
-                    { num: 1, title: 'Find Providers', desc: 'Search our directory for licensed providers, browse their resources, videos, and more.' },
-                    { num: 2, title: 'Book & Connect', desc: 'Easily book appointments or access digital products and media through the provider\'s links.' },
-                    { num: 3, title: 'Stay Connected', desc: 'Engage with your provider, follow our blog, and access wellness tools anytime.' },
-                  ].map(step => (
-                    <div key={step.num} className="flex gap-6 group">
-                       <div className="w-14 h-14 rounded-2xl bg-slate-50 text-slate-900 flex items-center justify-center text-xl font-black shrink-0 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">{step.num}</div>
-                       <div>
-                          <Heading level={4} className="mb-2">{step.title}</Heading>
-                          <Text>{step.desc}</Text>
-                       </div>
-                    </div>
-                  ))}
-               </div>
-            </div>
-           </div>
-         </Container>
-      </Section>
-
-      {/* ── Why Choose ───────────────────────────────────────────── */}
-      <Section spacing="md" background="white">
-        <Container>
-          <div className="text-center mb-16 reveal">
-             <Heading level={2}>Why Choose EvoWell?</Heading>
-          </div>
-          <Grid cols={2} md={4} gap="md" className="reveal">
-             {[
-               { title: "Wellness Library", desc: "Digital downloads, media, and tools." },
-               { title: "Direct Scheduling", desc: "Seamless booking with experts." },
-               { title: "Private Messaging", desc: "Secure comms with professionals." },
-               { title: "Open Access", desc: "No gatekeepers. Just care." },
-             ].map((item, i) => (
-               <Card key={i} variant="muted" hoverable className="p-4 md:p-6">
-                  <CardHeader className="p-0 mb-2">
-                     <Heading level={3} size="h4" className="text-sm md:text-lg">{item.title}</Heading>
-                  </CardHeader>
-                  <CardBody className="p-0">
-                     <Text variant="small" className="text-[10px] md:text-sm">{item.desc}</Text>
-                  </CardBody>
-               </Card>
-             ))}
-          </Grid>
-        </Container>
-      </Section>
-
-      {/* ── Areas of Support (compact) ───────────────────────────── */}
-      <Section spacing="sm" background="default">
-        <Container>
-          <div className="flex justify-between items-end mb-6 md:mb-8 reveal">
-             <div>
-               <Label variant="overline" color="brand" className="mb-3">Specialties</Label>
-               <Heading level={2}>Areas of Support</Heading>
-             </div>
-             <Button variant="ghost" size="sm" onClick={() => navigate('#/search')}>View All →</Button>
-          </div>
-
-          {/* Horizontal scroll on mobile, 6-col grid on desktop */}
-          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4 md:grid md:grid-cols-6 md:overflow-visible reveal">
-             {areasOfSupport.map((area, i) => (
-               <div
-                 key={i}
-                 onClick={() => navigate(`#/search?specialty=${area.id}`)}
-                 className="group cursor-pointer shrink-0 w-36 md:w-auto"
-               >
-                  <div className="relative rounded-xl md:rounded-2xl overflow-hidden aspect-[4/5] shadow-sm group-hover:shadow-lg transition-all duration-300">
-                     <img
-                       src={area.img}
-                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                       alt={area.name}
-                       loading="lazy"
-                     />
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                     <div className="absolute bottom-0 left-0 w-full p-4">
-                        <span className="text-white font-bold text-sm leading-tight">{area.name}</span>
-                     </div>
-                  </div>
-               </div>
-             ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* ── Featured Providers ───────────────────────────────────── */}
-      <FeaturedProviders providers={featured} />
-
-      <PointSolutionsReplacement />
-
-      {/* ── Provider CTA ─────────────────────────────────────────── */}
-      <Section spacing="sm" background="default">
-         <Container>
-           <div className="bg-[#2a4651] rounded-[3rem] p-12 lg:p-20 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-10 reveal">
-              <div className="relative z-10 max-w-2xl">
-                 <Heading level={2} color="white" className="mb-6">Curious About Becoming an EvoWell Provider?</Heading>
-                 <Text color="white" className="opacity-90">Create your profile in minutes, showcase your expertise, and grow your impact.</Text>
-              </div>
-              <Button variant="secondary" className="relative z-10 bg-amber-400 border-none text-[#2a4651] hover:bg-amber-300" onClick={() => navigate('#/login?join=true')}>
-                 Join as a Provider
+            <div className="mb-5 flex flex-wrap items-center justify-center gap-4">
+              <Button
+                size="lg"
+                variant="brand"
+                onClick={() => handleCta('FIND_PROVIDER')}
+              >
+                {content.hero.primaryCta}
               </Button>
-           </div>
-         </Container>
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => handleCta('FOR_PROVIDERS')}
+              >
+                {content.hero.secondaryCta}
+              </Button>
+              <button
+                type="button"
+                onClick={() => handleCta('CHAT_WITH_EVO')}
+                className="text-sm font-bold text-brand-600 underline-offset-4 hover:text-brand-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 rounded-md px-2 py-1"
+              >
+                {content.hero.tertiaryCta}
+              </button>
+            </div>
+
+            <div className="mx-auto mb-6 max-w-4xl rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <Label variant="overline" color="muted" className="mb-3 block text-center">
+                {content.search.title}
+              </Label>
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                <label htmlFor="home-search-query" className="sr-only">
+                  Search by specialty or condition
+                </label>
+                <input
+                  id="home-search-query"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      handleSearchSubmit();
+                    }
+                  }}
+                  placeholder={content.search.queryPlaceholder}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                />
+                <label htmlFor="home-search-location" className="sr-only">
+                  Search by location
+                </label>
+                <input
+                  id="home-search-location"
+                  type="text"
+                  value={searchLocation}
+                  onChange={(event) => setSearchLocation(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      handleSearchSubmit();
+                    }
+                  }}
+                  placeholder={content.search.locationPlaceholder}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                />
+                <Button variant="brand" onClick={handleSearchSubmit}>
+                  {content.search.cta}
+                </Button>
+              </div>
+            </div>
+
+            <Text variant="small" className="font-semibold text-slate-500">
+              {content.hero.microcopy}
+            </Text>
+          </div>
+        </Container>
+      </section>
+
+      <Section spacing="lg" background="default">
+        <Container>
+          <div className="mb-10 text-center">
+            <Heading level={2} className="mb-3">
+              {content.paths.title}
+            </Heading>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {content.paths.items.map((item, index) => {
+              const ctaTarget = index === 0 ? 'BROWSE_DIRECTORY' : 'CREATE_PROVIDER_PROFILE';
+              return (
+                <Card
+                  key={item.title}
+                  className="border border-slate-200 rounded-3xl shadow-sm hover:shadow-lg transition-shadow"
+                >
+                  <CardBody className="space-y-5 p-8">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                        <Icon path={iconPaths[item.icon]} size={22} />
+                      </span>
+                      <Heading level={3} className="text-slate-900">
+                        {item.title}
+                      </Heading>
+                    </div>
+
+                    <Text className="text-slate-600">{item.copy}</Text>
+
+                    <Button
+                      variant={index === 0 ? 'secondary' : 'brand'}
+                      onClick={() => handleCta(ctaTarget)}
+                    >
+                      {item.cta}
+                    </Button>
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </div>
+        </Container>
       </Section>
 
-      <TestimonialsSection testimonials={testimonials} />
+      <Section spacing="md" background="white">
+        <Container>
+          <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-8 md:p-10">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <Heading level={2} className="mb-3 text-slate-900">
+                  {content.providerDesignChoice.title}
+                </Heading>
+                <Text className="text-slate-600">
+                  {content.providerDesignChoice.subhead}
+                </Text>
+              </div>
+              <Button variant="brand" onClick={() => handleCta('CREATE_PROVIDER_PROFILE')}>
+                {content.providerDesignChoice.cta}
+              </Button>
+            </div>
 
-      {/* ── Blog ─────────────────────────────────────────────────── */}
-      <Section spacing="md" background="default">
-         <Container size="full">
-           <div className="mb-8 md:mb-12 reveal">
-              <Heading level={2}>Everyday Wellness Support</Heading>
-           </div>
-           <Grid cols={1} sm={2} md={3} gap="lg" className="reveal">
-              {blogs.map(post => (
-                 <div key={post.id} onClick={() => navigate(`#/blog/${post.slug}`)} className="group cursor-pointer">
-                    <div className="aspect-[16/10] rounded-[1.5rem] md:rounded-[2rem] overflow-hidden mb-4 md:mb-6 relative">
-                       <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="" loading="lazy" />
-                    </div>
-                    <Label variant="overline" color="brand" className="mb-2">{post.category}</Label>
-                    <Heading level={4} className="mb-3 group-hover:text-brand-600 transition-colors">{post.title}</Heading>
-                 </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {content.providerDesignChoice.schemes.map((scheme) => (
+                <div key={scheme.name} className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <Label variant="overline" color="brand" className="mb-2 block">
+                    Color Scheme
+                  </Label>
+                  <Heading level={4} className="mb-2 text-slate-900">
+                    {scheme.name}
+                  </Heading>
+                  <Text className="text-slate-600">{scheme.copy}</Text>
+                </div>
               ))}
-           </Grid>
-           <div className="text-center mt-16 reveal">
-              <Button variant="secondary" onClick={() => navigate('#/blog')}>Browse Resources</Button>
-           </div>
-         </Container>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      <Section spacing="lg" background="white">
+        <Container>
+          <div className="mb-12 text-center">
+            <Heading level={2} className="mb-4">
+              {content.howItWorks.title}
+            </Heading>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {content.howItWorks.steps.map((step, index) => (
+              <article
+                key={step.title}
+                className="rounded-3xl border border-slate-200 bg-slate-50 p-7"
+              >
+                <Badge variant="brand" className="mb-5">
+                  Step {index + 1}
+                </Badge>
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm">
+                  <Icon path={iconPaths[step.icon]} size={20} />
+                </div>
+                <Heading level={4} className="mb-3 text-slate-900">
+                  {step.title}
+                </Heading>
+                <Text className="text-slate-600">{step.copy}</Text>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Button variant="brand" onClick={() => handleCta('CHAT_WITH_EVO')}>
+              {content.howItWorks.cta}
+            </Button>
+          </div>
+        </Container>
+      </Section>
+
+      <FeaturedProvidersGrid
+        providers={featuredProviders}
+        title={content.featuredProviders.title}
+        subhead={content.featuredProviders.subhead}
+        microcopy={content.featuredProviders.microcopy}
+        ctaLabel={content.featuredProviders.cta}
+      />
+
+      <Section spacing="lg" background="default">
+        <Container>
+          <div className="grid gap-10 rounded-[2rem] border border-slate-200 bg-white p-10 shadow-sm lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <Label variant="overline" color="brand" className="mb-4 block">
+                Provider Exchange
+              </Label>
+              <Heading level={2} className="mb-4 text-slate-900">
+                {content.exchange.title}
+              </Heading>
+              <Text variant="lead" className="mb-6 max-w-3xl text-slate-600">
+                {content.exchange.subhead}
+              </Text>
+              <div className="flex flex-wrap gap-4">
+                <Button variant="brand" onClick={() => handleCta('BROWSE_EXCHANGE')}>
+                  {content.exchange.primaryCta}
+                </Button>
+                <Button variant="secondary" onClick={() => handleCta('SELL_RESOURCE')}>
+                  {content.exchange.secondaryCta}
+                </Button>
+              </div>
+              <Text variant="small" className="mt-4 font-semibold text-slate-500">
+                {content.exchange.disclaimer}
+              </Text>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <Heading level={4} className="mb-3 text-slate-900">
+                Build trust with every listing
+              </Heading>
+              <Text className="text-slate-600">
+                Verified providers publish educational resources that support real-world care journeys without making
+                medical claims.
+              </Text>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      <Section spacing="md" background="white">
+        <Container>
+          <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-8 md:p-10">
+            <Heading level={2} className="mb-6 text-slate-900">
+              {content.trust.title}
+            </Heading>
+            <ul className="grid gap-4 md:grid-cols-3">
+              {content.trust.bullets.map((bullet) => (
+                <li
+                  key={bullet}
+                  className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-slate-700"
+                >
+                  <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+                    <Icon path={iconPaths.shield} size={12} />
+                  </span>
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Container>
+      </Section>
+
+      <Section spacing="lg" background="default">
+        <Container>
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <Heading level={2} className="mb-3 text-slate-900">
+                {content.blog.title}
+              </Heading>
+              <Text className="max-w-3xl text-slate-600">{content.blog.subhead}</Text>
+            </div>
+            <Button variant="secondary" onClick={() => navigate('/blog')}>
+              {content.blog.cta}
+            </Button>
+          </div>
+
+          {featuredBlogs.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-3">
+              {featuredBlogs.map((post) => (
+                <article
+                  key={post.id}
+                  onClick={() => navigate(`/blog/${post.slug}`)}
+                  className="group cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="aspect-[16/10] overflow-hidden bg-slate-100">
+                    <img
+                      src={post.imageUrl}
+                      alt={post.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="space-y-3 p-6">
+                    <Label variant="badge" color="brand">
+                      {post.category}
+                    </Label>
+                    <Heading level={4} className="line-clamp-2 text-slate-900">
+                      {post.title}
+                    </Heading>
+                    <Text variant="small" className="line-clamp-2 text-slate-600">
+                      {post.summary}
+                    </Text>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center">
+              <Text className="text-slate-500">{content.blog.emptyState}</Text>
+            </div>
+          )}
+        </Container>
+      </Section>
+
+      <Section spacing="lg" background="default">
+        <Container>
+          <div className="rounded-[2.75rem] bg-[#0f311c] px-8 py-12 text-white shadow-2xl md:px-12 md:py-16">
+            <Heading level={2} color="white" className="mb-4 max-w-4xl">
+              {content.finalCta.title}
+            </Heading>
+            <Text variant="lead" color="white" className="mb-8 max-w-4xl text-white/85">
+              {content.finalCta.subhead}
+            </Text>
+            <div className="flex flex-wrap gap-4">
+              <Button variant="brand" onClick={() => handleCta('FOR_PROVIDERS')}>
+                {content.finalCta.primaryCta}
+              </Button>
+              <Button variant="secondary" onClick={() => handleCta('FIND_PROVIDER')}>
+                {content.finalCta.secondaryCta}
+              </Button>
+            </div>
+          </div>
+        </Container>
       </Section>
     </div>
   );

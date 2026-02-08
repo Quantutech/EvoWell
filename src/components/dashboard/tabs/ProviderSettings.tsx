@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { SettingInput, MultiSelect } from '@/components/dashboard/DashboardComponents';
-import { ProviderProfile, Specialty, User } from '@/types';
+import { ProviderProfile, ProviderProfileTheme, Specialty, User } from '@/types';
 import { LANGUAGES_LIST } from '@/components/dashboard/constants';
 import { getCommonTimezones, getUserTimezone } from '@/utils/timezone';
 import { Select } from '@/components/ui';
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
 import { US_STATES, AGE_GROUPS } from '@/data/constants';
+import { PROVIDER_PROFILE_THEME_OPTIONS } from '@/config/providerProfileThemes';
+import { resolveProviderProfileTheme } from '@/types/ui/providerProfile';
 
 interface ProviderSettingsProps {
   editForm: ProviderProfile;
@@ -64,6 +66,14 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
     const current = [...(editForm.mediaLinks || [])];
     current.splice(idx, 1);
     updateField('mediaLinks', current);
+  };
+
+  const profileTheme = resolveProviderProfileTheme(editForm.profileTheme, editForm.profileTemplate);
+  const providerIdentifier = editForm.profileSlug || editForm.id;
+  const previewProfileTheme = (theme: ProviderProfileTheme) => {
+    if (!providerIdentifier) return;
+    const url = `${window.location.origin}${window.location.pathname}#/provider/${providerIdentifier}?previewTheme=${theme}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -182,6 +192,122 @@ const ProviderSettings: React.FC<ProviderSettingsProps> = ({
                           </div>
                           <textarea rows={6} value={editForm.bio} onChange={(e) => updateField('bio', e.target.value)} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-brand-500/20 resize-none leading-relaxed" />
                        </div>
+
+                      {/* Profile Design */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Profile Color Scheme
+                          </label>
+                          <button
+                            onClick={handleSaveProfile}
+                            disabled={isSaving}
+                            className="bg-brand-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-700 disabled:opacity-50"
+                          >
+                            Save Design Choice
+                          </button>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {PROVIDER_PROFILE_THEME_OPTIONS.map((themeOption) => {
+                            const selected = profileTheme === themeOption.key;
+                            return (
+                              <div
+                                key={themeOption.key}
+                                className={`rounded-2xl border p-4 ${
+                                  selected
+                                    ? 'border-brand-300 bg-brand-50/60'
+                                    : 'border-slate-200 bg-white'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => updateField('profileTheme', themeOption.key)}
+                                  className="w-full text-left"
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs font-black text-slate-900">{themeOption.label}</p>
+                                    <div className="flex items-center gap-1">
+                                      {themeOption.swatches.map((swatch) => (
+                                        <span
+                                          key={`${themeOption.key}-${swatch}`}
+                                          className="h-3 w-3 rounded-full border border-slate-200"
+                                          style={{ backgroundColor: swatch }}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <p className="mt-1 text-[11px] text-slate-600">{themeOption.description}</p>
+                                </button>
+                                <div className="mt-3 flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => previewProfileTheme(themeOption.key)}
+                                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
+                                  >
+                                    Preview
+                                  </button>
+                                  {selected && (
+                                    <span className="rounded-lg bg-brand-600 px-2 py-2 text-[10px] font-black uppercase tracking-widest text-white">
+                                      Selected
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Public Status Controls */}
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Intake Status
+                          </label>
+                          <Select
+                            options={[
+                              { value: 'ACCEPTING', label: 'Accepting Clients' },
+                              { value: 'WAITLIST', label: 'Waitlist' },
+                              { value: 'NOT_ACCEPTING', label: 'Not Accepting' },
+                            ]}
+                            value={editForm.availabilityStatus || (editForm.acceptingNewClients === false ? 'NOT_ACCEPTING' : 'ACCEPTING')}
+                            onChange={(val) => {
+                              const nextValue = String(val);
+                              updateField('availabilityStatus', nextValue);
+                              updateField('acceptingNewClients', nextValue === 'ACCEPTING');
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            License Visibility
+                          </label>
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <label className="flex items-center gap-3 text-xs font-bold text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={editForm.showLicenseNumber || false}
+                                onChange={(event) => updateField('showLicenseNumber', event.target.checked)}
+                                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                              />
+                              Show license number publicly
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                          Accessibility Notes (Optional)
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={editForm.accessibilityNotes || ''}
+                          onChange={(event) => updateField('accessibilityNotes', event.target.value)}
+                          placeholder="e.g. Elevator access, step-free entrance, sensory-friendly waiting area."
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-brand-500/20"
+                        />
+                      </div>
 
                       {/* Education & Credentials */}
                       <div className="space-y-6">

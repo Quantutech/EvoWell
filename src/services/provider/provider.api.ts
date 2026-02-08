@@ -1,13 +1,13 @@
-import { 
-  ProviderProfile, SearchFilters, Specialty, InsuranceCompany, 
-  SubscriptionTier, SubscriptionStatus, ModerationStatus, 
-  AuditActionType, AuditResourceType
+import {
+  ProviderProfile,
+  SubscriptionTier,
+  SubscriptionStatus,
+  ModerationStatus,
 } from '../../types';
+import { resolveProviderProfileTheme } from '../../types/ui/providerProfile';
 import { supabase, isConfigured } from '../supabase';
 import { mockStore } from '../mockStore';
 import { SEED_DATA } from '../../data/seed';
-import { auditService } from '../audit';
-import { handleRequest } from '../serviceUtils';
 
 interface SearchRpcResponse {
   id: string;
@@ -25,8 +25,59 @@ interface SearchRpcResponse {
   languages: string[];
   active_days: string[];
   years_experience: number;
+  availability_status?: 'ACCEPTING' | 'WAITLIST' | 'NOT_ACCEPTING';
+  profile_template?: 'CLASSIC' | 'ELEVATED';
+  profile_theme?: 'MIDNIGHT' | 'FOREST' | 'OCEAN' | 'SLATE';
   relevance: number;
   full_count: number;
+}
+
+function withProviderDefaults(provider?: ProviderProfile): ProviderProfile | undefined {
+  if (!provider) return undefined;
+  return {
+    ...provider,
+    profileTemplate: provider.profileTemplate || 'CLASSIC',
+    profileTheme: resolveProviderProfileTheme(provider.profileTheme, provider.profileTemplate),
+    availabilityStatus:
+      provider.availabilityStatus ||
+      (provider.acceptingNewClients === false ? 'NOT_ACCEPTING' : 'ACCEPTING'),
+    accessibilityNotes: provider.accessibilityNotes || '',
+    showLicenseNumber: provider.showLicenseNumber || false,
+  };
+}
+
+function isLikelyCredentialText(value?: string): boolean {
+  if (!value) return false;
+  const normalized = value.toLowerCase().trim();
+  return (
+    normalized.includes(',') ||
+    /\b(phd|md|lcsw|lmft|psy[d]?|psychologist|psychiatrist|therapist|counselor)\b/.test(
+      normalized,
+    )
+  );
+}
+
+function enrichProviderWithUser(provider?: ProviderProfile): ProviderProfile | undefined {
+  if (!provider) return undefined;
+
+  const mergedUsers = [...SEED_DATA.users, ...mockStore.store.users];
+  const linkedUser = mergedUsers.find((user) => user.id === provider.userId);
+  const providerFirstName = provider.firstName?.trim() || '';
+  const providerLastName = provider.lastName?.trim() || '';
+
+  const hasValidProviderName =
+    Boolean(providerFirstName && providerLastName) &&
+    !isLikelyCredentialText(providerFirstName) &&
+    !isLikelyCredentialText(providerLastName);
+
+  return {
+    ...provider,
+    firstName: hasValidProviderName
+      ? providerFirstName
+      : linkedUser?.firstName || providerFirstName,
+    lastName: hasValidProviderName ? providerLastName : linkedUser?.lastName || providerLastName,
+    email: provider.email || linkedUser?.email,
+  };
 }
 
 export function formatProvider(row: any): ProviderProfile {
@@ -84,7 +135,14 @@ export function formatProvider(row: any): ProviderProfile {
     pronouns: row.pronouns,
     firstName: row.first_name,
     lastName: row.last_name,
-    email: row.email
+    email: row.email,
+    profileTemplate: row.profile_template || 'CLASSIC',
+    profileTheme: resolveProviderProfileTheme(row.profile_theme, row.profile_template),
+    availabilityStatus:
+      row.availability_status ||
+      (row.accepting_new_clients === false ? 'NOT_ACCEPTING' : 'ACCEPTING'),
+    accessibilityNotes: row.accessibility_notes || '',
+    showLicenseNumber: row.show_license_number || false,
   };
 }
 
@@ -125,14 +183,23 @@ export function mapSearchRowToProfile(r: SearchRpcResponse): ProviderProfile {
     security: { question: '', answer: '' },
     metrics: { views: 0, inquiries: 0 },
     metricsHistory: [],
-    audit: { createdAt: '', updatedAt: '' }
+    audit: { createdAt: '', updatedAt: '' },
+    profileTemplate: r.profile_template || 'CLASSIC',
+    profileTheme: resolveProviderProfileTheme(r.profile_theme, r.profile_template),
+    availabilityStatus: r.availability_status || 'ACCEPTING',
+    accessibilityNotes: '',
+    showLicenseNumber: false,
   };
 }
 
 export class ProviderApi {
   static async getById(id: string): Promise<ProviderProfile | undefined> {
     if (!isConfigured) {
-        return mockStore.store.providers.find(p => p.id === id) || SEED_DATA.providers.find(p => p.id === id);
+        return withProviderDefaults(
+          enrichProviderWithUser(
+            mockStore.store.providers.find(p => p.id === id) || SEED_DATA.providers.find(p => p.id === id),
+          ),
+        );
     }
     const { data: providerData, error } = await (supabase.from('providers') as any).select('*').eq('id', id).maybeSingle();
     if (providerData && !error) {
@@ -144,7 +211,12 @@ export class ProviderApi {
 
   static async getByUserId(userId: string): Promise<ProviderProfile | undefined> {
     if (!isConfigured) {
-        return mockStore.store.providers.find(p => p.userId === userId) || SEED_DATA.providers.find(p => p.userId === userId);
+        return withProviderDefaults(
+          enrichProviderWithUser(
+            mockStore.store.providers.find(p => p.userId === userId) ||
+            SEED_DATA.providers.find(p => p.userId === userId),
+          ),
+        );
     }
     const { data: providerData } = await (supabase.from('providers') as any).select('*').eq('user_id', userId).maybeSingle();
     if (providerData) {

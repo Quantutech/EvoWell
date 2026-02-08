@@ -10,6 +10,18 @@ import { IProviderService } from '../provider.service';
 import { createBlankProviderProfile, generateProfileSlug } from './provider.profile';
 import { fallbackMockSearch } from './provider.search';
 import { ProviderApi } from './provider.api';
+import { resolveProviderProfileTheme } from '../../types/ui/providerProfile';
+
+function isLikelyCredentialText(value?: string): boolean {
+  if (!value) return false;
+  const normalized = value.toLowerCase().trim();
+  return (
+    normalized.includes(',') ||
+    /\b(phd|md|lcsw|lmft|psy[d]?|psychologist|psychiatrist|therapist|counselor)\b/.test(
+      normalized,
+    )
+  );
+}
 
 export class MockProviderService implements IProviderService {
   createBlankProviderProfile = createBlankProviderProfile;
@@ -89,12 +101,29 @@ export class MockProviderService implements IProviderService {
 
         const providers = paged.map(p => {
           const user = usersById.get(p.userId);
+          const providerFirstName = p.firstName?.trim() || '';
+          const providerLastName = p.lastName?.trim() || '';
+          const hasValidProviderName =
+            Boolean(providerFirstName && providerLastName) &&
+            !isLikelyCredentialText(providerFirstName) &&
+            !isLikelyCredentialText(providerLastName);
+
           return {
             ...p,
-            firstName: p.firstName || user?.firstName || 'Unknown',
-            lastName: p.lastName || user?.lastName || 'Provider',
+            firstName: hasValidProviderName
+              ? providerFirstName
+              : user?.firstName || providerFirstName || 'Unknown',
+            lastName: hasValidProviderName
+              ? providerLastName
+              : user?.lastName || providerLastName || 'Provider',
             email: p.email || user?.email,
-            isPublished: p.isPublished ?? true 
+            isPublished: p.isPublished ?? true,
+            profileTemplate: p.profileTemplate || 'CLASSIC',
+            profileTheme: resolveProviderProfileTheme(p.profileTheme, p.profileTemplate),
+            availabilityStatus:
+              p.availabilityStatus || (p.acceptingNewClients === false ? 'NOT_ACCEPTING' : 'ACCEPTING'),
+            accessibilityNotes: p.accessibilityNotes || '',
+            showLicenseNumber: p.showLicenseNumber || false,
           };
         });
 
@@ -104,8 +133,10 @@ export class MockProviderService implements IProviderService {
 
   async getProviderBySlug(slug: string): Promise<ProviderProfile | undefined> {
     const tempProvider = mockStore.store.providers.find(p => p.profileSlug === slug);
-    if (tempProvider) return tempProvider;
-    return SEED_DATA.providers.find(p => p.profileSlug === slug);
+    const seedProvider = SEED_DATA.providers.find(p => p.profileSlug === slug);
+    const provider = tempProvider || seedProvider;
+    if (!provider) return undefined;
+    return this.getProviderById(provider.id);
   }
 
   async fetchProviderBySlugOrId(slugOrId: string): Promise<ProviderProfile | undefined> {

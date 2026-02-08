@@ -4,6 +4,10 @@ import {
 import { Address, Availability, Education, License, MediaItem } from './common';
 import { Endorsement } from './endorsement';
 
+export type ProviderProfileTemplate = 'CLASSIC' | 'ELEVATED';
+export type ProviderProfileTheme = 'MIDNIGHT' | 'FOREST' | 'OCEAN' | 'SLATE';
+export type ProviderAvailabilityStatus = 'ACCEPTING' | 'WAITLIST' | 'NOT_ACCEPTING';
+
 export interface ServicePackage {
   id: string;
   providerId: string;
@@ -119,6 +123,15 @@ export interface ProviderProfile {
       peerCount: number;
       items?: Endorsement[]; 
   };
+  /**
+   * @deprecated Legacy template selector kept for transition compatibility.
+   * Use `profileTheme` for all new writes.
+   */
+  profileTemplate?: ProviderProfileTemplate;
+  profileTheme?: ProviderProfileTheme;
+  availabilityStatus?: ProviderAvailabilityStatus;
+  accessibilityNotes?: string;
+  showLicenseNumber?: boolean;
   rating?: number | string; // Compatibility
   title?: string;
   credentials?: string;

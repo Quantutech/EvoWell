@@ -1,13 +1,11 @@
-import { 
-  ProviderProfile, SearchFilters, Specialty, InsuranceCompany, 
-  SubscriptionTier, SubscriptionStatus, ModerationStatus, UserRole,
+import {
+  ProviderProfile, SearchFilters, Specialty, InsuranceCompany,
+  SubscriptionTier, SubscriptionStatus, ModerationStatus,
   AuditActionType, AuditResourceType
 } from '../../types';
 import { supabase } from '../supabase';
-import { mockStore } from '../mockStore';
 import { SEED_DATA } from '../../data/seed';
 import { auditService } from '../audit';
-import { errorHandler } from '../error-handler';
 import { handleRequest } from '../serviceUtils';
 import { IProviderService } from '../provider.service';
 import { createBlankProviderProfile, generateProfileSlug } from './provider.profile';
@@ -96,7 +94,12 @@ export class SupabaseProviderService implements IProviderService {
             metricsHistory: [],
             audit: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
             profileSlug: id,
-            email: 'provider@example.com'
+            email: 'provider@example.com',
+            profileTemplate: 'CLASSIC',
+            profileTheme: 'MIDNIGHT',
+            availabilityStatus: 'ACCEPTING',
+            accessibilityNotes: '',
+            showLicenseNumber: false,
         };
     }
 
@@ -147,6 +150,10 @@ export class SupabaseProviderService implements IProviderService {
           phone: data.phone,
           website: data.website,
           pronouns: data.pronouns,
+          profile_theme: data.profileTheme,
+          availability_status: data.availabilityStatus,
+          accessibility_notes: data.accessibilityNotes,
+          show_license_number: data.showLicenseNumber,
           is_published: data.isPublished,
           onboarding_complete: data.onboardingComplete,
           updated_at: new Date().toISOString()
@@ -244,6 +251,10 @@ export class SupabaseProviderService implements IProviderService {
           years_experience: 0, bio: '', tagline: '', image_url: profile.imageUrl, hourly_rate: 150,
           sliding_scale: false, onboarding_complete: false, subscription_tier: 'FREE', subscription_status: 'TRIAL',
           moderation_status: 'PENDING', is_published: false, profile_slug: profile.profileSlug,
+          profile_theme: profile.profileTheme || 'MIDNIGHT',
+          availability_status: profile.availabilityStatus || 'ACCEPTING',
+          accessibility_notes: profile.accessibilityNotes || null,
+          show_license_number: profile.showLicenseNumber || false,
           created_at: new Date().toISOString(), updated_at: new Date().toISOString()
       });
       if (error) throw error;

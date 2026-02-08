@@ -108,6 +108,11 @@ export function createBlankProviderProfile(userId: string, firstName: string, la
     consultationFee: 0,
     freeConsultation: true,
     videoUrl: '',
-    headline: ''
+    headline: '',
+    profileTemplate: 'CLASSIC',
+    profileTheme: 'MIDNIGHT',
+    availabilityStatus: 'ACCEPTING',
+    accessibilityNotes: '',
+    showLicenseNumber: false,
   };
 }

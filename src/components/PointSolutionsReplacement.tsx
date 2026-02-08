@@ -105,7 +105,7 @@ const PointSolutionsReplacement: React.FC<PointSolutionsReplacementProps> = ({
 
   return (
     <section className="py-24 bg-white overflow-hidden border-y border-slate-100/50">
-      <div className="max-w-[1440px] mx-auto px-6 text-center reveal">
+      <div className="max-w-[1440px] mx-auto px-6 text-center">
         <p className="text-[10px] font-black text-brand-500 uppercase tracking-[0.3em] mb-4">{eyebrow}</p>
         <h2 className="text-3xl lg:text-5xl font-black text-slate-900 mb-16 tracking-tight leading-tight">
           {title} <br/><span className="text-slate-400">{titleAccent}</span>

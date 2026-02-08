@@ -1,7 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigation } from '@/App';
 import Logo from '@/components/brand/Logo';
 import { designSystem } from '@/styles/design-system';
+
+interface FooterLinkItem {
+  label: string;
+  href: string;
+}
+
+interface FooterLinkGroup {
+  title: string;
+  links: FooterLinkItem[];
+}
 
 const Link: React.FC<{ href: string; className?: string; children: React.ReactNode }> = ({ href, className, children }) => {
   const { navigate } = useNavigation();
@@ -19,11 +29,50 @@ const Link: React.FC<{ href: string; className?: string; children: React.ReactNo
   );
 };
 
+const footerLinkGroups: FooterLinkGroup[] = [
+  {
+    title: 'Platform',
+    links: [
+      { label: 'Home', href: '#/' },
+      { label: 'Find Care', href: '#/search' },
+      { label: 'Provider Exchange', href: '#/exchange' },
+      { label: 'For Providers', href: '#/benefits' },
+      { label: 'Pricing', href: '#/calculator' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'About', href: '#/about' },
+      { label: 'Partnerships', href: '#/partners' },
+      { label: 'Contact', href: '#/contact' },
+      { label: 'Careers', href: '#/careers' },
+      { label: 'Investors', href: '#/investors' },
+    ],
+  },
+  {
+    title: 'Support',
+    links: [
+      { label: 'FAQ', href: '#/faq' },
+      { label: 'Help Center', href: '#/help' },
+      { label: 'Trust & Safety / Content Policy', href: '#/docs' },
+      { label: 'Report an issue', href: '#/contact' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacy Policy', href: '#/privacy' },
+      { label: 'Terms of Service', href: '#/terms' },
+      { label: 'Cookie Policy', href: '#/privacy' },
+      { label: 'Disclaimer', href: '#/terms' },
+    ],
+  },
+];
+
 const Footer: React.FC = () => {
   const { navigate } = useNavigation();
   const footerRef = useRef<HTMLDivElement>(null);
-  const [email, setEmail] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
   
   // Entrance Animation Observer
   useEffect(() => {
@@ -44,91 +93,26 @@ const Footer: React.FC = () => {
 
     return () => observer.disconnect();
   }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    
-    setIsSubmitted(true);
-    // Simulate API call
-    setTimeout(() => {
-      setEmail('');
-      setIsSubmitted(false);
-    }, 3000);
-  };
   
   return (
     <div ref={footerRef} className="opacity-0 translate-y-20 transition-all duration-1000 ease-out">
       <footer className="relative mt-16 md:mt-24 lg:mt-40">
-        {/* Curved Top */}
-        <div className="absolute top-0 left-[-5%] w-[110%] overflow-hidden leading-none -translate-y-[98%] z-10 pointer-events-none">
-          <svg 
-            className="relative block w-full h-[40px] md:h-[80px] lg:h-[120px]" 
-            data-name="Layer 1" 
-            xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 0 1200 120" 
-            preserveAspectRatio="none"
-          >
-            {/* Smoother Quad Curve */}
-            <path 
-              d="M0,120 Q600,0 1200,120 V120 H0 Z" 
-              fill="#0f311c" 
-            />
-          </svg>
-        </div>
-
-        <div className="bg-[#0f311c] pt-12 pb-12 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-b from-[#0f311c] to-[#0b2717] pt-12 pb-12 text-white relative overflow-hidden">
           {/* Subtle Background Texture */}
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
           
           <div className="max-w-[1440px] mx-auto px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 items-center">
-              
-              {/* Left: Newsletter */}
-              <div className="lg:col-span-5 space-y-6 lg:space-y-8 text-center lg:text-left">
-                  <div>
-                    <h2 className={`${designSystem.typography.h2} mb-4 text-white`}>
-                      Join the Evolution
-                    </h2>
-                    <p className="text-white/70 text-sm md:text-base max-w-md mx-auto lg:mx-0 font-medium">
-                      Weekly insights for the modern wellness professional.
-                    </p>
-                  </div>
-                  
-                  <form 
-                    onSubmit={handleSubmit}
-                    className="relative max-w-sm mx-auto lg:mx-0"
-                  >
-                    <div className="relative flex items-center">
-                      <label htmlFor="newsletter-email" className="sr-only">Email address</label>
-                      <input 
-                        id="newsletter-email"
-                        type="email" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="email@domain.com" 
-                        className="w-full bg-white/5 border border-white/20 rounded-xl py-4 px-5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-brand-400 focus:bg-white/10 focus:ring-1 focus:ring-brand-400 transition-all pr-14"
-                        required
-                      />
-                      <button 
-                        type="submit"
-                        disabled={isSubmitted}
-                        className="absolute right-2 p-2 bg-brand-500 text-white rounded-lg hover:bg-brand-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
-                        aria-label="Subscribe"
-                      >
-                        {isSubmitted ? (
-                          <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                        )}
-                      </button>
-                    </div>
-                    {isSubmitted && <p className="absolute mt-2 text-xs text-brand-300 font-medium animate-in fade-in">Subscribed successfully.</p>}
-                  </form>
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-10 items-center">
+              <div className="text-center lg:text-left">
+                <h2 className={`${designSystem.typography.h2} mb-4 text-white`}>
+                  Built for trust. Designed for ease.
+                </h2>
+                <p className="text-white/75 text-sm md:text-base max-w-2xl font-medium mx-auto lg:mx-0">
+                  Updates for providers and people seeking support.
+                </p>
               </div>
 
-              {/* Center: Refined Animation */}
-              <div className="lg:col-span-2 flex justify-center py-6 lg:py-0">
+              <div className="flex justify-center lg:justify-end py-2">
                   <button 
                     className="relative group cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-4 focus-visible:ring-offset-slate-900 rounded-full" 
                     onClick={() => navigate('#/')}
@@ -147,23 +131,38 @@ const Footer: React.FC = () => {
                     </div>
                   </button>
               </div>
+            </div>
 
-              {/* Right: Contact (Static Text) */}
-              <div className="lg:col-span-5 text-center lg:text-right space-y-6 lg:space-y-8">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-brand-400 mb-2">Get in touch</p>
-                    <div className="space-y-1">
-                      <p className="text-xl md:text-2xl font-bold text-white tracking-tight">hello@evowell.com</p>
-                      <p className="text-lg md:text-xl font-medium text-white/70 tracking-tight">+1 (310) 555 33 33</p>
-                    </div>
-                  </div>
-                  
-                  <div className="text-sm text-white/60 leading-relaxed font-medium">
-                    123 Wellness Ave, Suite 400<br/>
-                    New York, NY 10001
-                  </div>
-              </div>
+            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+              {footerLinkGroups.map((group) => (
+                <div key={group.title}>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-brand-300 mb-3">
+                    {group.title}
+                  </p>
+                  <ul className="space-y-2">
+                    {group.links.map((link) => (
+                      <li key={`${group.title}-${link.label}`}>
+                        <Link
+                          href={link.href}
+                          className="text-sm text-white/75 hover:text-white transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
 
+            <div className="mt-12 rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <p className="text-[11px] md:text-xs text-white/75 leading-relaxed font-medium">
+                EvoWell provides provider discovery and practice tools. Evo is a navigation assistant and does not
+                provide medical advice. For emergencies, contact local emergency services.
+              </p>
+              <p className="mt-2 text-[11px] md:text-xs text-white/65 leading-relaxed font-medium">
+                Provider verification supports transparency, but it isn&apos;t a guarantee of outcomes.
+              </p>
             </div>
 
             {/* Bottom Bar */}
@@ -173,22 +172,39 @@ const Footer: React.FC = () => {
                   <p className="w-full md:w-auto text-center md:text-left mb-2 md:mb-0">© 2026 EvoWell Inc.</p>
                   <Link href="#/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
                   <Link href="#/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-                  <Link href="#/investors" className="hover:text-white transition-colors">Investors</Link>
-                  <Link href="#/careers" className="hover:text-white transition-colors">Careers</Link>
+                  <Link href="#/privacy" className="hover:text-white transition-colors">Cookie Policy</Link>
               </div>
 
               {/* Accessible Social Icons */}
               <div className="flex gap-4">
                 {[
-                  { name: 'LinkedIn', icon: 'M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 4a2 2 0 110-4 2 2 0 010 4z' },
-                  { name: 'Twitter', icon: 'M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z' },
-                  { name: 'Instagram', icon: 'M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zm1.5-4.87h.01M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 01-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 017.8 2m0 2a3.8 3.8 0 00-3.8 3.8v8.4A3.8 3.8 0 007.8 20h8.4a3.8 3.8 0 003.8-3.8V7.8A3.8 3.8 0 0016.2 4H7.8z' },
+                  {
+                    name: 'LinkedIn',
+                    href: 'https://www.linkedin.com',
+                    tooltip: 'Follow EvoWell on LinkedIn',
+                    icon: 'M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 4a2 2 0 110-4 2 2 0 010 4z',
+                  },
+                  {
+                    name: 'X',
+                    href: 'https://x.com',
+                    tooltip: 'Follow updates on X',
+                    icon: 'M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z',
+                  },
+                  {
+                    name: 'Instagram',
+                    href: 'https://www.instagram.com',
+                    tooltip: 'Community highlights',
+                    icon: 'M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zm1.5-4.87h.01M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 01-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 017.8 2m0 2a3.8 3.8 0 00-3.8 3.8v8.4A3.8 3.8 0 007.8 20h8.4a3.8 3.8 0 003.8-3.8V7.8A3.8 3.8 0 0016.2 4H7.8z',
+                  },
                 ].map(social => (
                   <a 
                     key={social.name}
-                    href="#" 
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={social.tooltip}
                     className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-brand-600 hover:border-brand-500 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-                    aria-label={`Follow us on ${social.name}`}
+                    aria-label={social.tooltip}
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d={social.icon} />

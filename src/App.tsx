@@ -27,6 +27,7 @@ const ProviderProfileEditView = lazy(() => import('./views/ProviderProfileEditVi
 const ProviderOnboardingView = lazy(() => import('./views/ProviderOnboardingView'));
 const ProviderGuideView = lazy(() => import('./views/ProviderGuideView'));
 const ExchangeView = lazy(() => import('./views/ExchangeView'));
+const ExchangeSellEntryView = lazy(() => import('./views/ExchangeSellEntryView'));
 const ResourceDetailView = lazy(() => import('./views/ResourceDetailView'));
 const AdminDashboard = lazy(() => import('./views/AdminDashboard'));
 import ClientLayout from './layouts/ClientLayout';
@@ -374,6 +375,7 @@ const AppInner: React.FC = () => {
 
                       {/* Provider Exchange - Public */}
                       <Route path="/exchange" element={<ExchangeView />} />
+                      <Route path="/exchange/sell" element={<ExchangeSellEntryView />} />
                       <Route path="/exchange/:slugOrId" element={<WrapperResourceDetails />} />
                       
                       <Route path="/blog" element={<BlogListView />} />

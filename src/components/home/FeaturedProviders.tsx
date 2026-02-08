@@ -9,7 +9,23 @@ interface FeaturedProvider extends ProviderProfile {
   lastName: string;
 }
 
-const FeaturedProviders: React.FC<{ providers: FeaturedProvider[] }> = ({ providers }) => {
+interface FeaturedProvidersProps {
+  providers: FeaturedProvider[];
+  previewLabel?: string;
+  title?: string;
+  subhead?: string;
+  microcopy?: string;
+  ctaLabel?: string;
+}
+
+const FeaturedProviders: React.FC<FeaturedProvidersProps> = ({
+  providers,
+  previewLabel,
+  title = 'Featured providers',
+  subhead = 'A growing network of verified professionals across wellness and clinical support.',
+  microcopy = 'Availability and services vary by provider.',
+  ctaLabel = 'View all providers',
+}) => {
   const { navigate } = useNavigation();
   const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -18,7 +34,7 @@ const FeaturedProviders: React.FC<{ providers: FeaturedProvider[] }> = ({ provid
   const tripledProviders = [...providers, ...providers, ...providers];
 
   const handleDirectoryNavigate = () => {
-    navigate('#/directory');
+    navigate('/search');
   };
 
   useEffect(() => {
@@ -77,9 +93,12 @@ const FeaturedProviders: React.FC<{ providers: FeaturedProvider[] }> = ({ provid
       <div className="max-w-[1440px] mx-auto px-6 relative z-10">
         <div className="max-w-[1440px] mx-auto mb-10 md:mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
           <div>
-            <p className="text-brand-500 text-xs font-bold uppercase tracking-widest mb-4">Our Network</p>
-            <h2 className={`${designSystem.typography.h1} mb-4`}>Real People. Real Support.</h2>
-            <p className={`${designSystem.typography.body} text-slate-500 max-w-xl`}>Meet our verified providers: Care from licensed therapists, coaches, and nutritionists dedicated to your growth.</p>
+            {previewLabel && (
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">{previewLabel}</p>
+            )}
+            <p className="text-brand-500 text-xs font-bold uppercase tracking-widest mb-4">Featured providers</p>
+            <h2 className={`${designSystem.typography.h1} mb-4`}>{title}</h2>
+            <p className={`${designSystem.typography.body} text-slate-500 max-w-xl`}>{subhead}</p>
           </div>
           <div className="flex gap-4">
             <button onClick={() => manualScroll('left')} className="w-12 h-12 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-brand-500 hover:border-brand-500 hover:shadow-lg transition-all"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
@@ -157,12 +176,12 @@ const FeaturedProviders: React.FC<{ providers: FeaturedProvider[] }> = ({ provid
           <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-6 relative z-10 group-hover:scale-110 transition-transform shadow-inner">
             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10l2 2 4-4" /></svg>
           </div>
-            <h3 className="text-3xl font-black text-white mb-6 relative z-10 tracking-tight">Discover<br/>More Experts</h3>
-            <button className="bg-white text-brand-600 px-8 py-3 rounded-xl font-bold text-sm shadow-xl group-hover:scale-105 transition-all relative z-10">
-              Browse Directory
-            </button>
-          </div>
-        </div>
+                    <h3 className="text-3xl font-black text-white mb-6 relative z-10 tracking-tight">View all<br/>providers</h3>
+                    <button className="bg-white text-brand-600 px-8 py-3 rounded-xl font-bold text-sm shadow-xl group-hover:scale-105 transition-all relative z-10">
+                      {ctaLabel}
+                    </button>
+                  </div>
+                </div>
 
         {/* Mobile Fallback for the Directory Card (at the end of the scroll) */}
         <div className="lg:hidden px-6 mt-4">
@@ -170,12 +189,14 @@ const FeaturedProviders: React.FC<{ providers: FeaturedProvider[] }> = ({ provid
             onClick={handleDirectoryNavigate}
             className="w-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-3xl p-8 text-center relative overflow-hidden shadow-lg shadow-brand-500/20"
           >
-            <h3 className="text-2xl font-black text-white mb-4 relative z-10">Browse Full Directory</h3>
-            <button className="bg-white text-brand-600 px-8 py-3 rounded-xl font-bold text-sm relative z-10 w-full shadow-md">View All Providers</button>
+            <h3 className="text-2xl font-black text-white mb-4 relative z-10">View all providers</h3>
+            <button className="bg-white text-brand-600 px-8 py-3 rounded-xl font-bold text-sm relative z-10 w-full shadow-md">{ctaLabel}</button>
           </div>
         </div>
         </div>
         )}
+
+        <p className="text-sm text-slate-500 font-semibold mt-2">{microcopy}</p>
       </div>
     </section>
   );

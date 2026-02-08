@@ -78,8 +78,9 @@ export function useProviderDashboard() {
         editForm.education = editForm.educationHistory.map(e => `${e.degree} from ${e.university}`).join(', ');
       }
 
+      const { profileTemplate: _legacyTemplate, ...editableProfile } = editForm;
       const payload: Partial<ProviderProfile> = {
-        ...editForm,
+        ...editableProfile,
         firstName: editForm.firstName,
         lastName: editForm.lastName,
         phoneNumber: editForm.phoneNumber,
