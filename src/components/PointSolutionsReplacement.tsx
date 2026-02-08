@@ -1,6 +1,20 @@
 import React from 'react';
 
-const PointSolutionsReplacement: React.FC = () => {
+interface PointSolutionsReplacementProps {
+  eyebrow?: string;
+  title?: string;
+  titleAccent?: string;
+  subhead?: string;
+  microcopy?: string;
+}
+
+const PointSolutionsReplacement: React.FC<PointSolutionsReplacementProps> = ({
+  eyebrow = 'What does EvoWell do?',
+  title = 'One platform.',
+  titleAccent = 'To replace them all.',
+  subhead,
+  microcopy,
+}) => {
   const columns = [
     {
       title: "CRM",
@@ -92,10 +106,15 @@ const PointSolutionsReplacement: React.FC = () => {
   return (
     <section className="py-24 bg-white overflow-hidden border-y border-slate-100/50">
       <div className="max-w-[1440px] mx-auto px-6 text-center reveal">
-        <p className="text-[10px] font-black text-brand-500 uppercase tracking-[0.3em] mb-4">What does EvoWell do?</p>
+        <p className="text-[10px] font-black text-brand-500 uppercase tracking-[0.3em] mb-4">{eyebrow}</p>
         <h2 className="text-3xl lg:text-5xl font-black text-slate-900 mb-16 tracking-tight leading-tight">
-          One platform. <br/><span className="text-slate-400">To replace them all.</span>
+          {title} <br/><span className="text-slate-400">{titleAccent}</span>
         </h2>
+        {subhead && (
+          <p className="text-slate-600 max-w-3xl mx-auto -mt-10 mb-14 text-lg leading-relaxed">
+            {subhead}
+          </p>
+        )}
 
         <div className="border border-slate-200 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 overflow-hidden bg-white max-w-6xl mx-auto ring-1 ring-slate-100">
           {/* Header Row (Desktop) */}
@@ -134,6 +153,11 @@ const PointSolutionsReplacement: React.FC = () => {
              ))}
           </div>
         </div>
+        {microcopy && (
+          <p className="mt-8 text-sm text-slate-500 max-w-3xl mx-auto">
+            {microcopy}
+          </p>
+        )}
       </div>
     </section>
   );

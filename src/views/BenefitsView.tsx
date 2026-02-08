@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigation } from '../App';
 import Breadcrumb from '../components/Breadcrumb';
+import PointSolutionsReplacement from '../components/PointSolutionsReplacement';
+import { Section, Container } from '../components/layout';
+import { Heading, Text, Label } from '../components/typography';
+import { Button, BrandImage } from '../components/ui';
 import Icon from '../components/ui/Icon';
 import { iconPaths } from '../components/ui/iconPaths';
-import PointSolutionsReplacement from '../components/PointSolutionsReplacement';
-import { PageHero, Section, Container, Grid } from '../components/layout';
-import { Heading, Text, Label } from '../components/typography';
-import { Button, Card, CardHeader, CardBody } from '../components/ui';
+import { brandImages } from '../config/brandImages';
 
 /* ─── Shared pricing data (single source of truth) ───────────────────── */
 export const PRICING_TIERS = [
@@ -63,311 +65,476 @@ export const PRICING_TIERS = [
     ],
     highlight: false,
   },
+] as const;
+
+const providerJoinPath = '/login?join=true&role=provider';
+
+const ecosystemItems: Array<{
+  title: string;
+  copy: string;
+  icon: keyof typeof iconPaths;
+}> = [
+  {
+    title: 'Practice Management (without the clutter)',
+    copy: 'Scheduling, reminders, and workflows that reduce admin load.',
+    icon: 'settings',
+  },
+  {
+    title: 'Client Communication (built for care)',
+    copy: 'Secure messaging and simple follow-ups without juggling apps.',
+    icon: 'chat',
+  },
+  {
+    title: 'Discovery That Rewards Credibility',
+    copy: 'Verified profiles, clear filters, and trust signals clients understand.',
+    icon: 'shield',
+  },
+  {
+    title: "Payments That Don't Interrupt Sessions",
+    copy: 'Straightforward billing and payouts designed to stay out of your way.',
+    icon: 'dollar',
+  },
+  {
+    title: 'Passive Income Through the Exchange',
+    copy: 'Turn your tools into resources others can buy and use.',
+    icon: 'folder',
+  },
 ];
 
-/* ─── Hero visual ────────────────────────────────────────────────────── */
+const exchangeFeatures: Array<{
+  title: string;
+  copy: string;
+  icon: keyof typeof iconPaths;
+}> = [
+  {
+    title: 'Publish once. Earn repeatedly.',
+    copy: 'Turn your best resources into downloads that support your practice.',
+    icon: 'download',
+  },
+  {
+    title: 'Built for clinical-quality tools.',
+    copy: 'Clear categories, search, and filters so the right people find your work.',
+    icon: 'search',
+  },
+  {
+    title: 'Your content, your voice.',
+    copy: 'Keep your style. Keep your standards. Keep improving over time.',
+    icon: 'article',
+  },
+  {
+    title: 'Free and paid options.',
+    copy: 'Share a free starter resource or build a paid library.',
+    icon: 'star',
+  },
+  {
+    title: 'Verified creators only.',
+    copy: 'Trust stays high because contributors are verified providers.',
+    icon: 'shield',
+  },
+];
 
-const BenefitsHeroVisual = () => (
-  <div className="relative w-full max-w-lg aspect-[4/5]">
-    <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px]"></div>
-    <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px]"></div>
-    <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600" className="absolute top-0 right-0 w-3/4 h-3/5 object-cover rounded-[3rem] shadow-2xl border-4 border-white z-10" alt="Provider 1" />
-    <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=600" className="absolute bottom-0 left-0 w-3/4 h-3/5 object-cover rounded-[3rem] shadow-2xl border-4 border-white z-20 grayscale hover:grayscale-0 transition-all duration-700" alt="Provider 2" />
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-xl z-30 border border-white/50 text-center">
-       <Heading level={3} size="h3" className="mb-1">+40%</Heading>
-       <Label variant="overline">Client Growth</Label>
-    </div>
-  </div>
-);
+const slidingScaleAnchors = [
+  {
+    label: 'Minimum - Access',
+    detail: 'for early-stage, rebuilding, limited caseload',
+  },
+  {
+    label: 'Recommended - Sustain',
+    detail: 'covers operations + ongoing development',
+  },
+  {
+    label: 'Supporter - Sponsor',
+    detail: 'helps subsidize other providers and funds new tools',
+  },
+] as const;
 
-/* ─── Main view ──────────────────────────────────────────────────────── */
+const onboardingSteps: Array<{
+  step: string;
+  title: string;
+  copy: string;
+  microcopy?: string;
+}> = [
+  {
+    step: 'Step 1',
+    title: 'Apply',
+    copy: 'Create your account and start your provider profile.',
+  },
+  {
+    step: 'Step 2',
+    title: 'Get verified',
+    copy: "Submit credentials for review so clients can trust who they're booking with.",
+    microcopy: 'Verification protects both clients and providers.',
+  },
+  {
+    step: 'Step 3',
+    title: 'Build your profile',
+    copy: 'Add specialties, modalities, languages, availability, rates, and accepted insurance (if applicable).',
+  },
+  {
+    step: 'Step 4',
+    title: 'Go live & grow',
+    copy: 'Publish your profile, enable booking, and optionally add your first Exchange resource.',
+  },
+];
 
 const BenefitsView: React.FC = () => {
   const { navigate } = useNavigation();
-  const [activeFeature, setActiveFeature] = useState(0);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const [selectedAnchor, setSelectedAnchor] = useState(1);
+  const activeAnchor = slidingScaleAnchors[selectedAnchor];
 
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.reveal').forEach(el => observerRef.current?.observe(el));
-    return () => observerRef.current?.disconnect();
-  }, []);
+  const navigateToProviderJoin = () => navigate(providerJoinPath);
 
-  const features = [
-    { title: "Sovereign Practice Management", subtitle: "Run Your Practice, Your Way", desc: "Set your own rates, hours, and cancellation policies. EvoWell adapts to how you work — not the other way around.", icon: "settings", img: "https://images.unsplash.com/photo-1666214280557-f1b5022eb634?auto=format&fit=crop&q=80&w=800" },
-    { title: "Holistic Service Flexibility", subtitle: "Offer What You Love", desc: "Go beyond 1:1 sessions. Run group workshops, sell digital guides, offer async check-ins — all from one profile.", icon: "heart", img: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80&w=800" },
-    { title: "High-Visibility Discovery", subtitle: "Get Found by the Right Clients", desc: "Our SEO-optimized directory and smart matching connect you with clients who are looking for exactly your specialties.", icon: "eye", img: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80&w=800" },
-    { title: "Passive Income Streams", subtitle: "Earn Beyond Sessions", desc: "Upload e-books, meditation guides, and self-paced courses. Your expertise works for you around the clock.", icon: "dollar", img: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800" },
-    { title: "Borderless Connection", subtitle: "Expand Your Reach Nationwide", desc: "Connect with clients across the country through secure video. No commute, no overhead, no geographic ceiling.", icon: "globe", img: "https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&q=80&w=800" },
-  ];
+  const scrollToPricing = () => {
+    const pricingSection = document.getElementById('sliding-scale-pricing');
+    if (!pricingSection) return;
+    pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="bg-[#F8FAFC] min-h-screen">
-      <Breadcrumb items={[{ label: 'Provider Benefits' }]} />
+      <Helmet>
+        <title>EvoWell for Providers | Run Your Practice. Grow With Trust.</title>
+        <meta
+          name="description"
+          content="A provider-first platform for scheduling, messaging, payments, discovery, and a marketplace to sell your resources—on a sliding-scale membership."
+        />
+      </Helmet>
 
-      {/* ── Hero ──────────────────────────────────────────────────── */}
-      <PageHero
-        overline="For Modern Practitioners"
-        title={<>Your Practice.<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-blue-600">Elevated.</span></>}
-        description="EvoWell isn't just a directory. It's a complete operating system for the next generation of mental health and wellness professionals."
-        variant="split"
-        visual={<BenefitsHeroVisual />}
-        actions={<>
-          <Button variant="primary" onClick={() => navigate('#/login?join=true')}>Start Your Journey</Button>
-          <Button variant="secondary" onClick={() => navigate('/pricing')}>See Pricing</Button>
-        </>}
+      <Breadcrumb items={[{ label: 'For Providers' }]} />
+
+      {/* Hero */}
+      <section className="relative pt-20 md:pt-24 lg:pt-28 pb-20 md:pb-24 overflow-hidden">
+        <div className="absolute top-0 right-0 w-[420px] h-[420px] bg-brand-100 rounded-full blur-[110px] opacity-70 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[340px] h-[340px] bg-blue-100 rounded-full blur-[110px] opacity-70 pointer-events-none" />
+        <Container size="full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div>
+              <Label variant="overline" className="text-brand-600 mb-5">
+                For Providers
+              </Label>
+              <Heading level={1} size="display" className="mb-5 text-slate-900">
+                Your Practice. Elevated.
+              </Heading>
+              <Text variant="lead" className="text-slate-600 mb-8 max-w-2xl">
+                Everything you need to run a modern clinical wellness practice—booking, messaging, payments,
+                visibility, and a marketplace for your tools. Built for trust. Designed for ease.
+              </Text>
+
+              <div className="flex flex-wrap gap-4 mb-4">
+                <Button size="lg" variant="brand" onClick={navigateToProviderJoin}>
+                  Create Provider Profile
+                </Button>
+                <Button size="lg" variant="secondary" onClick={navigateToProviderJoin}>
+                  Start Application
+                </Button>
+              </div>
+
+              <button
+                type="button"
+                onClick={scrollToPricing}
+                className="text-sm font-semibold text-brand-600 hover:text-brand-700 underline underline-offset-4 mb-5"
+              >
+                See how sliding-scale pricing works
+              </button>
+
+              <Text variant="small" className="text-slate-500 font-semibold">
+                Sliding-scale membership • Change your price anytime • Verification keeps the network credible
+              </Text>
+            </div>
+
+            <div className="relative">
+              <BrandImage
+                src={brandImages.providerGuide.hero.src}
+                fallbackSrc={brandImages.providerGuide.hero.fallbackSrc}
+                alt="Provider operations and growth on EvoWell"
+                className="w-full h-full object-cover rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/60"
+                aspectRatio="4 / 3"
+                wrapperClassName="w-full max-w-2xl mx-auto"
+              />
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Provider Ecosystem */}
+      <Section spacing="lg" background="white">
+        <Container size="full">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-start">
+            <div>
+              <Label variant="overline" className="text-brand-600 mb-4">
+                The Provider Ecosystem
+              </Label>
+              <Heading level={2} className="mb-4 text-slate-900">
+                One platform for the work behind the work.
+              </Heading>
+              <Text variant="lead" className="text-slate-600 mb-8 max-w-3xl">
+                Stop stitching together tools that don&apos;t talk to each other. EvoWell helps you stay organized,
+                get found, and grow—without losing your voice or independence.
+              </Text>
+
+              <div className="space-y-4">
+                {ecosystemItems.map((item) => (
+                  <article key={item.title} className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <div className="flex items-start gap-4">
+                      <span className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-brand-600 flex items-center justify-center shrink-0">
+                        <Icon path={iconPaths[item.icon]} size={20} />
+                      </span>
+                      <div>
+                        <Heading level={4} className="mb-1 text-slate-900">
+                          {item.title}
+                        </Heading>
+                        <Text className="text-slate-600">{item.copy}</Text>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-4 mt-8">
+                <Button size="lg" variant="brand" onClick={navigateToProviderJoin}>
+                  Create Provider Profile
+                </Button>
+                <Button size="lg" variant="secondary" onClick={() => navigate('/exchange')}>
+                  Browse Provider Exchange
+                </Button>
+              </div>
+            </div>
+
+            <div className="lg:sticky lg:top-24">
+              <BrandImage
+                src={brandImages.providerGuide.cards.tools.src}
+                fallbackSrc={brandImages.providerGuide.cards.tools.fallbackSrc}
+                alt="Provider dashboard workspace"
+                className="w-full h-full object-cover rounded-[2rem] border border-slate-200 shadow-xl"
+                aspectRatio="4 / 3"
+              />
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      <PointSolutionsReplacement
+        eyebrow="Provider Infrastructure"
+        title="One platform."
+        titleAccent="To replace them all."
+        subhead="Replace spreadsheets, scattered apps, and patchwork systems with one clean experience—for you and your clients."
+        microcopy="EvoWell is designed to integrate smoothly with how you already work—without forcing you into a rigid template."
       />
 
-      {/* ── Feature Explorer ─────────────────────────────────────── */}
-      <Section spacing="lg" background="white" className="relative">
-        <Container size="full">
-          <div className="mb-20 text-center reveal">
-             <Heading level={2} className="mb-4">The Provider Ecosystem</Heading>
-             <Text color="muted">Everything you need to thrive in the digital care economy.</Text>
-          </div>
-          <div className="grid lg:grid-cols-2 gap-16 items-start reveal">
-             <div className="space-y-4">
-                {features.map((feature, idx) => (
-                   <button
-                     key={idx}
-                     onClick={() => setActiveFeature(idx)}
-                     className={`w-full text-left p-8 rounded-[2rem] transition-all duration-300 flex items-center gap-6 group ${activeFeature === idx ? 'bg-slate-50 shadow-inner' : 'hover:bg-white hover:shadow-lg border border-transparent hover:border-slate-100'}`}
-                   >
-                      <div className={`transition-all duration-300 ${activeFeature === idx ? 'scale-110' : 'grayscale group-hover:grayscale-0'}`}>
-                         <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-brand-600">
-                           <Icon path={iconPaths[feature.icon as keyof typeof iconPaths]} size={24} />
-                         </div>
-                      </div>
-                      <div>
-                         <Heading level={4} className={`mb-1 transition-colors ${activeFeature === idx ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-800'}`}>{feature.title}</Heading>
-                         {activeFeature === idx && <Text variant="small" color="brand" className="animate-in fade-in slide-in-from-left-2">{feature.subtitle}</Text>}
-                      </div>
-                   </button>
-                ))}
-             </div>
-             <div className="sticky top-32">
-                <div className="bg-slate-900 rounded-[3rem] p-2 shadow-2xl overflow-hidden relative aspect-square lg:aspect-[4/3]">
-                   {features.map((feature, idx) => (
-                      <div key={idx} className={`absolute inset-0 transition-all duration-700 ease-in-out ${activeFeature === idx ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
-                         <img src={feature.img} className="w-full h-full object-cover opacity-60 rounded-[2.5rem]" alt={feature.title} />
-                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
-                         <div className="absolute bottom-0 left-0 w-full p-12">
-                            <div className="mb-6">
-                              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl">
-                                <Icon path={iconPaths[feature.icon as keyof typeof iconPaths]} size={32} />
-                              </div>
-                            </div>
-                            <Heading level={3} size="h2" color="white" className="mb-4">{feature.subtitle}</Heading>
-                            <Text color="white" className="opacity-80 max-w-md">{feature.desc}</Text>
-                         </div>
-                      </div>
-                   ))}
-                </div>
-             </div>
+      {/* Provider Exchange */}
+      <Section spacing="lg" background="dark">
+        <Container>
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            <div>
+              <Heading level={2} color="white" className="mb-4">
+                Provider Exchange - monetize your expertise.
+              </Heading>
+              <Text variant="lead" className="text-slate-300 mb-8">
+                Sell templates, worksheets, guides, toolkits, and courses—created by verified providers and trusted
+                by the EvoWell community.
+              </Text>
+
+              <div className="flex flex-wrap gap-4 mb-4">
+                <Button size="lg" variant="brand" onClick={() => navigate('/exchange')}>
+                  Browse the Exchange
+                </Button>
+                <Button size="lg" variant="secondary" onClick={navigateToProviderJoin}>
+                  Sell a Resource
+                </Button>
+              </div>
+
+              <Text variant="small" className="text-slate-400 font-semibold">
+                Only verified providers can publish to the Exchange.
+              </Text>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              {exchangeFeatures.map((feature) => (
+                <article
+                  key={feature.title}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm"
+                >
+                  <span className="w-10 h-10 rounded-xl bg-white/10 text-brand-300 flex items-center justify-center mb-4">
+                    <Icon path={iconPaths[feature.icon]} size={20} />
+                  </span>
+                  <Heading level={4} color="white" className="mb-2">
+                    {feature.title}
+                  </Heading>
+                  <Text className="text-slate-300">{feature.copy}</Text>
+                </article>
+              ))}
+            </div>
           </div>
         </Container>
       </Section>
 
-      <PointSolutionsReplacement />
-
-      {/* ── Provider Exchange Showcase ──────────────────────────── */}
-      <Section spacing="lg" className="bg-slate-900 text-white overflow-hidden relative">
-         <div className="absolute top-0 right-0 w-1/2 h-full bg-brand-500/10 blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
-         <div className="absolute bottom-0 left-0 w-1/2 h-full bg-blue-500/10 blur-[120px] translate-y-1/2 -translate-x-1/2"></div>
-         
-         <Container>
-            <div className="grid lg:grid-cols-2 gap-20 items-center reveal">
-               <div>
-                  <Label variant="overline" className="text-brand-400 mb-6">Marketplace for Experts</Label>
-                  <Heading level={2} color="white" className="text-5xl md:text-6xl mb-8 leading-[1.1]">The Provider Exchange: <br/><span className="text-brand-500">Monetize Your Expertise.</span></Heading>
-                  <Text variant="lead" className="text-slate-400 mb-10">
-                     Join the first high-integrity marketplace built specifically for wellness professionals. Share the tools that make your practice unique and earn passive income while helping the community thrive.
-                  </Text>
-                  
-                  <div className="grid sm:grid-cols-2 gap-8 mb-12">
-                     <div className="space-y-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-400">
-                           <Icon path={iconPaths.folder} size={20} />
-                        </div>
-                        <Heading level={4} color="white" size="h4">Clinical Templates</Heading>
-                        <Text variant="small" className="text-slate-500">Sell intake forms, assessment tools, and EHR-ready templates.</Text>
-                     </div>
-                     <div className="space-y-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-400">
-                           <Icon path={iconPaths.blog} size={20} />
-                        </div>
-                        <Heading level={4} color="white" size="h4">Digital Guides</Heading>
-                        <Text variant="small" className="text-slate-500">Publish e-books, patient handouts, and specialized worksheets.</Text>
-                     </div>
-                     <div className="space-y-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-400">
-                           <Icon path={iconPaths.podcast} size={20} />
-                        </div>
-                        <Heading level={4} color="white" size="h4">Audio & Video</Heading>
-                        <Text variant="small" className="text-slate-500">Host guided meditations, breathwork sessions, or video workshops.</Text>
-                     </div>
-                     <div className="space-y-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-400">
-                           <Icon path={iconPaths.star} size={20} />
-                        </div>
-                        <Heading level={4} color="white" size="h4">Full Courses</Heading>
-                        <Text variant="small" className="text-slate-500">Build and sell comprehensive certification courses for other pros.</Text>
-                     </div>
-                  </div>
-
-                  <Button variant="brand" size="lg" onClick={() => navigate('/exchange')}>Explore the Exchange</Button>
-               </div>
-               
-               <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-brand-500/20 to-blue-500/20 rounded-[4rem] blur-3xl scale-110"></div>
-                  <div className="relative bg-white/5 backdrop-blur-3xl border border-white/10 p-4 rounded-[4rem] shadow-2xl overflow-hidden group">
-                     <img 
-                        src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&q=80&w=1200" 
-                        className="w-full h-auto rounded-[3.5rem] opacity-80 group-hover:opacity-100 transition-opacity duration-700" 
-                        alt="Digital Resources" 
-                     />
-                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
-                     <div className="absolute bottom-12 left-12 right-12">
-                        <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl text-slate-900 shadow-2xl border border-white/50 transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500">
-                           <div className="flex items-center gap-4 mb-4">
-                              <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-black">EC</div>
-                              <div>
-                                 <p className="font-black text-sm uppercase tracking-tighter">Dr. Elena Chen</p>
-                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Top Contributor</p>
-                              </div>
-                           </div>
-                           <p className="text-sm font-medium text-slate-600 italic">"The Provider Exchange allowed me to reach 500+ clinicians with my specialized ADHD toolkit in just two months."</p>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </Container>
-      </Section>
-
-      {/* ── Founder Quote ────────────────────────────────────────── */}
-      <Section spacing="md" className="bg-brand-50 relative overflow-hidden">
-         <Container className="relative z-10">
-            <div className="bg-white rounded-[3rem] p-10 lg:p-16 shadow-xl border border-slate-100 flex flex-col lg:flex-row gap-16 items-center reveal">
-               <div className="lg:w-2/5 relative shrink-0">
-                  <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden rotate-2 shadow-lg border-4 border-white">
-                     <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover" alt="Founder" />
-                  </div>
-               </div>
-               <div className="lg:w-3/5 space-y-6">
-                  <Heading level={2}>Built by Someone Who's Been There</Heading>
-                  <Text variant="lead" className="text-slate-600">"I spent years paying for four different tools that didn't talk to each other — a booking system, a billing platform, a directory listing, and a notes app. EvoWell was born from wanting one place that actually works."</Text>
-                  <div className="pt-4">
-                    <Text weight="bold">Dr. Cassandra Vane</Text>
-                    <Text variant="small" color="muted">Founder & CEO, EvoWell</Text>
-                  </div>
-               </div>
-            </div>
-         </Container>
-      </Section>
-
-      {/* ── Pricing Overview ─────────────────────────────────────── */}
-      <Section spacing="lg" background="dark" className="relative">
-        <Container className="relative z-10">
-          <div className="text-center mb-6 reveal">
-            <Label variant="overline" className="text-brand-400 mb-4">Simple Pricing</Label>
-            <Heading level={2} color="white" className="mb-4">Pay less as you grow</Heading>
-            <Text className="text-slate-400 max-w-xl mx-auto mb-10">Every tier includes a small per-booking platform fee that drops as you commit to a higher plan. Start free, upgrade when it makes sense.</Text>
+      {/* Sliding Scale */}
+      <Section id="sliding-scale-pricing" spacing="lg" background="white">
+        <Container className="max-w-5xl">
+          <div className="text-center mb-10">
+            <Heading level={2} className="mb-4 text-slate-900">
+              Pay what&apos;s fair. Scale when you&apos;re ready.
+            </Heading>
+            <Text variant="lead" className="text-slate-600">
+              EvoWell uses a sliding-scale membership so more providers can access modern tools—without compromising
+              the platform. Choose your price within a range. Adjust anytime.
+            </Text>
           </div>
 
-          <div className="flex justify-center mb-14 reveal">
-            <div className="inline-flex bg-white/10 p-1 rounded-2xl backdrop-blur-sm border border-white/10">
-              <button onClick={() => setBillingCycle('monthly')} className={`px-8 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-widest ${billingCycle === 'monthly' ? 'bg-brand-500 text-white shadow-lg' : 'text-slate-300 hover:text-white'}`}>Monthly</button>
-              <button onClick={() => setBillingCycle('annual')} className={`px-8 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-widest ${billingCycle === 'annual' ? 'bg-brand-500 text-white shadow-lg' : 'text-slate-300 hover:text-white'}`}>Annual <span className="text-brand-300 ml-1">Save 25%</span></button>
+          <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 md:p-8">
+            <label htmlFor="sliding-scale-tier" className="sr-only">
+              Select sliding-scale membership level
+            </label>
+            <input
+              id="sliding-scale-tier"
+              type="range"
+              min={0}
+              max={2}
+              step={1}
+              value={selectedAnchor}
+              onChange={(event) => setSelectedAnchor(Number(event.target.value))}
+              className="w-full accent-brand-600"
+            />
+
+            <div className="grid md:grid-cols-3 gap-3 mt-5">
+              {slidingScaleAnchors.map((anchor, index) => (
+                <button
+                  key={anchor.label}
+                  type="button"
+                  onClick={() => setSelectedAnchor(index)}
+                  className={`text-left rounded-xl border px-4 py-3 transition-colors ${
+                    selectedAnchor === index
+                      ? 'border-brand-500 bg-brand-50 text-brand-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <p className="text-sm font-bold">{anchor.label}</p>
+                  <p className="text-xs mt-1">{anchor.detail}</p>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-xl bg-white border border-slate-200 p-5">
+              <Heading level={4} className="mb-2 text-slate-900">
+                {activeAnchor.label}
+              </Heading>
+              <Text className="text-slate-600">{activeAnchor.detail}</Text>
+            </div>
+
+            <Text className="text-slate-600 mt-5">
+              Your core access stays the same across the sliding scale. This is about accessibility and shared
+              sustainability.
+            </Text>
+
+            <div className="mt-6">
+              <Button size="lg" variant="brand" onClick={navigateToProviderJoin}>
+                Set Your Price
+              </Button>
             </div>
           </div>
 
-          <Grid cols={3} gap="lg" className="reveal">
-            {PRICING_TIERS.map((tier, i) => {
-              const price = billingCycle === 'monthly' ? tier.monthlyPrice : tier.annualPrice;
-              return (
-                <Card key={tier.id} variant={tier.highlight ? 'elevated' : 'muted'} className={`h-full relative ${tier.highlight ? 'scale-105 z-10' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}>
-                  {tier.highlight && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Most Popular</div>}
-                  <CardHeader>
-                     <Heading level={3} className={`mb-1 ${tier.highlight ? 'text-slate-900' : 'text-white'}`}>{tier.name}</Heading>
-                     <Text variant="small" className={tier.highlight ? 'text-slate-500' : 'text-slate-400'}>{tier.tagline}</Text>
-                     <div className="mt-6 flex items-baseline gap-1">
-                        <span className={`text-4xl font-black ${tier.highlight ? 'text-slate-900' : 'text-white'}`}>{price === 0 ? 'Free' : `$${price}`}</span>
-                        {price > 0 && <span className={`text-xs font-bold opacity-60 ${tier.highlight ? 'text-slate-900' : 'text-white'}`}>/mo</span>}
-                     </div>
-                     <div className="mt-3 inline-flex items-center gap-2 bg-brand-50 text-brand-700 px-3 py-1.5 rounded-xl text-xs font-bold">
-                       <span>{tier.platformFee}% per booking</span>
-                     </div>
-                  </CardHeader>
-                  <CardBody>
-                     <div className="space-y-4 mb-8">
-                        {tier.features.map((f, idx) => (
-                           <div key={idx} className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${tier.highlight ? 'bg-brand-500 text-white' : 'bg-white/20 text-white'}`}>✓</div>
-                              <span className={`text-xs font-bold ${tier.highlight ? 'text-slate-700' : 'text-slate-300'}`}>{f}</span>
-                           </div>
-                        ))}
-                     </div>
-                     <Button fullWidth variant={tier.highlight ? 'brand' : 'secondary'} onClick={() => navigate('#/login?join=true')}>
-                       {price === 0 ? 'Get Started Free' : 'Start 14-Day Trial'}
-                     </Button>
-                  </CardBody>
-                </Card>
-              );
-            })}
-          </Grid>
+          <Text className="text-slate-600 mt-8">
+            Because providers shouldn&apos;t be priced out of good infrastructure. We keep a minimum to maintain secure
+            systems and support. Those who can contribute more help keep EvoWell accessible.
+          </Text>
+        </Container>
+      </Section>
 
-          {/* CTA to calculator */}
-          <div className="text-center mt-16 reveal">
-            <Text className="text-slate-400 mb-4">Not sure which plan fits? See the numbers for yourself.</Text>
-            <Button variant="ghost" className="text-brand-400 hover:text-brand-300" onClick={() => navigate('/pricing')}>
-              Open the ROI Calculator →
-            </Button>
+      {/* Social Proof */}
+      <Section spacing="md" background="default">
+        <Container className="max-w-4xl">
+          <div className="bg-white rounded-[2rem] border border-slate-200 p-8 md:p-10 shadow-sm text-center">
+            <Heading level={2} className="mb-4 text-slate-900">
+              Built by people who understand the reality of practice.
+            </Heading>
+            <Text variant="lead" className="text-slate-600">
+              We&apos;re building EvoWell alongside providers—prioritizing usability, trust, and long-term
+              sustainability over flashy features.
+            </Text>
+            <Text variant="small" className="text-slate-500 mt-4">
+              Early access is evolving—your feedback shapes what ships next.
+            </Text>
           </div>
         </Container>
       </Section>
 
-      {/* ── How it works ─────────────────────────────────────────── */}
+      {/* How It Works */}
       <Section spacing="lg" background="white">
         <Container>
-          <div className="text-center mb-16 reveal">
-            <Label variant="overline" color="brand" className="mb-4">How It Works</Label>
-            <Heading level={2}>Live in under a week</Heading>
+          <div className="text-center mb-12">
+            <Heading level={2} className="mb-4 text-slate-900">
+              Live in under a week.
+            </Heading>
+            <Text variant="lead" className="text-slate-600">
+              A straightforward path from signup to a public profile.
+            </Text>
           </div>
-          <div className="grid md:grid-cols-4 gap-8 reveal">
-            {[
-              { step: '01', title: 'Apply', desc: 'Submit your credentials and practice details. Takes about 5 minutes.' },
-              { step: '02', title: 'Get verified', desc: 'Our clinical team reviews your profile within 48 hours.' },
-              { step: '03', title: 'Build your profile', desc: 'Add your specialties, rates, availability, and a personal bio.' },
-            { step: '04', title: 'Start seeing clients', desc: 'You\'re live. Clients can find and book you immediately.' },            ].map((s, i) => (
-              <div key={i} className="relative">
-                {i < 3 && <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-px bg-slate-200 z-0"></div>}
-                <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm font-black mb-5">{s.step}</div>
-                  <Heading level={4} className="mb-2">{s.title}</Heading>
-                  <Text variant="small" color="muted">{s.desc}</Text>
-                </div>
-              </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {onboardingSteps.map((step, index) => (
+              <article key={step.title} className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                <p className="text-xs font-black uppercase tracking-widest text-brand-600 mb-3">{step.step}</p>
+                <Heading level={4} className="mb-3 text-slate-900">
+                  {step.title}
+                </Heading>
+                <Text className="text-slate-600 mb-3">{step.copy}</Text>
+                {step.microcopy && (
+                  <Text variant="small" className="text-slate-500">
+                    {step.microcopy}
+                  </Text>
+                )}
+                {index === 0 && (
+                  <div className="mt-4">
+                    <Button variant="brand" size="sm" onClick={navigateToProviderJoin}>
+                      Start Application
+                    </Button>
+                  </div>
+                )}
+              </article>
             ))}
           </div>
         </Container>
       </Section>
 
-      {/* ── Final CTA ────────────────────────────────────────────── */}
+      {/* Final CTA */}
       <Section spacing="md" background="default">
-         <Container className="max-w-5xl">
-            <div className="text-center reveal">
-              <Heading level={2} className="mb-6">Ready to join the evolution?</Heading>
-              <Text variant="lead" className="mb-10 text-slate-500">Create your profile in minutes. Verification takes less than 48 hours. Start on the free tier — upgrade anytime.</Text>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="brand" onClick={() => navigate('#/login?join=true')}>Create Provider Profile</Button>
-                <Button size="lg" variant="secondary" onClick={() => navigate('/pricing')}>Calculate Your ROI</Button>
-              </div>
+        <Container className="max-w-6xl">
+          <div className="rounded-[2.5rem] bg-gradient-to-br from-brand-700 to-brand-500 text-white p-8 md:p-12 lg:p-16 shadow-2xl">
+            <Heading level={2} color="white" className="mb-4 max-w-4xl">
+              Ready to join the evolution?
+            </Heading>
+            <Text variant="lead" className="text-brand-50 max-w-4xl mb-8">
+              Build a verified presence, simplify your workflow, and grow your practice—on a sliding scale that
+              respects where you are today.
+            </Text>
+
+            <div className="flex flex-wrap gap-4 mb-5">
+              <Button size="lg" variant="primary" onClick={navigateToProviderJoin}>
+                Create Provider Profile
+              </Button>
+              <Button size="lg" variant="secondary" onClick={() => navigate('/contact')}>
+                Talk to Support
+              </Button>
             </div>
-         </Container>
+
+            <Text variant="small" className="text-brand-100 font-semibold">
+              No long-term contracts. Change your price anytime.
+            </Text>
+          </div>
+        </Container>
+      </Section>
+
+      {/* Footer Disclaimer */}
+      <Section spacing="sm" background="white">
+        <Container className="max-w-5xl">
+          <div className="text-center">
+            <Text variant="small" className="text-slate-500">
+              EvoWell is a platform that helps people find providers and helps providers manage their practice. Evo and
+              platform content are for informational purposes only and are not medical advice. If you&apos;re experiencing
+              an emergency, call local emergency services.
+            </Text>
+          </div>
+        </Container>
       </Section>
     </div>
   );
