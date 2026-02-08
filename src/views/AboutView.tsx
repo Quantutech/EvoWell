@@ -6,7 +6,10 @@ import Breadcrumb from '../components/Breadcrumb';
 import AnimatedCounter from '../components/AnimatedCounter';
 import { PageHero, Section, Container, Grid } from '../components/layout';
 import { Heading, Text, Label } from '../components/typography';
-import { Card, Button } from '../components/ui';
+import { Button, BrandImage, Icon } from '../components/ui';
+import { iconPaths } from '../components/ui/iconPaths';
+import { getStableMarkerOffset } from '../utils/map/deterministicOffsets';
+import { brandImages } from '../config/brandImages';
 
 interface TeamMember {
   name: string;
@@ -14,6 +17,7 @@ interface TeamMember {
   bio: string;
   fullBio: string;
   img: string;
+  fallbackImg?: string;
   x: string;
   linkedin: string;
   web: string;
@@ -27,10 +31,19 @@ interface EnrichedProvider extends ProviderProfile {
 const AboutHeroVisual = () => (
   <div className="relative flex justify-end">
      <div className="bg-[#f0f9ff] rounded-[2.5rem] md:rounded-[4rem] p-6 md:p-10 relative overflow-hidden w-full max-w-lg">
-        <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover rounded-[1.75rem] md:rounded-[3rem] grayscale mix-blend-multiply opacity-80" alt="Clinical Illustration" />
+        <BrandImage
+          src={brandImages.about.hero.src}
+          fallbackSrc={brandImages.about.hero.fallbackSrc}
+          className="w-full h-full object-cover rounded-[1.75rem] md:rounded-[3rem] grayscale mix-blend-multiply opacity-80"
+          alt={brandImages.about.hero.alt}
+        />
         <div className="absolute inset-0 bg-brand-500/10"></div>
-        <div className="absolute top-6 left-6 md:top-10 md:left-10 w-12 h-12 md:w-16 md:h-16 bg-white rounded-full shadow-2xl flex items-center justify-center text-xl md:text-2xl">💬</div>
-        <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10 w-12 h-12 md:w-16 md:h-16 bg-white rounded-full shadow-2xl flex items-center justify-center text-xl md:text-2xl">📞</div>
+        <div className="absolute top-6 left-6 md:top-10 md:left-10 w-12 h-12 md:w-16 md:h-16 bg-white rounded-full shadow-2xl flex items-center justify-center text-brand-600">
+          <Icon path={iconPaths.chat} className="w-5 h-5 md:w-6 md:h-6" />
+        </div>
+        <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10 w-12 h-12 md:w-16 md:h-16 bg-white rounded-full shadow-2xl flex items-center justify-center text-brand-600">
+          <Icon path={iconPaths.phone} className="w-5 h-5 md:w-6 md:h-6" />
+        </div>
      </div>
   </div>
 );
@@ -58,8 +71,9 @@ const USMap: React.FC<{ providers: EnrichedProvider[] }> = ({ providers }) => {
     .map(p => {
       const state = p.address?.state || 'NY';
       const baseCoords = stateCoords[state] || stateCoords['New York'];
-      const x = baseCoords.x + (Math.random() - 0.5) * 6;
-      const y = baseCoords.y + (Math.random() - 0.5) * 6;
+      const offset = getStableMarkerOffset(`${p.id}-${state}`, 3);
+      const x = Math.max(3, Math.min(97, baseCoords.x + offset.x));
+      const y = Math.max(3, Math.min(97, baseCoords.y + offset.y));
       return {
         id: p.id,
         name: `Dr. ${p.firstName || 'Expert'} ${p.lastName?.charAt(0) || ''}.`,
@@ -78,7 +92,7 @@ const USMap: React.FC<{ providers: EnrichedProvider[] }> = ({ providers }) => {
       <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(#475569 0.8px, transparent 0.8px)', backgroundSize: '24px 24px' }}></div>
       {/* Map silhouette */}
       <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{
-        backgroundImage: 'url(https://upload.wikimedia.org/wikipedia/commons/1/1a/Blank_US_Map_%28states_only%29.svg)',
+        backgroundImage: `url(${brandImages.maps.usSilhouette.src}), url(${brandImages.maps.usSilhouette.fallbackSrc})`,
         backgroundSize: '100%',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center'
@@ -118,7 +132,7 @@ const USMap: React.FC<{ providers: EnrichedProvider[] }> = ({ providers }) => {
       {/* Legend */}
       <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 bg-white/70 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/60 shadow-sm flex items-center gap-3">
          <div className="relative w-2.5 h-2.5">
-            <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-50"></div>
+            <div className="absolute inset-0 bg-emerald-500 rounded-full motion-safe:animate-ping opacity-50"></div>
             <div className="relative w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
          </div>
          <span className="text-xs font-semibold tracking-wider uppercase text-slate-500">Live Network</span>
@@ -146,7 +160,12 @@ const BioModal: React.FC<{ member: TeamMember; onClose: () => void }> = ({ membe
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md" onClick={onClose}>
       <div className="bg-white w-full max-w-5xl rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col md:flex-row max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="md:w-2/5 relative h-72 md:h-auto shrink-0">
-          <img src={member.img} className="w-full h-full object-cover" alt={member.name} />
+          <BrandImage
+            src={member.img}
+            fallbackSrc={member.fallbackImg}
+            className="w-full h-full object-cover"
+            alt={member.name}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden"></div>
           <button onClick={onClose} className="absolute top-6 right-6 md:hidden bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/40 transition-all">✕</button>
         </div>
@@ -189,7 +208,12 @@ const TeamSection: React.FC<{ team: TeamMember[], onSelect: (m: TeamMember) => v
         >
           <div className="grid md:grid-cols-2">
             <div className="relative aspect-[4/3] md:aspect-auto">
-              <img src={lead.img} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt={lead.name} />
+              <BrandImage
+                src={lead.img}
+                fallbackSrc={lead.fallbackImg}
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                alt={lead.name}
+              />
               <div className="absolute inset-0 bg-brand-900/20 group-hover:bg-transparent transition-colors duration-500"></div>
             </div>
             <div className="p-10 md:p-16 flex flex-col justify-center">
@@ -212,7 +236,12 @@ const TeamSection: React.FC<{ team: TeamMember[], onSelect: (m: TeamMember) => v
               className="group relative rounded-[2rem] overflow-hidden cursor-pointer aspect-[3/4] bg-slate-100"
               onClick={() => onSelect(member)}
             >
-              <img src={member.img} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" alt={member.name} />
+              <BrandImage
+                src={member.img}
+                fallbackSrc={member.fallbackImg}
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                alt={member.name}
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
               <div className="absolute bottom-0 left-0 w-full p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                 <p className="text-white font-semibold text-base mb-1">{member.name}</p>
@@ -251,21 +280,21 @@ const AboutView: React.FC = () => {
   }, []);
 
   const team: TeamMember[] = [
-    { name: "Dr. Cassandra Vane", role: "CEO & Founder", bio: "Pioneering the intersection of clinical care and technology.", fullBio: "Dr. Cassandra Vane spent fifteen years as a practicing clinical psychologist before founding EvoWell. Frustrated by the barriers her own patients faced — long wait lists, insurance red tape, and geographic limitations — she set out to build a platform that meets people where they are. Her vision: world-class mental health care should be as accessible as a phone call.", img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=800", x: "#", linkedin: "#", web: "#" },
-    { name: "Adrian Solis", role: "Chief Technology Officer", bio: "Architecting zero-trust infrastructure for sensitive health data.", fullBio: "Adrian brings two decades of experience building secure, scalable systems at companies like Stripe and Oscar Health. At EvoWell he oversees the engineering team and ensures that every byte of patient data is protected with zero-trust architecture.", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800", x: "#", linkedin: "#", web: "#" },
-    { name: "Elara Vance", role: "Head of Design", bio: "Crafting empathetic interfaces that feel human.", fullBio: "Elara treats pixels with the same care a therapist treats words. Before EvoWell, she led design at Calm and Headspace, where she developed a deep understanding of how digital experiences can reduce anxiety rather than create it.", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800", x: "#", linkedin: "#", web: "#" },
-    { name: "Dr. Marcus Thorne", role: "Director of Clinical Affairs", bio: "Ensuring clinical rigor across the platform.", fullBio: "A board-certified psychiatrist with a research background in teletherapy outcomes, Dr. Thorne ensures that every provider on EvoWell meets the highest standards of clinical excellence.", img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=800", x: "#", linkedin: "#", web: "#" },
-    { name: "Sophia Liu", role: "VP of Operations", bio: "Scaling the ecosystem without losing the human touch.", fullBio: "Sophia manages the complex logistics of provider credentialing, scheduling, and compliance. Her systems thinking keeps EvoWell running smoothly as it scales.", img: "https://images.unsplash.com/photo-1598550874175-4d7112ee7f38?auto=format&fit=crop&q=80&w=800", x: "#", linkedin: "#", web: "#" },
-    { name: "James Sterling", role: "Community Lead", bio: "Fostering connection across the care network.", fullBio: "James believes that healers need community too. He runs EvoWell's provider support programs, peer groups, and the annual EvoWell Summit.", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=800", x: "#", linkedin: "#", web: "#" }
+    { name: "Dr. Cassandra Vane", role: "CEO & Founder", bio: "Pioneering the intersection of clinical care and technology.", fullBio: "Dr. Cassandra Vane spent fifteen years as a practicing clinical psychologist before founding EvoWell. Frustrated by the barriers her own patients faced — long wait lists, insurance red tape, and geographic limitations — she set out to build a platform that meets people where they are. Her vision: world-class mental health care should be as accessible as a phone call.", img: brandImages.about.team[0].src, fallbackImg: brandImages.about.team[0].fallbackSrc, x: "#", linkedin: "#", web: "#" },
+    { name: "Adrian Solis", role: "Chief Technology Officer", bio: "Architecting zero-trust infrastructure for sensitive health data.", fullBio: "Adrian brings two decades of experience building secure, scalable systems at companies like Stripe and Oscar Health. At EvoWell he oversees the engineering team and ensures that every byte of patient data is protected with zero-trust architecture.", img: brandImages.about.team[1].src, fallbackImg: brandImages.about.team[1].fallbackSrc, x: "#", linkedin: "#", web: "#" },
+    { name: "Elara Vance", role: "Head of Design", bio: "Crafting empathetic interfaces that feel human.", fullBio: "Elara treats pixels with the same care a therapist treats words. Before EvoWell, she led design at Calm and Headspace, where she developed a deep understanding of how digital experiences can reduce anxiety rather than create it.", img: brandImages.about.team[2].src, fallbackImg: brandImages.about.team[2].fallbackSrc, x: "#", linkedin: "#", web: "#" },
+    { name: "Dr. Marcus Thorne", role: "Director of Clinical Affairs", bio: "Ensuring clinical rigor across the platform.", fullBio: "A board-certified psychiatrist with a research background in teletherapy outcomes, Dr. Thorne ensures that every provider on EvoWell meets the highest standards of clinical excellence.", img: brandImages.about.team[3].src, fallbackImg: brandImages.about.team[3].fallbackSrc, x: "#", linkedin: "#", web: "#" },
+    { name: "Sophia Liu", role: "VP of Operations", bio: "Scaling the ecosystem without losing the human touch.", fullBio: "Sophia manages the complex logistics of provider credentialing, scheduling, and compliance. Her systems thinking keeps EvoWell running smoothly as it scales.", img: brandImages.about.team[4].src, fallbackImg: brandImages.about.team[4].fallbackSrc, x: "#", linkedin: "#", web: "#" },
+    { name: "James Sterling", role: "Community Lead", bio: "Fostering connection across the care network.", fullBio: "James believes that healers need community too. He runs EvoWell's provider support programs, peer groups, and the annual EvoWell Summit.", img: brandImages.about.team[5].src, fallbackImg: brandImages.about.team[5].fallbackSrc, x: "#", linkedin: "#", web: "#" }
   ];
 
-  const values = [
-    { icon: "🌍", title: "Accessible", desc: "Care without barriers — geographic, financial, or cultural." },
-    { icon: "🤝", title: "Empowering", desc: "Tools that put clients and providers in the driver's seat." },
-    { icon: "🧬", title: "Inclusive", desc: "A platform built to serve every identity and background." },
-    { icon: "🔒", title: "Trustworthy", desc: "Radical transparency in everything we build and share." },
-    { icon: "⚡", title: "Innovative", desc: "Technology that feels invisible but changes everything." },
-    { icon: "🌱", title: "Collaborative", desc: "Better outcomes through partnership, not isolation." }
+  const values: Array<{ icon: keyof typeof iconPaths; title: string; desc: string }> = [
+    { icon: 'globe', title: "Accessible", desc: "Care without barriers — geographic, financial, or cultural." },
+    { icon: 'partners', title: "Empowering", desc: "Tools that put clients and providers in the driver's seat." },
+    { icon: 'dna', title: "Inclusive", desc: "A platform built to serve every identity and background." },
+    { icon: 'lock', title: "Trustworthy", desc: "Radical transparency in everything we build and share." },
+    { icon: 'lightning', title: "Innovative", desc: "Technology that feels invisible but changes everything." },
+    { icon: 'sprout', title: "Collaborative", desc: "Better outcomes through partnership, not isolation." }
   ];
 
   const milestones = [
@@ -363,7 +392,9 @@ const AboutView: React.FC = () => {
            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 reveal">
               {values.map((v, i) => (
                 <div key={i} className="group p-8 rounded-[2rem] border border-slate-100 hover:border-brand-100 bg-white hover:bg-brand-50/30 transition-all duration-300">
-                   <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center text-xl mb-5 group-hover:scale-110 transition-transform">{v.icon}</div>
+                   <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-600 mb-5 group-hover:scale-110 transition-transform">
+                     <Icon path={iconPaths[v.icon]} className="w-5 h-5" />
+                   </div>
                    <Heading level={4} className="mb-2">{v.title}</Heading>
                    <Text variant="caption" className="text-slate-500 leading-relaxed">{v.desc}</Text>
                 </div>
@@ -430,7 +461,12 @@ const AboutView: React.FC = () => {
                         className="absolute w-14 h-14 rounded-full border-[3px] border-brand-900 shadow-lg overflow-hidden"
                         style={{ left: `calc(50% + ${x}px - 28px)`, top: `calc(50% + ${y}px - 28px)` }}
                       >
-                        <img src={m.img} alt={m.name} className="w-full h-full object-cover" />
+                        <BrandImage
+                          src={m.img}
+                          fallbackSrc={m.fallbackImg}
+                          alt={m.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     );
                   })}

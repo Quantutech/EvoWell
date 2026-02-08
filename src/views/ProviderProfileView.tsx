@@ -17,7 +17,7 @@ import { EndorseButton } from '../components/provider/EndorseButton';
 import BookingSidebar from '../components/provider/booking/BookingSidebar';
 import { Heading, Text, Label } from '../components/typography';
 import { Card, Badge, Icon } from '../components/ui';
-import { iconPaths } from '../components/ui/iconPaths';
+import { iconPaths, type IconName } from '../components/ui/iconPaths';
 import { useQuery } from '@tanstack/react-query';
 import SEO from '../components/SEO';
 import { useToast } from '../contexts/ToastContext';
@@ -26,16 +26,22 @@ const DynamicMap = lazy(() => import('../components/maps/DynamicMap'));
 
 // ─── Reusable sub-components ────────────────────────────────────────
 
-const SectionHeading: React.FC<{ children: React.ReactNode; icon?: string }> = ({ children, icon }) => (
+const SectionHeading: React.FC<{ children: React.ReactNode; icon?: IconName }> = ({ children, icon }) => (
   <div className="flex items-center gap-3 mb-8">
-    {icon && <span className="text-2xl" role="img" aria-hidden="true">{icon}</span>}
+    {icon && (
+      <span className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+        <Icon path={iconPaths[icon]} className="w-5 h-5" />
+      </span>
+    )}
     <Heading level={2} className="tracking-tight">{children}</Heading>
   </div>
 );
 
-const EmptyState: React.FC<{ message: string; icon?: string }> = ({ message, icon = '📭' }) => (
+const EmptyState: React.FC<{ message: string; icon?: IconName }> = ({ message, icon = 'inbox' }) => (
   <div className="text-center py-12 text-slate-400">
-    <span className="text-4xl block mb-4" role="img" aria-hidden="true">{icon}</span>
+    <span className="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-4">
+      <Icon path={iconPaths[icon]} className="w-6 h-6" />
+    </span>
     <Text variant="small">{message}</Text>
   </div>
 );
@@ -139,7 +145,7 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
     staleTime: 5 * 60 * 1000,
   });
 
-  const allBlogs = blogsResponse?.data || [];
+  const allBlogs = useMemo(() => blogsResponse?.data ?? [], [blogsResponse?.data]);
 
   const blogs = useMemo(
     () => (provider ? allBlogs.filter(post => post.providerId === provider.id && post.status === 'APPROVED') : []),
@@ -297,7 +303,9 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
   if (error || !provider) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 p-6">
-        <span className="text-6xl" role="img" aria-label="confused face">😕</span>
+        <span className="w-16 h-16 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
+          <Icon path={iconPaths.alertCircle} className="w-8 h-8" />
+        </span>
         <Heading level={2}>Provider Not Found</Heading>
         <Text color="muted" className="text-center max-w-md">
           {error || "We couldn't find the provider you're looking for."}
@@ -318,7 +326,9 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
   if (!isVisibleToPublic && !isOwnerOrAdmin) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 p-6">
-        <span className="text-6xl" role="img" aria-label="lock">🔒</span>
+        <span className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+          <Icon path={iconPaths.lock} className="w-8 h-8" />
+        </span>
         <Heading level={2}>Profile Not Available</Heading>
         <Text color="muted" className="text-center max-w-md">
           This provider profile is not currently available.
@@ -372,7 +382,9 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
               <div className="lg:w-[400px] shrink-0 w-full">
                 <Card className="h-full p-6 overflow-hidden shadow-xl shadow-slate-200/50 border-slate-100 flex flex-col animate-in fade-in slide-in-from-right-4 duration-700">
                   <div className="flex items-center gap-2 mb-4">
-                    <span className="text-lg">🎬</span>
+                    <span className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
+                      <Icon path={iconPaths.media} className="w-4 h-4" />
+                    </span>
                     <Heading level={4} className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Intro Video</Heading>
                   </div>
                   <div className="flex-1 min-h-[200px] rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
@@ -416,7 +428,7 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
 
             <div className="space-y-8">
               <Card id="section-overview" ref={registerSection('section-overview')} className="scroll-mt-36 p-8 md:p-10" role="tabpanel">
-                <SectionHeading icon="👋">Introduction</SectionHeading>
+                <SectionHeading icon="wave">Introduction</SectionHeading>
                 <div className="prose prose-slate max-w-none mb-10">
                   <Text variant="lead" className="text-slate-600 leading-relaxed">
                     {provider.bio || `${provider.firstName || 'This provider'} is dedicated to high-quality care.`}
@@ -445,7 +457,7 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
               </Card>
 
               <Card id="section-about" ref={registerSection('section-about')} className="scroll-mt-36 p-8 md:p-10" role="tabpanel">
-                <SectionHeading icon="🎓">Credentials & Background</SectionHeading>
+                <SectionHeading icon="education">Credentials & Background</SectionHeading>
                 {!hasAboutContent ? (
                   <EmptyState message="No credentials info available." />
                 ) : (
@@ -456,7 +468,9 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
                         <div className="space-y-4">
                           {provider.educationHistory.map((edu, idx) => (
                             <div key={idx} className="flex items-start gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-100">🎓</div>
+                              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-100 text-brand-600">
+                                <Icon path={iconPaths.education} className="w-5 h-5" />
+                              </div>
                               <div>
                                 <Text weight="bold">{edu.degree}</Text>
                                 <Text variant="small" color="muted">{edu.university}</Text>
@@ -491,7 +505,7 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
               {/* Trust & Endorsements Section */}
               <Card id="section-endorsements" ref={registerSection('section-endorsements')} className="scroll-mt-36 p-8 md:p-10 border-slate-200/60 shadow-xl shadow-slate-200/40 animate-in fade-in slide-in-from-bottom-4 duration-500" role="tabpanel">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
-                  <SectionHeading icon="🛡️">Trust & Endorsements</SectionHeading>
+                  <SectionHeading icon="shield">Trust & Endorsements</SectionHeading>
                   {provider && (
                     <EndorseButton 
                       provider={provider} 
@@ -589,9 +603,9 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
               </Card>
 
               <Card id="section-media" ref={registerSection('section-media')} className="scroll-mt-36 p-8 md:p-10" role="tabpanel">
-                <SectionHeading icon="🎬">Media & Appearances</SectionHeading>
+                <SectionHeading icon="media">Media & Appearances</SectionHeading>
                 {!hasMediaContent ? (
-                  <EmptyState message="No media content available yet." icon="🎥" />
+                  <EmptyState message="No media content available yet." icon="media" />
                 ) : (
                   <div className="space-y-8">
                     {(provider.mediaAppearances || []).map((media, idx) => (
@@ -607,9 +621,9 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
               </Card>
 
               <Card id="section-articles" ref={registerSection('section-articles')} className="scroll-mt-36 p-8 md:p-10" role="tabpanel">
-                <SectionHeading icon="📝">Articles & Insights</SectionHeading>
+                <SectionHeading icon="article">Articles & Insights</SectionHeading>
                 {!hasArticles ? (
-                  <EmptyState message="No articles published yet." icon="✍️" />
+                  <EmptyState message="No articles published yet." icon="blog" />
                 ) : (
                   <div className="grid sm:grid-cols-2 gap-6">
                     {blogs.map(blog => (
@@ -625,7 +639,7 @@ const ProviderProfileView: React.FC<{ providerId?: string }> = ({ providerId: pr
               </Card>
 
               <Card id="section-location" ref={registerSection('section-location')} className="scroll-mt-36 p-8 md:p-10" role="tabpanel">
-                <SectionHeading icon="📍">Office Location</SectionHeading>
+                <SectionHeading icon="pin">Office Location</SectionHeading>
                 <div className="h-96 rounded-3xl w-full mb-6 relative overflow-hidden border border-slate-100">
                   <Suspense fallback={<div className="h-full w-full bg-slate-100 animate-pulse" />}>
                     <DynamicMap address={provider.address} height="100%" />

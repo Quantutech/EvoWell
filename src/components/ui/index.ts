@@ -9,3 +9,4 @@ export type { CardProps } from './Card';
 export { Badge } from './Badge';
 export { Tag } from './Tag';
 export { Select } from './Select';
+export { default as BrandImage } from './BrandImage';

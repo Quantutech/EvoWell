@@ -1,10 +1,11 @@
 import React from 'react';
 import { ProviderProfile } from '@/types';
-import { Card, CardBody, Badge, Button } from '@/components/ui';
-import { Heading, Text, Label } from '@/components/typography';
+import { Card, CardBody, Badge, Button, Icon } from '@/components/ui';
+import { Heading, Text } from '@/components/typography';
 import { useNavigation } from '@/App';
 import { EndorsementBadge } from './EndorsementBadge';
 import { WishlistButton } from './WishlistButton';
+import { iconPaths } from '@/components/ui/iconPaths';
 
 interface ProviderCardProps {
   provider: ProviderProfile;
@@ -60,9 +61,19 @@ const ProviderCard: React.FC<ProviderCardProps> = ({ provider, className, isSave
                 </div>
               </div>
               <div className="flex flex-wrap gap-4 my-3 text-[11px] font-medium text-slate-600 border-y border-slate-50 py-3">
-                <div className="flex items-center gap-2"><span className="text-base">🎓</span><span className="font-bold">{provider.yearsExperience} Years Exp.</span></div>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+                    <Icon path={iconPaths.education} className="w-3 h-3" />
+                  </span>
+                  <span className="font-bold">{provider.yearsExperience} Years Exp.</span>
+                </div>
                 {/* Note: Star ratings removed in favor of professional endorsements */}
-                <div className="flex items-center gap-2"><span className="text-base">📍</span><span className="font-bold">{provider.address?.city || 'Remote'}, {provider.address?.state}</span></div>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+                    <Icon path={iconPaths.pin} className="w-3 h-3" />
+                  </span>
+                  <span className="font-bold">{provider.address?.city || 'Remote'}, {provider.address?.state}</span>
+                </div>
               </div>
 
               {/* Endorsements Row */}

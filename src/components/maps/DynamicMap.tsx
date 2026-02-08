@@ -1,7 +1,10 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Address } from '@/types';
+import { Icon } from '@/components/ui';
+import { iconPaths } from '@/components/ui/iconPaths';
+import { brandImages } from '@/config/brandImages';
 
 // Fix for default markers in React Leaflet with Vite/Webpack
 const DefaultIcon = L.icon({
@@ -21,14 +24,44 @@ interface DynamicMapProps {
   height?: string;
 }
 
+const MapSizeInvalidator: React.FC = () => {
+  const map = useMap();
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      map.invalidateSize();
+    }, 0);
+
+    const rafId = window.requestAnimationFrame(() => {
+      map.invalidateSize();
+    });
+
+    const handleResize = () => map.invalidateSize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map]);
+
+  return null;
+};
+
 const DynamicMap: React.FC<DynamicMapProps> = ({ address, height = "400px" }) => {
   if (!address || !address.lat || !address.lng) {
     return (
       <div className={`relative w-full rounded-[2rem] overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200`} style={{ height }}>
         {/* Fallback Static Map visual */}
-        <div className="absolute inset-0 opacity-40 bg-[url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg')] bg-cover bg-center mix-blend-multiply"></div>
-        <div className="relative z-10 bg-white/90 backdrop-blur-md px-8 py-6 rounded-2xl shadow-xl border border-slate-100 text-center animate-bounce-slow">
-           <span className="text-4xl block mb-2">📍</span>
+        <div
+          className="absolute inset-0 opacity-40 bg-cover bg-center mix-blend-multiply"
+          style={{ backgroundImage: `url(${brandImages.maps.worldFallback.src}), url(${brandImages.maps.worldFallback.fallbackSrc})` }}
+        ></div>
+        <div className="relative z-10 bg-white/90 backdrop-blur-md px-8 py-6 rounded-2xl shadow-xl border border-slate-100 text-center">
+           <div className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 mx-auto mb-2 flex items-center justify-center">
+             <Icon path={iconPaths.pin} className="w-5 h-5" />
+           </div>
            <p className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">Location Map</p>
            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Coordinates unavailable</p>
         </div>
@@ -49,6 +82,7 @@ const DynamicMap: React.FC<DynamicMapProps> = ({ address, height = "400px" }) =>
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapSizeInvalidator />
         <Marker position={[address.lat, address.lng]}>
           <Popup className="font-sans">
             <div className="text-center p-2">
