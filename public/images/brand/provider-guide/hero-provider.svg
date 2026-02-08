@@ -1,0 +1,30 @@
+<svg width="1200" height="860" viewBox="0 0 1200 860" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hero-bg" x1="80" y1="60" x2="1080" y2="780" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E6F4FF"/>
+      <stop offset="1" stop-color="#F6FBFF"/>
+    </linearGradient>
+    <linearGradient id="hero-card" x1="320" y1="170" x2="910" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F2F8FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="860" rx="56" fill="url(#hero-bg)"/>
+  <circle cx="1030" cy="150" r="180" fill="#D9EEFF" opacity="0.85"/>
+  <circle cx="190" cy="760" r="230" fill="#D7EBFF" opacity="0.9"/>
+  <rect x="220" y="120" width="760" height="620" rx="44" fill="url(#hero-card)" stroke="#CDE4FA" stroke-width="2"/>
+  <rect x="300" y="210" width="260" height="220" rx="28" fill="#EAF4FF"/>
+  <rect x="640" y="210" width="260" height="220" rx="28" fill="#EAF4FF"/>
+  <rect x="300" y="480" width="600" height="190" rx="28" fill="#FFFFFF" stroke="#D9EAFB" stroke-width="2"/>
+  <rect x="336" y="248" width="188" height="18" rx="9" fill="#AFD5F8"/>
+  <rect x="336" y="282" width="152" height="14" rx="7" fill="#C5E2FB"/>
+  <rect x="336" y="309" width="170" height="14" rx="7" fill="#C5E2FB"/>
+  <circle cx="770" cy="285" r="62" fill="#0EA5E9" opacity="0.25"/>
+  <path d="M770 255L780 278L804 281L786 297L790 321L770 309L750 321L754 297L736 281L760 278L770 255Z" fill="#0EA5E9"/>
+  <path d="M365 565H836" stroke="#DCECFB" stroke-width="12" stroke-linecap="round"/>
+  <path d="M365 600H722" stroke="#DCECFB" stroke-width="12" stroke-linecap="round"/>
+  <path d="M365 635H662" stroke="#DCECFB" stroke-width="12" stroke-linecap="round"/>
+  <rect x="760" y="556" width="108" height="74" rx="20" fill="#0EA5E9"/>
+  <path d="M794 593L808 607L836 578" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+

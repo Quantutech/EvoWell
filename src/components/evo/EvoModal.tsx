@@ -68,6 +68,9 @@ const EvoModal: React.FC<EvoModalProps> = ({ isOpen, onClose }) => {
 
         {/* Content Area */}
         <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+          <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 text-[11px] font-semibold tracking-wide text-amber-900 text-center">
+            Evo is not a medical professional. For emergencies, call local emergency services.
+          </div>
           
           {/* INTRO VIEW */}
           {view === 'INTRO' && (
@@ -77,11 +80,12 @@ const EvoModal: React.FC<EvoModalProps> = ({ isOpen, onClose }) => {
                  <EvoIcon size="xl" className="relative z-10" />
               </div>
               
-              <Heading level={1} className="mb-2 text-4xl tracking-tight">Hi, I'm Evo.</Heading>
-              <Text className="text-brand-600 font-medium mb-6 uppercase tracking-wide text-sm">Your guide to the EvoWell ecosystem</Text>
+              <Heading level={1} className="mb-2 text-4xl tracking-tight">Hi, I&apos;m Evo.</Heading>
+              <Text className="text-brand-600 font-medium mb-6 uppercase tracking-wide text-sm">Navigation assistant</Text>
               
               <Text variant="lead" className="max-w-md mb-10 text-slate-600 leading-relaxed">
-                I'll ask a few quick questions to better understand your needs and guide you to the right resources.
+                I can help you find providers, explore resources, or navigate EvoWell.
+                I&apos;m not a medical professional and I can&apos;t provide medical advice.
               </Text>
               
               <Button 
