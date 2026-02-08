@@ -1,211 +1,283 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { api } from '../services/api';
-import { useNavigation, useAuth } from '../App';
+import { useAuth, useNavigation } from '../App';
 import { BlogPost, UserRole } from '../types';
 import Breadcrumb from '../components/Breadcrumb';
-import { PageHero, Section, Container, Grid } from '../components/layout';
-import { Button, Card, CardBody, Badge, Tag } from '../components/ui';
-import { Heading, Text, Label } from '../components/typography';
+import { Container, PageHero, Section } from '../components/layout';
+import { Badge, Button, Card, CardBody, Tag } from '../components/ui';
+import { Heading, Label, Text } from '../components/typography';
+import { blogIndexPageContent as content } from '../content/blogIndexPageContent';
 
-/* ─── Loading skeleton ───────────────────────────────────────────────── */
+const ALL_CATEGORY = content.filters.allLabel;
 
 const BlogSkeleton: React.FC = () => (
   <div className="animate-pulse space-y-16">
-    {/* Featured skeleton */}
-    <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden">
+    <div className="overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white">
       <div className="grid lg:grid-cols-2">
-        <div className="aspect-video lg:aspect-auto bg-slate-100" />
-        <div className="p-10 lg:p-16 space-y-4">
-          <div className="flex gap-3"><div className="h-6 w-20 bg-slate-100 rounded-full" /><div className="h-6 w-32 bg-slate-50 rounded-full" /></div>
-          <div className="h-8 w-3/4 bg-slate-100 rounded-xl" />
-          <div className="h-8 w-1/2 bg-slate-100 rounded-xl" />
-          <div className="h-4 w-full bg-slate-50 rounded-lg" />
-          <div className="h-4 w-5/6 bg-slate-50 rounded-lg" />
-          <div className="flex items-center gap-3 pt-4"><div className="w-10 h-10 bg-slate-100 rounded-full" /><div className="h-4 w-24 bg-slate-50 rounded-lg" /></div>
+        <div className="aspect-video bg-slate-100 lg:aspect-auto" />
+        <div className="space-y-4 p-10 lg:p-16">
+          <div className="flex gap-3">
+            <div className="h-6 w-20 rounded-full bg-slate-100" />
+            <div className="h-6 w-36 rounded-full bg-slate-50" />
+          </div>
+          <div className="h-8 w-4/5 rounded-xl bg-slate-100" />
+          <div className="h-8 w-1/2 rounded-xl bg-slate-100" />
+          <div className="h-4 w-full rounded-lg bg-slate-50" />
+          <div className="h-4 w-5/6 rounded-lg bg-slate-50" />
+          <div className="flex items-center gap-3 pt-4">
+            <div className="h-10 w-10 rounded-full bg-slate-100" />
+            <div className="h-4 w-28 rounded-lg bg-slate-50" />
+          </div>
         </div>
       </div>
     </div>
-    {/* Grid skeleton */}
-    <div className="grid md:grid-cols-3 gap-8">
-      {[0, 1, 2].map(i => (
-        <div key={i} className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden">
+
+    <div className="grid gap-8 md:grid-cols-3">
+      {[0, 1, 2].map((index) => (
+        <div key={index} className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white">
           <div className="aspect-[4/3] bg-slate-100" />
-          <div className="p-6 space-y-3"><div className="h-4 w-24 bg-slate-50 rounded-full" /><div className="h-5 w-full bg-slate-100 rounded-lg" /><div className="h-4 w-3/4 bg-slate-50 rounded-lg" /></div>
+          <div className="space-y-3 p-6">
+            <div className="h-4 w-24 rounded-full bg-slate-50" />
+            <div className="h-5 w-full rounded-lg bg-slate-100" />
+            <div className="h-4 w-3/4 rounded-lg bg-slate-50" />
+          </div>
         </div>
       ))}
     </div>
   </div>
 );
 
-/* ─── Main view ──────────────────────────────────────────────────────── */
+const formatDate = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  const parsed = new Date(dateStr);
+  if (Number.isNaN(parsed.getTime())) return dateStr;
+  return parsed.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+const normalizeReadTime = (readTime?: string): string => {
+  if (!readTime) return '5 min read';
+  const numeric = readTime.match(/\d+/)?.[0];
+  if (!numeric) return readTime;
+  return `${numeric} min read`;
+};
+
+const isEditorialRole = (role?: string): boolean => {
+  if (!role) return true;
+  const normalized = role.trim().toLowerCase();
+  return normalized === 'admin' || normalized === 'editorial' || normalized === 'evowell editorial';
+};
+
+const getAuthorLine = (post: BlogPost): string => {
+  const name = (post.authorName || '').trim();
+  const role = (post.authorRole || '').trim();
+  if (!name || !role || isEditorialRole(role)) {
+    return content.grid.authorFallback;
+  }
+  return `By ${name} • ${role}`;
+};
+
+const buildExcerpt = (summary?: string): string => {
+  const clean = (summary || '').trim();
+  if (!clean) return 'What you’ll learn: practical takeaways from this article.';
+  const lower = clean.toLowerCase();
+  if (lower.startsWith("what you'll learn") || lower.startsWith('what you’ll learn')) {
+    return clean;
+  }
+  return `What you’ll learn: ${clean}`;
+};
 
 const BlogListView: React.FC = () => {
   const { navigate } = useNavigation();
   const { user } = useAuth();
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('View all');
+  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
   const [searchQuery, setSearchQuery] = useState('');
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSent, setNewsletterSent] = useState(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const newsletterRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    api.getAllBlogs({ limit: 100 }).then(response => {
-      const data = response.data || [];
-      const visibleBlogs = data.filter(b => b.status === 'APPROVED' || user?.role === UserRole.ADMIN);
-      setBlogs(visibleBlogs);
-      setLoading(false);
-    });
+    let isMounted = true;
+    api
+      .getAllBlogs({ limit: 100 })
+      .then((response) => {
+        if (!isMounted) return;
+        const data = response.data || [];
+        const visibleBlogs = data.filter(
+          (post) => post.status === 'APPROVED' || user?.role === UserRole.ADMIN,
+        );
+        setBlogs(visibleBlogs);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setBlogs([]);
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
-
-  // Reveal animation
-  useEffect(() => {
-    if (loading) return;
-    observerRef.current = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-      { threshold: 0.05 },
-    );
-    
-    const observeElements = () => {
-      document.querySelectorAll('.reveal').forEach(el => observerRef.current?.observe(el));
-    };
-
-    observeElements();
-    
-    // Also re-observe after a short delay to catch late renders
-    const timer = setTimeout(observeElements, 500);
-
-    return () => { 
-      clearTimeout(timer); 
-      observerRef.current?.disconnect(); 
-    };
-  }, [loading, activeCategory, searchQuery, blogs]);
-
-  // ── Derived data ────────────────────────────────────────────
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    const approved = blogs.filter(b => b.status === 'APPROVED');
-    approved.forEach(b => {
-      if (b.category) counts.set(b.category, (counts.get(b.category) || 0) + 1);
+    blogs.forEach((post) => {
+      if (!post.category) return;
+      counts.set(post.category, (counts.get(post.category) || 0) + 1);
     });
     return counts;
   }, [blogs]);
 
-  const categories = useMemo(() => {
-    const cats = Array.from(categoryCounts.keys()).sort();
-    return ['View all', ...cats];
-  }, [categoryCounts]);
+  const categories = useMemo(
+    () => [ALL_CATEGORY, ...Array.from(categoryCounts.keys()).sort()],
+    [categoryCounts],
+  );
 
   const filteredBlogs = useMemo(() => {
-    return blogs.filter(b => {
-      const matchesCategory = activeCategory === 'View all' || b.category === activeCategory;
-      const q = searchQuery.toLowerCase();
-      const matchesQuery = !q ||
-        b.title.toLowerCase().includes(q) ||
-        (b.summary || '').toLowerCase().includes(q) ||
-        (b.authorName || '').toLowerCase().includes(q);
+    const query = searchQuery.trim().toLowerCase();
+    return blogs.filter((post) => {
+      const matchesCategory = activeCategory === ALL_CATEGORY || post.category === activeCategory;
+      const matchesQuery =
+        !query ||
+        post.title.toLowerCase().includes(query) ||
+        (post.summary || '').toLowerCase().includes(query) ||
+        (post.authorName || '').toLowerCase().includes(query);
       return matchesCategory && matchesQuery;
     });
   }, [blogs, activeCategory, searchQuery]);
 
-  const featured = useMemo(
-    () => filteredBlogs.find(b => b.isFeatured && b.status === 'APPROVED') || filteredBlogs[0],
-    [filteredBlogs],
-  );
+  const featured = useMemo(() => {
+    if (filteredBlogs.length === 0) return undefined;
+    return filteredBlogs.find((post) => post.isFeatured && post.status === 'APPROVED') || filteredBlogs[0];
+  }, [filteredBlogs]);
 
   const regularPosts = useMemo(
-    () => filteredBlogs.filter(b => b.id !== featured?.id),
+    () => filteredBlogs.filter((post) => post.id !== featured?.id),
     [filteredBlogs, featured],
   );
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '';
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    } catch {
-      return dateStr;
-    }
+  const hasAnyPosts = blogs.length > 0;
+  const hasMatches = filteredBlogs.length > 0;
+  const isNoPosts = !loading && !hasAnyPosts;
+  const isNoMatches = !loading && hasAnyPosts && !hasMatches;
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setActiveCategory(ALL_CATEGORY);
   };
 
   const handleNewsletterSubmit = () => {
-    if (!newsletterEmail) return;
+    if (!newsletterEmail.trim()) return;
     setNewsletterSent(true);
     setNewsletterEmail('');
     setTimeout(() => setNewsletterSent(false), 4000);
   };
 
   return (
-    <div className="bg-[#fbfcff] min-h-screen">
-      <Breadcrumb items={[{ label: 'Wellness Blog' }]} />
+    <div className="min-h-screen bg-[#fbfcff]">
+      <Helmet>
+        <title>{content.seo.title}</title>
+        <meta name="description" content={content.seo.description} />
+      </Helmet>
 
-      {/* ── Hero ──────────────────────────────────────────────── */}
+      <Breadcrumb items={[{ label: 'Resources & Insights' }]} />
+
       <PageHero
-        overline="Our Blog"
-        title="Resources & Insights"
-        description="The latest clinical news, wellness strategies, and community stories."
+        overline={content.hero.eyebrow}
+        title={content.hero.title}
+        description={content.hero.subhead}
         variant="left-aligned"
         actions={
-          user?.role === UserRole.ADMIN ? (
-            <Button variant="primary" onClick={() => navigate('#/dashboard')}>Admin Console</Button>
-          ) : undefined
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => navigate('/search')}
+              className="block text-left text-sm font-bold text-brand-600 transition-colors hover:text-brand-700 hover:underline"
+            >
+              {content.heroLinks.support}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/benefits')}
+              className="block text-left text-sm font-bold text-brand-600 transition-colors hover:text-brand-700 hover:underline"
+            >
+              {content.heroLinks.providers}
+            </button>
+            <Text variant="small" className="pt-1 font-semibold text-slate-500">
+              {content.hero.microcopy}
+            </Text>
+          </div>
         }
       />
 
       <Section spacing="md" background="default">
         <Container>
+          <div className="mb-8 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+            <Text variant="small" className="font-semibold text-slate-600">
+              {content.disclaimer}
+            </Text>
+          </div>
+
           {loading ? (
             <BlogSkeleton />
           ) : (
             <>
-              {/* ── Featured post ─────────────────────────────── */}
               {featured && (
                 <Card
                   variant="default"
                   size="lg"
-                  className="mb-16 p-0 overflow-hidden cursor-pointer group reveal"
-                  onClick={() => navigate(`#/blog/${featured.slug}`)}
+                  className="group mb-16 cursor-pointer overflow-hidden p-0"
+                  onClick={() => navigate(`/blog/${featured.slug}`)}
                 >
                   <div className="grid lg:grid-cols-2">
-                    <div className="aspect-video lg:aspect-auto overflow-hidden relative bg-slate-100">
+                    <div className="relative aspect-video overflow-hidden bg-slate-100 lg:aspect-auto">
                       <img
                         src={featured.imageUrl}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                        className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         alt={featured.title}
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                      {/* Featured badge */}
-                      {featured.isFeatured && (
-                        <div className="absolute top-5 left-5">
-                          <Badge variant="brand" className="bg-brand-500 text-white shadow-lg">✦ Featured</Badge>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-10 lg:p-14 flex flex-col justify-center relative bg-white">
-                      <div className="flex items-center gap-3 mb-5 flex-wrap">
-                         <Badge variant="brand">{featured.category}</Badge>
-                         <Label variant="badge" color="muted">{featured.readTime}</Label>
-                         <Label variant="badge" color="muted">{formatDate(featured.publishedAt)}</Label>
-                         {featured.status && featured.status !== 'APPROVED' && (
-                           <Badge variant="warning">{featured.status}</Badge>
-                         )}
+                      <div className="absolute left-5 top-5">
+                        <Badge variant="brand" className="bg-brand-500 text-white shadow-lg">
+                          {content.featured.badge}
+                        </Badge>
                       </div>
-                      <Heading level={2} className="mb-5 group-hover:text-brand-600 transition-colors leading-tight">
+                    </div>
+
+                    <div className="relative flex flex-col justify-center bg-white p-10 lg:p-14">
+                      <div className="mb-5 flex flex-wrap items-center gap-3">
+                        <Badge variant="brand">{featured.category}</Badge>
+                        <Label variant="badge" color="muted">
+                          {`${normalizeReadTime(featured.readTime)} • ${formatDate(featured.publishedAt)}`}
+                        </Label>
+                        {featured.status && featured.status !== 'APPROVED' && (
+                          <Badge variant="warning">{featured.status}</Badge>
+                        )}
+                      </div>
+
+                      <Heading level={2} className="mb-5 leading-tight transition-colors group-hover:text-brand-600">
                         {featured.title}
                       </Heading>
-                      <Text variant="lead" className="mb-8 line-clamp-3 text-slate-500">{featured.summary}</Text>
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-3">
-                           <img src={featured.authorImage} className="w-11 h-11 rounded-full border-2 border-slate-50 shadow-sm object-cover" alt="" />
-                           <div>
-                              <Text variant="small" weight="bold">{featured.authorName}</Text>
-                              <Text variant="caption" color="muted">{featured.authorRole}</Text>
-                           </div>
+                      <Text variant="lead" className="mb-8 line-clamp-3 text-slate-500">
+                        {buildExcerpt(featured.summary)}
+                      </Text>
+
+                      <div className="mt-auto flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
+                        <div className="min-w-0">
+                          <Text variant="small" weight="bold" className="truncate">
+                            {getAuthorLine(featured)}
+                          </Text>
                         </div>
-                        <span className="text-brand-500 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                          Read article →
+                        <span className="text-sm font-bold text-brand-600 transition-colors group-hover:text-brand-700">
+                          {content.featured.cta} →
                         </span>
                       </div>
                     </div>
@@ -213,20 +285,25 @@ const BlogListView: React.FC = () => {
                 </Card>
               )}
 
-              {/* ── Filter bar ────────────────────────────────── */}
-              <div className="flex flex-col lg:flex-row justify-between gap-4 mb-10 sticky top-20 z-20 bg-[#fbfcff]/95 backdrop-blur-sm py-3 -mx-2 px-2 reveal">
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
-                  {categories.map(cat => {
-                    const count = cat === 'View all' ? blogs.filter(b => b.status === 'APPROVED').length : categoryCounts.get(cat) || 0;
+              <div className="sticky top-20 z-20 -mx-2 mb-2 bg-[#fbfcff]/95 px-2 py-3 backdrop-blur-sm">
+                <div className="mb-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar lg:pb-0">
+                  {categories.map((category) => {
+                    const count =
+                      category === ALL_CATEGORY ? blogs.length : categoryCounts.get(category) || 0;
+
                     return (
                       <Tag
-                        key={cat}
-                        selected={activeCategory === cat}
-                        onSelect={() => setActiveCategory(cat)}
+                        key={category}
+                        selected={activeCategory === category}
+                        onSelect={() => setActiveCategory(category)}
                       >
-                        {cat}
+                        {category}
                         {count > 0 && (
-                          <span className={`ml-1.5 text-[10px] ${activeCategory === cat ? 'opacity-70' : 'text-slate-400'}`}>
+                          <span
+                            className={`ml-1.5 text-[10px] ${
+                              activeCategory === category ? 'opacity-70' : 'text-slate-400'
+                            }`}
+                          >
                             {count}
                           </span>
                         )}
@@ -234,153 +311,221 @@ const BlogListView: React.FC = () => {
                     );
                   })}
                 </div>
-                <div className="relative w-full lg:w-72 group shrink-0">
-                   <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                   </svg>
-                   <input
+
+                <div className="w-full lg:max-w-sm">
+                  <div className="group relative">
+                    <svg
+                      className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-brand-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <input
                       type="text"
-                      placeholder="Search articles…"
+                      placeholder={content.filters.searchPlaceholder}
                       value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold text-slate-700 placeholder:font-medium placeholder:text-slate-400 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-300 outline-none shadow-sm transition-all"
-                   />
-                   {searchQuery && (
-                     <button
-                       onClick={() => setSearchQuery('')}
-                       className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"
-                     >
-                       ×
-                     </button>
-                   )}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 placeholder:font-medium placeholder:text-slate-400 shadow-sm outline-none transition-all focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-500 transition-colors hover:bg-slate-200"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <Text variant="caption" className="mt-2 pl-1 text-slate-500">
+                    {content.filters.searchHelper}
+                  </Text>
                 </div>
               </div>
 
-              {/* ── Results summary ───────────────────────────── */}
-              {(searchQuery || activeCategory !== 'View all') && (
-                <div className="flex items-center gap-3 mb-6 reveal">
+              {(searchQuery || activeCategory !== ALL_CATEGORY) && (
+                <div className="mb-6 flex items-center gap-3">
                   <Text variant="small" color="muted" className="font-semibold">
                     {filteredBlogs.length} article{filteredBlogs.length !== 1 ? 's' : ''}
-                    {searchQuery && <> matching "<span className="text-slate-700">{searchQuery}</span>"</>}
-                    {activeCategory !== 'View all' && <> in <span className="text-slate-700">{activeCategory}</span></>}
+                    {searchQuery && (
+                      <>
+                        {' '}
+                        matching <span className="text-slate-700">"{searchQuery}"</span>
+                      </>
+                    )}
+                    {activeCategory !== ALL_CATEGORY && (
+                      <>
+                        {' '}
+                        in <span className="text-slate-700">{activeCategory}</span>
+                      </>
+                    )}
                   </Text>
                   <button
-                    onClick={() => { setSearchQuery(''); setActiveCategory('View all'); }}
-                    className="text-xs font-bold text-brand-500 hover:text-brand-700 transition-colors"
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-xs font-bold text-brand-500 transition-colors hover:text-brand-700"
                   >
-                    Clear
+                    {content.filters.clear}
                   </button>
                 </div>
               )}
 
-              {/* ── Post grid ─────────────────────────────────── */}
-              {regularPosts.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7 reveal">
-                  {regularPosts.map(post => (
+              {regularPosts.length > 0 && (
+                <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+                  {regularPosts.map((post) => (
                     <Card
                       key={post.id}
-                      className="cursor-pointer group flex flex-col h-full p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-                      onClick={() => navigate(`#/blog/${post.slug}`)}
+                      className="group flex h-full cursor-pointer flex-col overflow-hidden p-0 transition-shadow duration-300 hover:shadow-xl"
+                      onClick={() => navigate(`/blog/${post.slug}`)}
                     >
-                      <div className="aspect-[4/3] overflow-hidden relative border-b border-slate-100 bg-slate-50">
-                         <img
-                           src={post.imageUrl}
-                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                           alt={post.title}
-                           loading="lazy"
-                         />
-                         <div className="absolute top-4 left-4">
-                            <Badge variant="neutral" className="bg-white/90 backdrop-blur-md shadow-sm">{post.category}</Badge>
-                         </div>
-                         {post.status && post.status !== 'APPROVED' && (
-                           <div className="absolute top-4 right-4">
-                             <Badge variant="warning">{post.status}</Badge>
-                           </div>
-                         )}
+                      <div className="relative aspect-[4/3] overflow-hidden border-b border-slate-100 bg-slate-50">
+                        <img
+                          src={post.imageUrl}
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          alt={post.title}
+                          loading="lazy"
+                        />
+                        <div className="absolute left-4 top-4">
+                          <Badge variant="neutral" className="bg-white/90 shadow-sm backdrop-blur-md">
+                            {post.category}
+                          </Badge>
+                        </div>
+                        {post.status && post.status !== 'APPROVED' && (
+                          <div className="absolute right-4 top-4">
+                            <Badge variant="warning">{post.status}</Badge>
+                          </div>
+                        )}
                       </div>
-                      <CardBody className="p-6 flex flex-col flex-1">
+
+                      <CardBody className="flex flex-1 flex-col p-6">
                         <Label variant="badge" color="muted" className="mb-3">
-                          {formatDate(post.publishedAt)}{post.readTime ? ` · ${post.readTime}` : ''}
+                          {`${formatDate(post.publishedAt)} • ${normalizeReadTime(post.readTime)}`}
                         </Label>
-                        <Heading level={4} className="mb-3 group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
+                        <Heading level={4} className="mb-3 line-clamp-2 leading-snug transition-colors group-hover:text-brand-600">
                           {post.title}
                         </Heading>
-                        <Text variant="small" color="muted" className="line-clamp-2 mb-6">{post.summary}</Text>
-                        <div className="flex items-center gap-3 pt-4 border-t border-slate-50 mt-auto">
-                           <img src={post.authorImage} className="w-8 h-8 rounded-full border border-slate-100 object-cover" alt="" />
-                           <div className="min-w-0">
-                              <Text variant="caption" weight="bold" className="truncate">{post.authorName}</Text>
-                              <Text variant="caption" color="muted" className="text-[10px] truncate">{post.authorRole}</Text>
-                           </div>
+                        <Text variant="small" color="muted" className="mb-6 line-clamp-2">
+                          {buildExcerpt(post.summary)}
+                        </Text>
+
+                        <div className="mt-auto border-t border-slate-50 pt-4">
+                          <Text variant="caption" weight="bold" className="mb-3 truncate">
+                            {getAuthorLine(post)}
+                          </Text>
+                          <span className="text-sm font-bold text-brand-600 transition-colors group-hover:text-brand-700">
+                            {content.grid.cta} →
+                          </span>
                         </div>
                       </CardBody>
                     </Card>
                   ))}
                 </div>
-              ) : featured === undefined ? (
-                <div className="text-center py-32 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 reveal">
-                  <span className="text-4xl block mb-4">📝</span>
-                  <Text color="muted" weight="bold" className="mb-2">No articles match your criteria.</Text>
-                  <Text variant="small" color="muted" className="mb-6">Try a different category or clear your search.</Text>
-                  <Button variant="secondary" size="sm" onClick={() => { setSearchQuery(''); setActiveCategory('View all'); }}>
-                    Clear Filters
+              )}
+
+              {isNoPosts && (
+                <div className="rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-white py-20 text-center">
+                  <Heading level={3} className="mb-3">
+                    {content.emptyStates.noPosts.title}
+                  </Heading>
+                  <Text color="muted" className="mx-auto mb-6 max-w-2xl">
+                    {content.emptyStates.noPosts.copy}
+                  </Text>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      newsletterRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }
+                  >
+                    {content.emptyStates.noPosts.cta}
                   </Button>
                 </div>
-              ) : null}
+              )}
 
-              {/* ── Newsletter CTA ────────────────────────────── */}
-              <div className="mt-24 reveal">
-                <div className="relative rounded-[2.5rem] overflow-hidden border border-slate-200 bg-white">
-                  {/* Accent strip */}
-                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-400 via-emerald-400 to-brand-500" />
-                  {/* Subtle dot pattern */}
-                  <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+              {isNoMatches && (
+                <div className="rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-white py-20 text-center">
+                  <Heading level={3} className="mb-3">
+                    {content.emptyStates.noMatches.title}
+                  </Heading>
+                  <Text color="muted" className="mb-6">
+                    {content.emptyStates.noMatches.copy}
+                  </Text>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <Button variant="secondary" size="sm" onClick={clearFilters}>
+                      {content.emptyStates.noMatches.clearFilters}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveCategory(ALL_CATEGORY)}
+                    >
+                      {content.emptyStates.noMatches.viewAll}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
-                  <div className="relative z-10 p-10 lg:p-14 flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
-                    {/* Left: icon + text */}
-                    <div className="flex-1 flex gap-5 items-start">
-                      <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-brand-50 border border-brand-100 items-center justify-center shrink-0">
-                        <svg className="w-6 h-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div ref={newsletterRef} className="mt-24">
+                <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white">
+                  <div className="absolute left-0 right-0 top-0 h-1.5 bg-gradient-to-r from-brand-400 via-emerald-400 to-brand-500" />
+                  <div
+                    className="absolute inset-0 opacity-[0.025]"
+                    style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}
+                  />
+
+                  <div className="relative z-10 flex flex-col items-center gap-10 p-10 lg:flex-row lg:gap-14 lg:p-14">
+                    <div className="flex flex-1 items-start gap-5">
+                      <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 sm:flex">
+                        <svg className="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                         </svg>
                       </div>
                       <div>
-                        <h3 className="text-xl lg:text-2xl font-black text-slate-900 mb-2">Stay ahead of the curve</h3>
-                        <p className="text-slate-500 text-sm leading-relaxed max-w-md">
-                          Evidence-based wellness strategies, provider spotlights, and new resources — delivered weekly.
+                        <h3 className="mb-2 text-xl font-black text-slate-900 lg:text-2xl">
+                          {content.newsletter.title}
+                        </h3>
+                        <p className="max-w-md text-sm leading-relaxed text-slate-500">
+                          {content.newsletter.copy}
                         </p>
                       </div>
                     </div>
 
-                    {/* Right: input */}
-                    <div className="w-full lg:w-auto lg:min-w-[380px]">
+                    <div className="w-full lg:min-w-[380px] lg:w-auto">
                       {newsletterSent ? (
-                        <div className="bg-brand-50 border border-brand-200 rounded-2xl p-6 text-center">
-                          <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center mx-auto mb-2">
-                            <span className="text-brand-600 text-lg">✓</span>
+                        <div className="rounded-2xl border border-brand-200 bg-brand-50 p-6 text-center">
+                          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-brand-100">
+                            <span className="text-lg text-brand-600">✓</span>
                           </div>
-                          <p className="text-brand-800 font-bold text-sm">You're on the list!</p>
-                          <p className="text-brand-600 text-xs mt-1">Check your inbox for a confirmation.</p>
+                          <p className="text-sm font-bold text-brand-800">{content.newsletter.successTitle}</p>
+                          <p className="mt-1 text-xs text-brand-600">{content.newsletter.successCopy}</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="flex bg-slate-50 p-1.5 rounded-xl border border-slate-200 focus-within:border-brand-300 focus-within:ring-4 focus-within:ring-brand-500/10 transition-all">
-                             <input
-                                type="email"
-                                placeholder="you@email.com"
-                                className="flex-grow bg-transparent border-none text-slate-800 px-4 py-3 placeholder:text-slate-400 focus:ring-0 outline-none text-sm font-medium min-w-0"
-                                value={newsletterEmail}
-                                onChange={e => setNewsletterEmail(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleNewsletterSubmit()}
-                             />
-                             <button
-                               onClick={handleNewsletterSubmit}
-                               className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg text-sm font-bold transition-all active:scale-95 shadow-sm whitespace-nowrap"
-                             >
-                               Subscribe
-                             </button>
+                          <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1.5 transition-all focus-within:border-brand-300 focus-within:ring-4 focus-within:ring-brand-500/10">
+                            <input
+                              type="email"
+                              placeholder={content.newsletter.placeholder}
+                              className="min-w-0 flex-grow border-none bg-transparent px-4 py-3 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none focus:ring-0"
+                              value={newsletterEmail}
+                              onChange={(event) => setNewsletterEmail(event.target.value)}
+                              onKeyDown={(event) => event.key === 'Enter' && handleNewsletterSubmit()}
+                            />
+                            <button
+                              type="button"
+                              onClick={handleNewsletterSubmit}
+                              className="whitespace-nowrap rounded-lg bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-600 active:scale-95"
+                            >
+                              {content.newsletter.button}
+                            </button>
                           </div>
-                          <p className="text-slate-400 text-[11px] pl-2">No spam. Unsubscribe anytime.</p>
+                          <p className="pl-2 text-[11px] text-slate-400">{content.newsletter.microcopy}</p>
                         </div>
                       )}
                     </div>

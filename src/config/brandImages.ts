@@ -64,6 +64,38 @@ export const brandImages = {
         'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800',
       alt: 'Clinical illustration',
     },
+    sections: {
+      why: {
+        src: '/images/brand/about/hero-clinical.svg',
+        fallbackSrc:
+          'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000',
+        alt: 'Provider-first platform operations illustration',
+      },
+      earlyStage: {
+        src: '/images/brand/about/hero-clinical.svg',
+        fallbackSrc:
+          'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1000',
+        alt: 'Product team collaboration illustration',
+      },
+      slidingScale: {
+        src: '/images/brand/about/hero-clinical.svg',
+        fallbackSrc:
+          'https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&q=80&w=1000',
+        alt: 'Sliding-scale accessibility illustration',
+      },
+      trustSafety: {
+        src: '/images/brand/about/hero-clinical.svg',
+        fallbackSrc:
+          'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1000',
+        alt: 'Trust and safety principles illustration',
+      },
+      participation: {
+        src: '/images/brand/about/hero-clinical.svg',
+        fallbackSrc:
+          'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=1000',
+        alt: 'Community participation illustration',
+      },
+    },
     team: [
       {
         src: '/images/brand/about/team-01.svg',
