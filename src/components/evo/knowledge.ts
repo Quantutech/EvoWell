@@ -69,8 +69,8 @@ export const KNOWLEDGE_BASE: Record<string, Recommendation[]> = {
     {
       id: 'provider-calc',
       type: 'resource',
-      title: 'Income Calculator',
-      description: 'Estimate your earnings with our optimized booking system.',
+      title: 'Sliding-Scale Calculator',
+      description: 'Set your monthly membership with transparent practice-based estimates.',
       tags: ['Finance', 'Tool'],
       languages: ['English'],
       url: '#/calculator',

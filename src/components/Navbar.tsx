@@ -171,7 +171,7 @@ const Navbar: React.FC<{ currentPath: string }> = ({ currentPath }) => {
       items: [
         { label: 'Why EvoWell', href: '#/benefits', icon: 'star', desc: 'Platform benefits & pricing' },
         { label: 'Onboarding Guide', href: '#/provider-guide', icon: 'map', desc: 'Step-by-step walkthrough' },
-        { label: 'ROI Calculator', href: '#/calculator', icon: 'dollar', desc: 'Estimate your earnings' },
+        { label: 'Sliding-Scale Calculator', href: '#/calculator', icon: 'dollar', desc: 'Set your membership contribution' },
       ],
     },
   ];
